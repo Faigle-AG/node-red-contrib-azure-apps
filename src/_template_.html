@@ -1,0 +1,60 @@
+<script type="text/javascript">
+    RED.nodes.registerType('_template_', {
+        category: 'function',
+        color: '#a6bbcf',
+        defaults: {
+            name: { value: '' },
+            enableLogging: { value: true },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-cog',
+        label: function () {
+            return this.name || '_template_';
+        },
+    });
+</script>
+
+<script type="text/html" data-template-name="_template_">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" placeholder="Name" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-enableLogging">
+            <i class="fa fa-list"></i>
+            Enable Logging
+        </label>
+        <input
+            type="checkbox"
+            id="node-input-enableLogging"
+            style="display:inline-block; width:auto; vertical-align:top;"
+        />
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="_template_">
+A simple template node to demonstrate how to create custom Node-RED nodes.
+
+### Properties
+
+- **Name** _string_ \
+  The label of the node in the workspace.
+
+- **Enable Logging** _boolean_ \
+  If checked, the node will output the `msg.payload` to the Node-RED debug console.
+
+### Details
+
+This node accepts 1 input, updates its visual status, optionally logs the payload, and passes the message to 1 output unmodified.
+
+### References
+
+- [Official Documentation: Creating Nodes](https://nodered.org/docs/creating-nodes/)
+</script>
+<!-- @formatter:on -->

@@ -1,0 +1,44 @@
+{
+  "name": "@faigle/node-red-contrib-_template_",
+  "version": "0.2.3",
+  "description": "Template/Example node for Node-Red",
+  "keywords": [
+    "node-red"
+  ],
+  "private": false,
+  "license": "MIT",
+  "node-red": {
+    "nodes": {
+      "_template_": "src/_template_.js"
+    }
+  },
+  "devDependencies": {
+    "@eslint/css": "^1.3.0",
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^2.0.0",
+    "@eslint/markdown": "^8.0.2",
+    "eslint": "^10.5.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-html": "^8.1.4",
+    "globals": "^17.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "mocha": "^11.7.6",
+    "node-red": "^5.0.0",
+    "node-red-node-test-helper": "^0.3.6",
+    "prettier": "^3.8.4"
+  },
+  "dependencies": {
+    "@faigle/node-red-runtime-utils": "^0.3.5"
+  },
+  "scripts": {
+    "prepare": "npx --yes husky",
+    "test": "mocha \"test/**/*_spec.js\"",
+    "format": "prettier --write \"**/*.{js,html,md}\"",
+    "lint": "eslint \"**/*.{js,html}\""
+  },
+  "lint-staged": {
+    "*.{js,html,md}": "prettier --write",
+    "*.{js,html}": "eslint"
+  }
+}
