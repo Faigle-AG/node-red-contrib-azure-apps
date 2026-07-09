@@ -1,0 +1,240 @@
+<script type="text/javascript">
+    RED.nodes.registerType('email-write', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            userId: { value: '', required: true },
+            dynamic: { value: false },
+            to: {
+                value: 'email.to',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('toType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            toType: { value: 'msg' },
+            subject: {
+                value: 'email.subject',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('subjectType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            subjectType: { value: 'msg' },
+            body: {
+                value: 'email.body',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('bodyType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            bodyType: { value: 'msg' }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-paper-plane',
+        label: function () {
+            return this.name || 'email - write';
+        },
+        oneditprepare: function () {
+            $('#node-input-to').typedInput({
+                default: 'msg',
+                types: ['str', 'msg', 'flow', 'global', 'env'],
+                typeField: $('#node-input-toType'),
+            });
+            $('#node-input-subject').typedInput({
+                default: 'msg',
+                types: ['str', 'msg', 'flow', 'global', 'env'],
+                typeField: $('#node-input-subjectType'),
+            });
+            $('#node-input-body').typedInput({
+                default: 'msg',
+                types: ['str', 'msg', 'flow', 'global', 'env'],
+                typeField: $('#node-input-bodyType'),
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                if ($(this).prop('checked')) $('#email-options-group').hide();
+                else $('#email-options-group').show();
+
+                $('#node-input-to').trigger('change');
+                $('#node-input-subject').trigger('change');
+                $('#node-input-body').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<style>
+    .flex-checkbox-row {
+        display: flex;
+        align-items: center;
+        padding-left: 104px;
+        margin-bottom: 12px;
+    }
+    .flex-checkbox-row input[type='checkbox'] {
+        width: auto !important;
+        margin: 0 8px 0 0 !important;
+    }
+    .flex-checkbox-row label {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    fieldset.node-red-fieldset {
+        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        border-radius: 4px !important;
+    }
+
+    fieldset.node-red-fieldset legend {
+        border-bottom: none !important;
+        width: auto !important;
+        padding: 0 5px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        color: var(--red-ui-primary-text-color, #555) !important;
+        margin-bottom: 0 !important;
+    }
+
+    .input-width-70 {
+        width: 70% !important;
+    }
+</style>
+
+<script type="text/html" data-template-name="email-write">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            <span>Name</span>
+        </label>
+        <input type="text" id="node-input-name" placeholder="Name" class="input-width-70" />
+    </div>
+
+    <div class="form-row flex-checkbox-row">
+        <input type="checkbox" id="node-input-dynamic" class="input-width-70" />
+        <label for="node-input-dynamic">
+            <i class="fa fa-usb"></i>
+            Load from msg.email
+        </label>
+    </div>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Azure Configuration</legend>
+
+        <div class="form-row">
+            <label for="node-input-userId">
+                <i class="fa fa-user"></i>
+                User ID / Email
+            </label>
+            <input type="text" id="node-input-userId" class="input-width-70" placeholder="user@domain.com" />
+        </div>
+    </fieldset>
+
+    <fieldset id="email-options-group" class="node-red-fieldset">
+        <legend>Message Details</legend>
+
+        <div class="form-row">
+            <label for="node-input-to">
+                <i class="fa fa-envelope"></i>
+                To
+            </label>
+            <input type="text" id="node-input-to" class="input-width-70" />
+            <input type="hidden" id="node-input-toType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-subject">
+                <i class="fa fa-header"></i>
+                Subject
+            </label>
+            <input type="text" id="node-input-subject" class="input-width-70" />
+            <input type="hidden" id="node-input-subjectType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-body">
+                <i class="fa fa-align-left"></i>
+                Body
+            </label>
+            <input type="text" id="node-input-body" class="input-width-70" />
+            <input type="hidden" id="node-input-bodyType" />
+        </div>
+    </fieldset>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="email-write">
+Sends an email from an Azure user's mailbox utilizing the `@azure/identity` `DefaultAzureCredential`.
+
+### Properties
+
+- **Load from msg.email** _boolean_ \
+  If enabled, the node ignores the UI properties and expects `msg.email.to`, `msg.email.subject`, and `msg.email.body` to be provided dynamically.
+
+- **User ID / Email** _string_ \
+  The UserPrincipalName or Azure Object ID of the sender.
+
+- **To** _string | msg_ \
+  A comma-separated list of recipient email addresses.
+
+- **Subject** _string | msg_ \
+  The subject line of the email.
+
+- **Body** _string | msg_ \
+  The HTML or plain text body of the email.
+
+---
+
+### Inputs
+
+- **msg.email** _object_ \
+  The incoming message triggers the operation.
+
+  - **msg.email.to** _string_ \
+    The destination email addresses.
+
+  - **msg.email.subject** _string_ \
+    The email subject.
+
+  - **msg.email.body** _string_ \
+    The body of the email.
+
+### Outputs
+
+- **msg.email** _object_ \
+  The object containing the event details.
+
+  - **msg.email.action** _string_ \
+    The action performed (`write`).
+
+  - **msg.email.status** _string_ \
+    The status of the operation (`sent`).
+</script>
+<!-- @formatter:on -->

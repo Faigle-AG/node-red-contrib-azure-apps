@@ -1,0 +1,207 @@
+<script type="text/javascript">
+    RED.nodes.registerType('email-transfer', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            userId: { value: '', required: true },
+            dynamic: { value: false },
+            messageId: {
+                value: 'email.messageId',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('messageIdType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            messageIdType: { value: 'msg' },
+            destinationId: {
+                value: 'email.destinationId',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('destinationIdType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            destinationIdType: { value: 'msg' }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-exchange',
+        label: function () {
+            return this.name || 'email - transfer';
+        },
+        oneditprepare: function () {
+            $('#node-input-messageId').typedInput({
+                default: 'msg',
+                types: ['str', 'msg', 'flow', 'global', 'env'],
+                typeField: $('#node-input-messageIdType'),
+            });
+            $('#node-input-destinationId').typedInput({
+                default: 'msg',
+                types: ['str', 'msg', 'flow', 'global', 'env'],
+                typeField: $('#node-input-destinationIdType'),
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                if ($(this).prop('checked')) $('#email-options-group').hide();
+                else $('#email-options-group').show();
+
+                $('#node-input-messageId').trigger('change');
+                $('#node-input-destinationId').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<style>
+    .flex-checkbox-row {
+        display: flex;
+        align-items: center;
+        padding-left: 104px;
+        margin-bottom: 12px;
+    }
+    .flex-checkbox-row input[type='checkbox'] {
+        width: auto !important;
+        margin: 0 8px 0 0 !important;
+    }
+    .flex-checkbox-row label {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    fieldset.node-red-fieldset {
+        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        border-radius: 4px !important;
+    }
+
+    fieldset.node-red-fieldset legend {
+        border-bottom: none !important;
+        width: auto !important;
+        padding: 0 5px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        color: var(--red-ui-primary-text-color, #555) !important;
+        margin-bottom: 0 !important;
+    }
+
+    .input-width-70 {
+        width: 70% !important;
+    }
+</style>
+
+<script type="text/html" data-template-name="email-transfer">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            <span>Name</span>
+        </label>
+        <input type="text" id="node-input-name" placeholder="Name" class="input-width-70" />
+    </div>
+
+    <div class="form-row flex-checkbox-row">
+        <input type="checkbox" id="node-input-dynamic" class="input-width-70" />
+        <label for="node-input-dynamic">
+            <i class="fa fa-usb"></i>
+            Load from msg.email
+        </label>
+    </div>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Azure Configuration</legend>
+
+        <div class="form-row">
+            <label for="node-input-userId">
+                <i class="fa fa-user"></i>
+                User ID / Email
+            </label>
+            <input type="text" id="node-input-userId" class="input-width-70" placeholder="user@domain.com" />
+        </div>
+    </fieldset>
+
+    <fieldset id="email-options-group" class="node-red-fieldset">
+        <legend>Transfer Details</legend>
+
+        <div class="form-row">
+            <label for="node-input-messageId">
+                <i class="fa fa-file-text-o"></i>
+                Message ID
+            </label>
+            <input type="text" id="node-input-messageId" class="input-width-70" />
+            <input type="hidden" id="node-input-messageIdType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-destinationId">
+                <i class="fa fa-folder-open"></i>
+                Dest. Folder
+            </label>
+            <input type="text" id="node-input-destinationId" class="input-width-70" placeholder="Archive, DeletedItems, etc." />
+            <input type="hidden" id="node-input-destinationIdType" />
+        </div>
+    </fieldset>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="email-transfer">
+Moves an email to a different folder utilizing the `@azure/identity` `DefaultAzureCredential`.
+
+### Properties
+
+- **Load from msg.email** _boolean_ \
+  If enabled, the node will ignore the UI properties and expect `msg.email.messageId` and `msg.email.destinationId` to be provided dynamically.
+
+- **User ID / Email** _string_ \
+  The UserPrincipalName or Azure Object ID of the user whose mailbox contains the message.
+
+- **Message ID** _string | msg_ \
+  The unique ID of the message to move.
+
+- **Dest. Folder** _string | msg_ \
+  The ID of the destination folder (e.g., `Archive`, `DeletedItems`, `JunkEmail`, or a specific custom folder ID).
+
+---
+
+### Inputs
+
+- **msg.email** _object_ \
+  The incoming message triggers the operation.
+
+  - **msg.email.messageId** _string_ \
+    The ID of the message to move.
+
+  - **msg.email.destinationId** _string_ \
+    The target folder ID.
+
+### Outputs
+
+- **msg.email** _object_ \
+  The object containing the event details.
+
+  - **msg.email.action** _string_ \
+    The action performed (`transfer`).
+
+  - **msg.email.messageId** _string_ \
+    The ID of the transferred message.
+
+  - **msg.email.destinationId** _string_ \
+    The folder where the message was transferred.
+</script>
+<!-- @formatter:on -->

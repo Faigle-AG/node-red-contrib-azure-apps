@@ -1,0 +1,194 @@
+<script type="text/javascript">
+    RED.nodes.registerType('email-read', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            dynamic: { value: false },
+            userId: { value: '', required: true },
+            limit: {
+                value: 10,
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    return RED.validators.number()(v);
+                }
+            },
+            downloadAttachments: { value: true },
+            output: { value: 'emails', required: true },
+            outputType: { value: 'msg' }
+        },
+        oneditprepare: function () {
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                if ($(this).prop('checked')) $('#email-options-group').hide();
+                else $('#email-options-group').show();
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-envelope',
+        label: function () {
+            return this.name || 'email - read';
+        },
+    });
+</script>
+
+<style>
+    .flex-checkbox-row {
+        display: flex;
+        align-items: center;
+        padding-left: 104px;
+        margin-bottom: 12px;
+    }
+
+    .flex-checkbox-row input[type='checkbox'] {
+        width: auto !important;
+        margin: 0 8px 0 0 !important;
+    }
+
+    .flex-checkbox-row label {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    fieldset.node-red-fieldset {
+        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        border-radius: 4px !important;
+    }
+
+    fieldset.node-red-fieldset legend {
+        border-bottom: none !important;
+        width: auto !important;
+        padding: 0 5px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        color: var(--red-ui-primary-text-color, #555) !important;
+        margin-bottom: 0 !important;
+    }
+
+    .input-width-70 {
+        width: 70% !important;
+    }
+</style>
+
+<script type="text/html" data-template-name="email-read">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" class="input-width-70" placeholder="Name" />
+    </div>
+
+    <div class="form-row flex-checkbox-row">
+        <input type="checkbox" id="node-input-dynamic" class="input-width-70" />
+        <label for="node-input-dynamic">
+            <i class="fa fa-usb"></i>
+            Load from msg.email
+        </label>
+    </div>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Azure Configuration</legend>
+
+        <div class="form-row">
+            <label for="node-input-userId">
+                <i class="fa fa-user"></i>
+                User ID / Email
+            </label>
+            <input type="text" id="node-input-userId" class="input-width-70" placeholder="user@domain.com" />
+        </div>
+    </fieldset>
+
+    <fieldset id="email-options-group" class="node-red-fieldset">
+        <legend>Read Options</legend>
+
+        <div class="form-row">
+            <label for="node-input-limit">
+                <i class="fa fa-list-ol"></i>
+                Email Count
+            </label>
+            <input type="number" id="node-input-limit" class="input-width-70" placeholder="10" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <label for="node-input-downloadAttachments"><i class="fa fa-paperclip"></i></label>
+            <input type="checkbox" id="node-input-downloadAttachments" />
+            <label for="node-input-downloadAttachments">Include Attachments</label>
+        </div>
+    </fieldset>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Output</legend>
+        <div class="form-row">
+            <label for="node-input-output">
+                <i class="fa fa-sign-out"></i>
+                Output to
+            </label>
+            <input type="text" id="node-input-output" class="input-width-70" />
+            <input type="hidden" id="node-input-outputType" />
+        </div>
+    </fieldset>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="email-read">
+Reads emails from an Azure user's inbox utilizing the `@azure/identity` `DefaultAzureCredential`.
+
+### Properties
+
+- **Load from msg.email** _boolean_ \
+  If enabled, the node will ignore the UI options and expect `msg.email.limit` and `msg.email.downloadAttachments` to be provided dynamically.
+
+- **User ID / Email** _string_ \
+  The UserPrincipalName or Azure Object ID of the user whose inbox you want to read.
+
+- **Email Count** _number_ \
+  The maximum number of emails to return (maps to OData `$top`).
+
+- **Include Attachments** _boolean_ \
+  If checked, requests the Graph API to expand and include file attachments in the response.
+
+- **Output to** _msg | flow | global_ \
+  The destination property where the retrieved array of emails will be stored.
+
+---
+
+### Inputs
+
+- **msg.email** _object_ \
+  The incoming message triggers the operation.
+
+  - **msg.email.limit** _number_ \
+    The maximum number of emails to return.
+
+  - **msg.email.downloadAttachments** _boolean_ \
+    Whether to include attachments.
+
+### Outputs
+
+- **msg.email** _object_ \
+  The object containing the event details.
+
+  - **msg.email.action** _string_ \
+    The action performed (`read`).
+
+  - **msg.email.count** _number_ \
+    The number of emails retrieved.
+</script>
+<!-- @formatter:on -->

@@ -2,20 +2,29 @@ module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
     const { DefaultAzureCredential } = require('@azure/identity');
 
-    function AzureReadEmailNode(config) {
+    function AzureEmailReadNode(config) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
+        this.dynamic = config.dynamic;
         this.userId = config.userId;
         this.limit = config.limit || 10;
+        this.downloadAttachments = config.downloadAttachments;
         this.output = config.output;
         this.outputType = config.outputType;
 
         var node = this;
-
         extendNode(node);
 
         node.on('input', async function (msg, send, done) {
             try {
+                const currentLimit = node.dynamic && msg.email && msg.email.limit !== undefined
+                    ? msg.email.limit
+                    : node.limit;
+
+                const currentDownloadAttachments = node.dynamic && msg.email && msg.email.downloadAttachments !== undefined
+                    ? msg.email.downloadAttachments
+                    : node.downloadAttachments;
+
                 node.status.processing('authenticating...');
 
                 const credential = new DefaultAzureCredential();
@@ -23,7 +32,10 @@ module.exports = function (RED) {
 
                 node.status.processing('fetching emails...');
 
-                const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(node.userId)}/mailFolders/inbox/messages?$top=${node.limit}`;
+                let url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(node.userId)}/mailFolders/inbox/messages?$top=${currentLimit}`;
+
+                if (currentDownloadAttachments)
+                    url += '&$expand=attachments';
 
                 const response = await fetch(url, {
                     headers: {
@@ -39,10 +51,15 @@ module.exports = function (RED) {
 
                 const data = await response.json();
 
-                await node.setTypedProperty(node.output, node.outputType, msg, data.value);
+                var emailDetails = {
+                    action: 'read',
+                    count: data.value ? data.value.length : 0,
+                    list: data.value ? data.value : []
+                };
+
+                await node.setTypedProperty(node.output, node.outputType, msg, emailDetails);
 
                 send(msg);
-
                 if (done) done();
 
                 node.status.succeeded('finished processing', {
@@ -57,5 +74,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('azure-read-email', AzureReadEmailNode);
+    RED.nodes.registerType('email-read', AzureEmailReadNode);
 };

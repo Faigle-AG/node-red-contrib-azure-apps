@@ -1,7 +1,7 @@
 {
-"name": "@faigle/node-red-contrib-azure-read-email",
+"name": "@faigle/node-red-contrib-azure-apps",
   "version": "0.0.0",
-  "description": "Read emails from Azure Graph API using DefaultAzureCredential",
+  "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"
   ],
@@ -9,7 +9,9 @@
   "license": "MIT",
   "node-red": {
     "nodes": {
-      "_template_": "src/email.js"
+      "email-read": "src/email-read.js",
+      "email-transfer": "src/email-transfer.js",
+      "email-write": "src/email-write.js"
     }
   },
   "devDependencies": {
