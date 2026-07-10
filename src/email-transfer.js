@@ -30,12 +30,14 @@ module.exports = function (RED) {
                 node.status.processing('authenticating...');
 
                 const credential = new DefaultAzureCredential();
-                const tokenResponse = await credential.getToken('https://graph.microsoft.com/.default');
+                const tokenResponse = await credential.getToken(
+                    'https://graph.microsoft.com/.default',
+                );
 
                 node.status.processing('moving email...');
 
                 const payload = {
-                    destinationId: destIdRaw
+                    destinationId: destIdRaw,
                 };
 
                 const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(node.userId)}/messages/${encodeURIComponent(msgIdRaw)}/move`;
@@ -43,11 +45,11 @@ module.exports = function (RED) {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${tokenResponse.token}`,
+                        Authorization: `Bearer ${tokenResponse.token}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        Accept: 'application/json',
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
                 });
 
                 if (!response.ok) {
@@ -61,7 +63,7 @@ module.exports = function (RED) {
                     action: 'transfer',
                     messageId: msgIdRaw,
                     destinationId: destIdRaw,
-                    apiResponse: data
+                    apiResponse: data,
                 };
 
                 msg.email = { ...msg.email, ...emailDetails };

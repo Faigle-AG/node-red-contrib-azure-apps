@@ -35,7 +35,7 @@
                     return builtInValidator.call(this, v);
                 },
             },
-            destinationIdType: { value: 'msg' }
+            destinationIdType: { value: 'msg' },
         },
         inputs: 1,
         outputs: 1,
@@ -131,7 +131,12 @@
                 <i class="fa fa-user"></i>
                 User ID / Email
             </label>
-            <input type="text" id="node-input-userId" class="input-width-70" placeholder="user@domain.com" />
+            <input
+                type="text"
+                id="node-input-userId"
+                class="input-width-70"
+                placeholder="user@domain.com"
+            />
         </div>
     </fieldset>
 
@@ -152,7 +157,12 @@
                 <i class="fa fa-folder-open"></i>
                 Dest. Folder
             </label>
-            <input type="text" id="node-input-destinationId" class="input-width-70" placeholder="Archive, DeletedItems, etc." />
+            <input
+                type="text"
+                id="node-input-destinationId"
+                class="input-width-70"
+                placeholder="Archive, DeletedItems, etc."
+            />
             <input type="hidden" id="node-input-destinationIdType" />
         </div>
     </fieldset>

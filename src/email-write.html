@@ -50,7 +50,7 @@
                     return builtInValidator.call(this, v);
                 },
             },
-            bodyType: { value: 'msg' }
+            bodyType: { value: 'msg' },
         },
         inputs: 1,
         outputs: 1,
@@ -152,7 +152,12 @@
                 <i class="fa fa-user"></i>
                 User ID / Email
             </label>
-            <input type="text" id="node-input-userId" class="input-width-70" placeholder="user@domain.com" />
+            <input
+                type="text"
+                id="node-input-userId"
+                class="input-width-70"
+                placeholder="user@domain.com"
+            />
         </div>
     </fieldset>
 

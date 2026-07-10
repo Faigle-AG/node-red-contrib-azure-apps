@@ -36,12 +36,14 @@ module.exports = function (RED) {
                 node.status.processing('authenticating...');
 
                 const credential = new DefaultAzureCredential();
-                const tokenResponse = await credential.getToken('https://graph.microsoft.com/.default');
+                const tokenResponse = await credential.getToken(
+                    'https://graph.microsoft.com/.default',
+                );
 
                 node.status.processing('sending email...');
 
-                const toRecipients = toRaw.split(',').map(email => ({
-                    emailAddress: { address: email.trim() }
+                const toRecipients = toRaw.split(',').map((email) => ({
+                    emailAddress: { address: email.trim() },
                 }));
 
                 const payload = {
@@ -49,11 +51,11 @@ module.exports = function (RED) {
                         subject: subjectRaw,
                         body: {
                             contentType: 'HTML',
-                            content: bodyRaw
+                            content: bodyRaw,
                         },
-                        toRecipients: toRecipients
+                        toRecipients: toRecipients,
                     },
-                    saveToSentItems: 'true'
+                    saveToSentItems: 'true',
                 };
 
                 const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(node.userId)}/sendMail`;
@@ -61,10 +63,10 @@ module.exports = function (RED) {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${tokenResponse.token}`,
-                        'Content-Type': 'application/json'
+                        Authorization: `Bearer ${tokenResponse.token}`,
+                        'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(payload),
                 });
 
                 if (!response.ok) {
@@ -76,7 +78,7 @@ module.exports = function (RED) {
                     action: 'write',
                     status: 'sent',
                     to: toRaw,
-                    subject: subjectRaw
+                    subject: subjectRaw,
                 };
 
                 msg.email = { ...msg.email, ...emailDetails };
