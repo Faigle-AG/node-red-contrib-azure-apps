@@ -13,6 +13,8 @@ module.exports = function (RED) {
         this.subjectType = config.subjectType || 'msg';
         this.body = config.body;
         this.bodyType = config.bodyType || 'msg';
+        this.attachments = config.attachments;
+        this.attachmentsType = config.attachmentsType || 'msg';
 
         var node = this;
         extendNode(node);
@@ -28,6 +30,9 @@ module.exports = function (RED) {
                 const bodyRaw = node.dynamic
                     ? msg.email && msg.email.body
                     : await node.getTypedProperty(node.body, node.bodyType, msg);
+                const attachmentsRaw = node.dynamic
+                    ? msg.email && msg.email.attachments
+                    : await node.getTypedProperty(node.attachments, node.attachmentsType, msg);
 
                 if (!toRaw) throw new Error('Recipient (To) is missing');
                 if (!subjectRaw) throw new Error('Subject is missing');
@@ -46,6 +51,27 @@ module.exports = function (RED) {
                     emailAddress: { address: email.trim() },
                 }));
 
+                let graphAttachments = [];
+                if (attachmentsRaw && Array.isArray(attachmentsRaw)) {
+                    graphAttachments = attachmentsRaw.map((att) => {
+                        let contentBytes;
+                        if (Buffer.isBuffer(att.content)) {
+                            contentBytes = att.content.toString('base64');
+                        } else if (typeof att.content === 'string') {
+                            contentBytes = att.content;
+                        } else {
+                            throw new Error('Attachment content must be a Buffer or Base64 string');
+                        }
+
+                        return {
+                            '@odata.type': '#microsoft.graph.fileAttachment',
+                            name: att.name || 'attachment',
+                            contentType: att.contentType || 'application/octet-stream',
+                            contentBytes: contentBytes,
+                        };
+                    });
+                }
+
                 const payload = {
                     message: {
                         subject: subjectRaw,
@@ -54,6 +80,10 @@ module.exports = function (RED) {
                             content: bodyRaw,
                         },
                         toRecipients: toRecipients,
+                        ...(graphAttachments.length > 0 && {
+                            hasAttachments: true,
+                            attachments: graphAttachments,
+                        }),
                     },
                     saveToSentItems: 'true',
                 };
@@ -79,6 +109,7 @@ module.exports = function (RED) {
                     status: 'sent',
                     to: toRaw,
                     subject: subjectRaw,
+                    attachmentsCount: graphAttachments.length,
                 };
 
                 msg.email = { ...msg.email, ...emailDetails };

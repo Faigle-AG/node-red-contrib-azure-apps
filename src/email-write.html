@@ -51,6 +51,8 @@
                 },
             },
             bodyType: { value: 'msg' },
+            attachments: { value: 'email.attachments' },
+            attachmentsType: { value: 'msg' },
         },
         inputs: 1,
         outputs: 1,
@@ -74,6 +76,11 @@
                 types: ['str', 'msg', 'flow', 'global', 'env'],
                 typeField: $('#node-input-bodyType'),
             });
+            $('#node-input-attachments').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-attachmentsType'),
+            });
 
             $('#node-input-dynamic').on('change', function () {
                 if ($(this).prop('checked')) $('#email-options-group').hide();
@@ -82,6 +89,7 @@
                 $('#node-input-to').trigger('change');
                 $('#node-input-subject').trigger('change');
                 $('#node-input-body').trigger('change');
+                $('#node-input-attachments').trigger('change');
             });
 
             $('#node-input-dynamic').trigger('change');
@@ -190,6 +198,15 @@
             <input type="text" id="node-input-body" class="input-width-70" />
             <input type="hidden" id="node-input-bodyType" />
         </div>
+
+        <div class="form-row">
+            <label for="node-input-attachments">
+                <i class="fa fa-paperclip"></i>
+                Attachments
+            </label>
+            <input type="text" id="node-input-attachments" class="input-width-70" />
+            <input type="hidden" id="node-input-attachmentsType" />
+        </div>
     </fieldset>
 </script>
 
@@ -201,7 +218,7 @@ Sends an email from an Azure user's mailbox utilizing the `@azure/identity` `Def
 ### Properties
 
 - **Load from msg.email** _boolean_ \
-  If enabled, the node ignores the UI properties and expects `msg.email.to`, `msg.email.subject`, and `msg.email.body` to be provided dynamically.
+  If enabled, the node ignores the UI properties and expects `msg.email.to`, `msg.email.subject`, `msg.email.body`, and optionally `msg.email.attachments` to be provided dynamically.
 
 - **User ID / Email** _string_ \
   The UserPrincipalName or Azure Object ID of the sender.
@@ -214,6 +231,9 @@ Sends an email from an Azure user's mailbox utilizing the `@azure/identity` `Def
 
 - **Body** _string | msg_ \
   The HTML or plain text body of the email.
+
+- **Attachments** _msg_ \
+  An array of objects containing `name` and `content` (base64 string or Node.js Buffer).
 
 ---
 
@@ -230,6 +250,9 @@ Sends an email from an Azure user's mailbox utilizing the `@azure/identity` `Def
 
   - **msg.email.body** _string_ \
     The body of the email.
+
+  - **msg.email.attachments** _array_ (optional) \
+    `[{ name: "file.pdf", content: <Buffer or Base64 String>, contentType: "application/pdf" }]`
 
 ### Outputs
 
