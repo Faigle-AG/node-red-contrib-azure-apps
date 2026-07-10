@@ -1,0 +1,242 @@
+<script type="text/javascript">
+    RED.nodes.registerType('document-intelligence', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            dynamic: { value: false },
+            endpoint: { value: '', required: true },
+            modelId: {
+                value: 'prebuilt-document',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('modelIdType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            modelIdType: { value: 'str' },
+            documentData: {
+                value: 'payload',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    var builtInValidator = RED.validators.typedInput('documentDataType');
+                    return builtInValidator.call(this, v);
+                },
+            },
+            documentDataType: { value: 'msg' },
+            output: { value: 'payload', required: true },
+            outputType: { value: 'msg' },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-file-text-o',
+        label: function () {
+            return this.name || 'document intelligence';
+        },
+        oneditprepare: function () {
+            $('#node-input-modelId').typedInput({
+                default: 'str',
+                types: ['str', 'msg', 'flow', 'global', 'env'],
+                typeField: $('#node-input-modelIdType'),
+            });
+            $('#node-input-documentData').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'str', 'env'],
+                typeField: $('#node-input-documentDataType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                if ($(this).prop('checked')) $('#document-options-group').hide();
+                else $('#document-options-group').show();
+
+                $('#node-input-modelId').trigger('change');
+                $('#node-input-documentData').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<style>
+        .flex-checkbox-row {
+        display: flex;
+        align-items: center;
+        padding-left: 104px;
+        margin-bottom: 12px;
+    }
+        .flex-checkbox-row input[type='checkbox'] {
+        width: auto !important;
+        margin: 0 8px 0 0 !important;
+    }
+        .flex-checkbox-row label {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+        fieldset.node-red-fieldset {
+        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        border-radius: 4px !important;
+    }
+
+        fieldset.node-red-fieldset legend {
+        border - bottom: none !important;
+        width: auto !important;
+        padding: 0 5px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        color: var(--red-ui-primary-text-color, #555) !important;
+        margin-bottom: 0 !important;
+    }
+
+        .input-width-70 {
+        width: 70% !important;
+    }
+</style>
+
+<script type="text/html" data-template-name="document-intelligence">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" class="input-width-70" placeholder="Name" />
+    </div>
+
+    <div class="form-row flex-checkbox-row">
+        <input type="checkbox" id="node-input-dynamic" class="input-width-70" />
+        <label for="node-input-dynamic">
+            <i class="fa fa-usb"></i>
+            Load from msg.document
+        </label>
+    </div>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Azure Configuration</legend>
+
+        <div class="form-row">
+            <label for="node-input-endpoint">
+                <i class="fa fa-globe"></i>
+                Endpoint URL
+            </label>
+            <input
+                type="text"
+                id="node-input-endpoint"
+                class="input-width-70"
+                placeholder="https://<resource>.cognitiveservices.azure.com/"
+            />
+        </div>
+    </fieldset>
+
+    <fieldset id="document-options-group" class="node-red-fieldset">
+        <legend>Analysis Details</legend>
+
+        <div class="form-row">
+            <label for="node-input-modelId">
+                <i class="fa fa-cogs"></i>
+                Model / Prompt
+            </label>
+            <input
+                type="text"
+                id="node-input-modelId"
+                class="input-width-70"
+                placeholder="prebuilt-document"
+            />
+            <input type="hidden" id="node-input-modelIdType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-documentData">
+                <i class="fa fa-file"></i>
+                Document Data
+            </label>
+            <input
+                type="text"
+                id="node-input-documentData"
+                class="input-width-70"
+                placeholder="URL or Buffer"
+            />
+            <input type="hidden" id="node-input-documentDataType" />
+        </div>
+    </fieldset>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Output</legend>
+        <div class="form-row">
+            <label for="node-input-output">
+                <i class="fa fa-sign-out"></i>
+                Output to
+            </label>
+            <input type="text" id="node-input-output" class="input-width-70" />
+            <input type="hidden" id="node-input-outputType" />
+        </div>
+    </fieldset>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="document-intelligence">
+Analyzes a document utilizing Azure Document Intelligence and the `@azure/identity` `DefaultAzureCredential`.
+
+### Properties
+
+- **Load from msg.document** _boolean_ \
+  If enabled, the node ignores the UI properties and expects `msg.document.modelId` and `msg.document.data` to be
+  provided dynamically.
+
+- **Endpoint URL** _string_ \
+Your Azure Cognitive Services endpoint (e.g., `https://<resource-name>.cognitiveservices.azure.com/`).
+
+- **Model / Prompt** _string | msg_ \
+  The model ID to use (e.g., `prebuilt-document`, `prebuilt-receipt`, `prebuilt-layout` or a custom model ID).
+
+- **Document Data** _string | buffer | msg_ \
+  An HTTP/HTTPS URL string pointing to a document, or a binary Buffer of the file itself.
+
+- **Output to** _msg | flow | global_ \
+  The destination property where the analysis results will be stored.
+
+---
+
+### Inputs
+
+- **msg.document** _object_ \
+  The incoming message triggers the operation if dynamic loading is checked.
+
+- **msg.document.modelId** _string_ \
+  The model ID to run.
+
+- **msg.document.data** _string | buffer_ \
+  The URL or Buffer of the document to analyze.
+
+### Outputs
+
+- **msg.document** _object_ \
+  The object containing the event details.
+
+- **msg.document.action** _string_ \
+  The action performed (`analyze`).
+
+- **msg.document.status** _string_ \
+  The status of the API operation.
+</script>
+<!-- @formatter:on -->
