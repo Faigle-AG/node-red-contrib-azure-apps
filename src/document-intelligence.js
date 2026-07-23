@@ -15,6 +15,7 @@ module.exports = function (RED) {
         this.modelIdType = config.modelIdType || 'str';
         this.documentData = config.documentData;
         this.documentDataType = config.documentDataType || 'msg';
+        this.inputType = config.inputType || 'auto';
         this.output = config.output;
         this.outputType = config.outputType || 'msg';
 
@@ -30,6 +31,9 @@ module.exports = function (RED) {
                 const docRaw = node.dynamic
                     ? msg.document && msg.document.data
                     : await node.getTypedProperty(node.documentData, node.documentDataType, msg);
+                const currentInputType = node.dynamic
+                    ? (msg.document && msg.document.inputType) || node.inputType
+                    : node.inputType;
 
                 if (!this.endpoint) throw new Error('Endpoint URL is missing');
                 if (!modelRaw) throw new Error('Model ID is missing');
@@ -45,14 +49,29 @@ module.exports = function (RED) {
                 node.status.processing('submitting document...');
 
                 let body, contentType;
-                if (typeof docRaw === 'string' && docRaw.startsWith('http')) {
+                if (
+                    currentInputType === 'url' ||
+                    (currentInputType === 'auto' &&
+                        typeof docRaw === 'string' &&
+                        docRaw.startsWith('http'))
+                ) {
                     body = JSON.stringify({ urlSource: docRaw });
                     contentType = 'application/json';
-                } else if (Buffer.isBuffer(docRaw)) {
+                } else if (
+                    currentInputType === 'base64' ||
+                    (currentInputType === 'auto' && typeof docRaw === 'string')
+                ) {
+                    const cleanBase64 = docRaw.replace(/^data:.*?;base64,/, '');
+                    body = Buffer.from(cleanBase64, 'base64');
+                    contentType = 'application/octet-stream';
+                } else if (
+                    currentInputType === 'buffer' ||
+                    (currentInputType === 'auto' && Buffer.isBuffer(docRaw))
+                ) {
                     body = docRaw;
                     contentType = 'application/octet-stream';
                 } else {
-                    throw new Error('Document Data must be a URL string or a Buffer');
+                    throw new Error('Invalid or unrecognized document input format');
                 }
 
                 const baseUrl = this.endpoint.replace(/\/$/, '');

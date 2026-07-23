@@ -2,27 +2,68 @@
 
 A collection of Node-RED nodes for interacting with Microsoft Azure services, specifically Microsoft Graph (Emails) and Azure Cognitive Services (Document Intelligence).
 
-These nodes utilize the `@azure/identity` package's `DefaultAzureCredential`, enabling seamless, zero-code authentication whether running locally via the Azure CLI or hosted in Azure via Managed Identities.
+These nodes utilize the `@azure/identity` package's `DefaultAzureCredential`, enabling seamless, zero-code authentication whether running locally via environment variables/Azure CLI or hosted in Azure via Managed Identities.
 
 ## Installation
 
 Run the following command in your Node-RED user directory (typically `~/.node-red`):
 
+```bash
 npm install @faigle/node-red-contrib-azure-apps
+```
 
-_(Note: Replace with the actual package name if different)_
+## Azure Portal Setup
 
-## Authentication & Prerequisites
+To authenticate using a Service Principal, configure the required resources and permissions in the Azure Portal:
 
-These nodes do not require you to input Client Secrets or Tenant IDs in the UI. They use **DefaultAzureCredential**.
+### 1. Create an App Registration
 
-- **Local Development:** Run `az login` in your terminal before starting Node-RED.
-- **Azure Hosting:** Assign a **System-Assigned** or **User-Assigned Managed Identity** to your Node-RED host container/app service.
+1. Navigate to **Microsoft Entra ID** > **App registrations** > **New registration**.
+2. Provide a name and register the application.
+3. From the **Overview** page, copy the **Application (client) ID** and **Directory (tenant) ID**.
+4. Navigate to **Certificates & secrets** > **New client secret**, generate a secret, and copy the **Value**.
 
-### Permissions Required
+### 2. Configure Microsoft Graph API Permissions
 
-- **Email Nodes (Graph API):** The executing identity must be granted the `Mail.Read`, `Mail.ReadWrite`, and/or `Mail.Send` **Application Permissions** for the Microsoft Graph API. (Note: Managed Identities require these permissions to be assigned via PowerShell/CLI, not the Azure Portal UI).
-- **Document Intelligence:** The executing identity must be assigned the **Cognitive Services User** RBAC role on the specific Document Intelligence resource.
+1. In your App Registration, navigate to **API permissions** > **Add a permission** > **Microsoft Graph** > **Application permissions**.
+2. Select the required permissions based on the nodes you use:
+    - `Mail.Read` (for `email-read`)
+    - `Mail.ReadWrite` (for `email-transfer`)
+    - `Mail.Send` (for `email-write`)
+3. Click **Grant admin consent for [Your Tenant]** to activate the permissions.
+
+### 3. Configure Document Intelligence RBAC Role
+
+1. Navigate to your **Document Intelligence** resource in the Azure Portal.
+2. Select **Access control (IAM)** > **Add** > **Add role assignment**.
+3. Select the **Cognitive Services User** role.
+4. Assign access to **User, group, or service principal**, and select your App Registration.
+
+---
+
+## Authentication Configuration (.env Setup)
+
+When running Node-RED locally or outside of Azure infrastructure, configure `DefaultAzureCredential` using environment variables.
+
+### 1. Create the `.env` File
+
+Create a `.env` file in your Node-RED user directory (`~/.node-red/.env`) with the credentials obtained from the Azure Portal:
+
+```env
+AZURE_TENANT_ID="your-directory-tenant-id"
+AZURE_CLIENT_ID="your-application-client-id"
+AZURE_CLIENT_SECRET="your-client-secret-value"
+```
+
+### 2. Load Environment Variables in Node-RED
+
+Open your Node-RED configuration file (`~/.node-red/settings.js`) and add the following line to the very top of the file:
+
+```javascript
+require('dotenv').config();
+```
+
+Restart your Node-RED server to apply the credentials. Alternatively, you can authenticate locally by running `az login` in your terminal prior to starting Node-RED.
 
 ---
 
@@ -30,80 +71,47 @@ These nodes do not require you to input Client Secrets or Tenant IDs in the UI. 
 
 ### 1. azure-document-intelligence
 
-Analyzes a document (URL or Buffer) using Azure Document Intelligence (API version `2023-07-31`).
-
-**Properties:**
+Analyzes a document using Azure Document Intelligence (API version `2023-07-31`).
 
 - **Endpoint URL:** Your Cognitive Services endpoint (e.g., `https://<resource-name>.cognitiveservices.azure.com/`).
-- **Model / Prompt:** The model to use (e.g., `prebuilt-document`, `prebuilt-receipt`, `prebuilt-layout`).
-- **Document Data:** An HTTP(S) URL string or a binary Buffer of the document.
-- **Dynamic Mode:** If _Load from msg.document_ is enabled, UI properties are overridden by:
-    - `msg.document.modelId` (string)
-    - `msg.document.data` (string | buffer)
-
-**Outputs:**
-Stores the Azure analysis result in the configured output property (default: `msg.analysis`), and appends metadata to `msg.document` (action, status, modelId).
-
----
+- **Model / Prompt:** The model ID to use (e.g., `prebuilt-document`, `prebuilt-receipt`, `prebuilt-layout`).
+- **Document Data:** An HTTP/HTTPS URL string or a binary Buffer of the file.
+- **Input Format:** Specify how to interpret the incoming data (`auto`, `buffer`, `base64`, or `url`).
+- **Dynamic Mode:** Override UI properties via `msg.document.modelId`, `msg.document.data`, and `msg.document.inputType`.
 
 ### 2. email-read
 
 Reads emails from a specific user's Microsoft 365 inbox.
 
-**Properties:**
-
 - **User ID / Email:** The UserPrincipalName or Azure Object ID of the target mailbox.
-- **Email Count:** Maximum number of emails to retrieve (OData `$top`).
-- **Include Attachments:** Expands the Graph API request to download attachments.
-- **Dynamic Mode:** If _Load from msg.email_ is enabled, UI properties are overridden by:
-    - `msg.email.limit` (number)
-    - `msg.email.downloadAttachments` (boolean)
-
-**Outputs:**
-Stores the retrieved emails in the configured output property (default: `msg.emails`). Appends metadata to `msg.email` including `action`, `count`, and `list`.
-
----
+- **Email Count:** Maximum number of emails to retrieve (maps to OData `$top`).
+- **Include Attachments:** Expands the Graph API request to include attachments.
+- **Dynamic Mode:** Override UI properties via `msg.email.limit` and `msg.email.downloadAttachments`.
 
 ### 3. email-write
 
 Sends an HTML or plain text email from a specified user's mailbox.
 
-**Properties:**
-
 - **User ID / Email:** The sender's UserPrincipalName or Azure Object ID.
-- **To:** Comma-separated list of recipient email addresses.
+- **To:** A comma-separated string, a single recipient object (`{ name: "...", address: "..." }`), or an array of recipient objects.
 - **Subject:** The subject line.
-- **Body:** The email content.
-- **Dynamic Mode:** If _Load from msg.email_ is enabled, UI properties are overridden by:
-    - `msg.email.to` (string)
-    - `msg.email.subject` (string)
-    - `msg.email.body` (string)
-
-**Outputs:**
-Passes through the original message and appends `msg.email.status` (`sent`) and `msg.email.action` (`write`).
-
----
+- **Body:** The HTML or plain text content.
+- **Attachments:** An optional array of objects containing `name` and `content` (Buffer or Base64 string).
+- **Dynamic Mode:** Override UI properties via `msg.email.to`, `msg.email.subject`, `msg.email.body`, and `msg.email.attachments`.
 
 ### 4. email-transfer
 
 Moves an existing email to a different folder (e.g., Archive, DeletedItems).
 
-**Properties:**
-
 - **User ID / Email:** The UserPrincipalName or Azure Object ID of the mailbox.
-- **Message ID:** The Graph API Base64 ID of the message to move.
+- **Message ID:** The Graph API message ID.
 - **Dest. Folder:** The target folder ID (well-known names like `Archive`, `DeletedItems`, or custom IDs).
-- **Dynamic Mode:** If _Load from msg.email_ is enabled, UI properties are overridden by:
-    - `msg.email.messageId` (string)
-    - `msg.email.destinationId` (string)
-
-**Outputs:**
-Appends the API response and metadata to `msg.email` (action, messageId, destinationId).
+- **Dynamic Mode:** Override UI properties via `msg.email.messageId` and `msg.email.destinationId`.
 
 ---
 
 ## Troubleshooting
 
-- **Error 401: Unauthorized (Audience is incorrect):** Ensure your Node-RED server was hard-restarted if you recently updated token scopes in the code. Verify you have the correct RBAC roles (Cognitive Services User).
-- **Error 403: Forbidden (Graph API):** Your Managed Identity lacks the necessary Entra ID Application Permissions to access the Graph API.
-- **Error InvalidIdMalformed:** Ensure you are passing the proper Graph API Object ID (`id`), not the `internetMessageId`, and that strings are trimmed of whitespace and line breaks.
+- **Error 401: Unauthorized / PermissionDenied:** Ensure Node-RED was restarted after updating token permissions or `.env` variables. Verify the App Registration is assigned the **Cognitive Services User** role.
+- **Error 403: Forbidden (Graph API):** Ensure **Application permissions** (not Delegated) were granted and admin consent was executed in Entra ID.
+- **Error InvalidIdMalformed:** Verify you are passing the Graph API Object ID (`id`), not the header `internetMessageId`, and strip any whitespace.

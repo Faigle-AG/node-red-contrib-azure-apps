@@ -1,6 +1,6 @@
 {
   "name": "@faigle/node-red-contrib-azure-apps",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"
@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
-    "@faigle/node-red-runtime-utils": "^0.4.3"
+    "@faigle/node-red-runtime-utils": "^0.4.4"
   },
   "workspaces": [
     "../../node-red-runtime/*"

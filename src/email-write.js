@@ -22,21 +22,30 @@ module.exports = function (RED) {
         node.on('input', async function (msg, send, done) {
             try {
                 const toRaw = node.dynamic
-                    ? msg.email && msg.email.to
-                    : await node.getTypedProperty(node.to, node.toType, msg);
+                    ? (msg.email && msg.email.to) || ''
+                    : (await node.getTypedProperty(node.to, node.toType, msg)) || '';
                 const subjectRaw = node.dynamic
-                    ? msg.email && msg.email.subject
-                    : await node.getTypedProperty(node.subject, node.subjectType, msg);
+                    ? (msg.email && msg.email.subject) || ''
+                    : (await node.getTypedProperty(node.subject, node.subjectType, msg)) || '';
                 const bodyRaw = node.dynamic
-                    ? msg.email && msg.email.body
-                    : await node.getTypedProperty(node.body, node.bodyType, msg);
-                const attachmentsRaw = node.dynamic
-                    ? msg.email && msg.email.attachments
-                    : await node.getTypedProperty(node.attachments, node.attachmentsType, msg);
+                    ? (msg.email && msg.email.body) || ''
+                    : (await node.getTypedProperty(node.body, node.bodyType, msg)) || '';
+                let attachmentsRaw = [];
+                try {
+                    attachmentsRaw = node.dynamic
+                        ? (msg.email && msg.email.attachments) || []
+                        : (await node.getTypedProperty(
+                              node.attachments,
+                              node.attachmentsType,
+                              msg,
+                          )) || [];
+                } catch {
+                    attachmentsRaw = [];
+                }
 
                 if (!toRaw) throw new Error('Recipient (To) is missing');
                 if (!subjectRaw) throw new Error('Subject is missing');
-                if (bodyRaw === undefined) throw new Error('Body is missing');
+                if (!bodyRaw) throw new Error('Body is missing');
 
                 node.status.processing('authenticating...');
 
@@ -47,9 +56,32 @@ module.exports = function (RED) {
 
                 node.status.processing('sending email...');
 
-                const toRecipients = toRaw.split(',').map((email) => ({
-                    emailAddress: { address: email.trim() },
-                }));
+                let toRecipients = [];
+                if (typeof toRaw === 'string') {
+                    toRecipients = toRaw.split(',').map((email) => ({
+                        emailAddress: { address: email.trim() },
+                    }));
+                } else if (Array.isArray(toRaw)) {
+                    toRecipients = toRaw.map((item) => ({
+                        emailAddress: {
+                            address: item.address || item.emailAddress?.address,
+                            ...(item.name && { name: item.name }),
+                            ...(item.emailAddress?.name && { name: item.emailAddress.name }),
+                        },
+                    }));
+                } else if (typeof toRaw === 'object' && toRaw !== null) {
+                    toRecipients = [
+                        {
+                            emailAddress: {
+                                address: toRaw.address || toRaw.emailAddress?.address,
+                                ...(toRaw.name && { name: toRaw.name }),
+                                ...(toRaw.emailAddress?.name && { name: toRaw.emailAddress.name }),
+                            },
+                        },
+                    ];
+                } else {
+                    throw new Error('Invalid format for Recipient (To)');
+                }
 
                 let graphAttachments = [];
                 if (attachmentsRaw && Array.isArray(attachmentsRaw)) {

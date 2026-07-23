@@ -51,7 +51,14 @@
                 },
             },
             bodyType: { value: 'msg' },
-            attachments: { value: 'email.attachments' },
+            attachments: {
+                value: 'email.attachments',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return true;
+                    var builtInValidator = RED.validators.typedInput('attachmentsType');
+                    return builtInValidator.call(this, v);
+                },
+            },
             attachmentsType: { value: 'msg' },
         },
         inputs: 1,
@@ -63,22 +70,22 @@
         oneditprepare: function () {
             $('#node-input-to').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'env'],
+                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
                 typeField: $('#node-input-toType'),
             });
             $('#node-input-subject').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'env'],
+                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
                 typeField: $('#node-input-subjectType'),
             });
             $('#node-input-body').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'env'],
+                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
                 typeField: $('#node-input-bodyType'),
             });
             $('#node-input-attachments').typedInput({
                 default: 'msg',
-                types: ['msg', 'flow', 'global'],
+                types: ['msg', 'flow', 'global', 'jsonata'],
                 typeField: $('#node-input-attachmentsType'),
             });
 

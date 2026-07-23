@@ -36,6 +36,7 @@
                 },
             },
             documentDataType: { value: 'msg' },
+            inputType: { value: 'auto' },
             output: { value: 'analysis', required: true },
             outputType: { value: 'msg' },
         },
@@ -48,12 +49,12 @@
         oneditprepare: function () {
             $('#node-input-modelId').typedInput({
                 default: 'str',
-                types: ['str', 'msg', 'flow', 'global', 'env'],
+                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
                 typeField: $('#node-input-modelIdType'),
             });
             $('#node-input-documentData').typedInput({
                 default: 'msg',
-                types: ['msg', 'flow', 'global', 'str', 'env'],
+                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
                 typeField: $('#node-input-documentDataType'),
             });
             $('#node-input-output').typedInput({
@@ -76,30 +77,30 @@
 </script>
 
 <style>
-        .flex-checkbox-row {
+    .flex-checkbox-row {
         display: flex;
         align-items: center;
         padding-left: 104px;
         margin-bottom: 12px;
     }
-        .flex-checkbox-row input[type='checkbox'] {
+    .flex-checkbox-row input[type='checkbox'] {
         width: auto !important;
         margin: 0 8px 0 0 !important;
     }
-        .flex-checkbox-row label {
+    .flex-checkbox-row label {
         width: auto !important;
         margin: 0 !important;
     }
 
-        fieldset.node-red-fieldset {
+    fieldset.node-red-fieldset {
         border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
         padding: 12px !important;
         margin-bottom: 12px !important;
         border-radius: 4px !important;
     }
 
-        fieldset.node-red-fieldset legend {
-        border - bottom: none !important;
+    fieldset.node-red-fieldset legend {
+        border-bottom: none !important;
         width: auto !important;
         padding: 0 5px !important;
         font-size: 13px !important;
@@ -108,7 +109,7 @@
         margin-bottom: 0 !important;
     }
 
-        .input-width-70 {
+    .input-width-70 {
         width: 70% !important;
     }
 </style>
@@ -177,6 +178,19 @@
             />
             <input type="hidden" id="node-input-documentDataType" />
         </div>
+
+        <div class="form-row">
+            <label for="node-input-inputType">
+                <i class="fa fa-filter"></i>
+                Input Format
+            </label>
+            <select id="node-input-inputType" class="input-width-70">
+                <option value="auto">Auto-Detect (Buffer / URL / Base64)</option>
+                <option value="buffer">Buffer</option>
+                <option value="base64">Base64 String</option>
+                <option value="url">URL String</option>
+            </select>
+        </div>
     </fieldset>
 
     <fieldset class="node-red-fieldset">
@@ -212,6 +226,9 @@ Your Azure Cognitive Services endpoint (e.g., `https://<resource-name>.cognitive
 - **Document Data** _string | buffer | msg_ \
   An HTTP/HTTPS URL string pointing to a document, or a binary Buffer of the file itself.
 
+- **Input Format** _string_ \
+  How to interpret the incoming document data (`auto`, `buffer`, `base64`, or `url`).
+
 - **Output to** _msg | flow | global_ \
   The destination property where the analysis results will be stored.
 
@@ -227,6 +244,9 @@ Your Azure Cognitive Services endpoint (e.g., `https://<resource-name>.cognitive
 
 - **msg.document.data** _string | buffer_ \
   The URL or Buffer of the document to analyze.
+
+- **msg.document.inputType** _string_ \
+  Optional format override (`auto`, `buffer`, `base64`, or `url`).
 
 ### Outputs
 
