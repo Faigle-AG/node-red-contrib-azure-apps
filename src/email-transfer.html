@@ -4,7 +4,16 @@
         color: '#0072C6',
         defaults: {
             name: { value: '' },
-            userId: { value: '', required: true },
+            userId: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('userIdType');
+                    return validator.call(this, v);
+                },
+            },
+            userIdType: { value: 'str' },
             dynamic: { value: false },
             messageId: {
                 value: 'email.messageId',
@@ -44,6 +53,11 @@
             return this.name || 'email - transfer';
         },
         oneditprepare: function () {
+            $('#node-input-userId').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-userIdType'),
+            });
             $('#node-input-messageId').typedInput({
                 default: 'msg',
                 types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
@@ -135,8 +149,9 @@
                 type="text"
                 id="node-input-userId"
                 class="input-width-70"
-                placeholder="user@domain.com"
+                placeholder="user@domain.com or variable"
             />
+            <input type="hidden" id="node-input-userIdType" />
         </div>
     </fieldset>
 
@@ -178,7 +193,7 @@ Moves an email to a different folder utilizing the `@azure/identity` `DefaultAzu
 - **Load from msg.email** _boolean_ \
   If enabled, the node will ignore the UI properties and expect `msg.email.messageId` and `msg.email.destinationId` to be provided dynamically.
 
-- **User ID / Email** _string_ \
+- **User ID / Email** _string | env | msg | flow | global | jsonata_ \
   The UserPrincipalName or Azure Object ID of the user whose mailbox contains the message.
 
 - **Message ID** _string | msg_ \

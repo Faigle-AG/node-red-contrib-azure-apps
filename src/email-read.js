@@ -7,6 +7,7 @@ module.exports = function (RED) {
         this.name = config.name;
         this.dynamic = config.dynamic;
         this.userId = config.userId;
+        this.userIdType = config.userIdType || 'str';
         this.limit = config.limit || 10;
         this.downloadAttachments = config.downloadAttachments;
         this.output = config.output;
@@ -27,6 +28,19 @@ module.exports = function (RED) {
                         ? msg.email.downloadAttachments
                         : node.downloadAttachments;
 
+                const currentUserId = await node.getTypedProperty(
+                    node.userId,
+                    node.userIdType,
+                    msg,
+                );
+
+                const normalizedUserId = String(currentUserId || '').trim();
+                if (!normalizedUserId) {
+                    const err = new Error('User ID / Email resolved to an empty value');
+                    err.code = 'INVALID_USER_ID';
+                    throw err;
+                }
+
                 node.status.processing('authenticating...');
 
                 const credential = new DefaultAzureCredential();
@@ -36,7 +50,7 @@ module.exports = function (RED) {
 
                 node.status.processing('fetching emails...');
 
-                let url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(node.userId)}/mailFolders/inbox/messages?$top=${currentLimit}`;
+                let url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(normalizedUserId)}/mailFolders/inbox/messages?$top=${currentLimit}`;
 
                 if (currentDownloadAttachments) url += '&$expand=attachments';
 

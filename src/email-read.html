@@ -5,7 +5,16 @@
         defaults: {
             name: { value: '' },
             dynamic: { value: false },
-            userId: { value: '', required: true },
+            userId: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('userIdType');
+                    return validator.call(this, v);
+                },
+            },
+            userIdType: { value: 'str' },
             limit: {
                 value: 10,
                 validate: function (v) {
@@ -23,6 +32,12 @@
             outputType: { value: 'msg' },
         },
         oneditprepare: function () {
+            $('#node-input-userId').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-userIdType'),
+            });
+
             $('#node-input-output').typedInput({
                 default: 'msg',
                 types: ['msg', 'flow', 'global', 'jsonata'],
@@ -114,8 +129,9 @@
                 type="text"
                 id="node-input-userId"
                 class="input-width-70"
-                placeholder="user@domain.com"
+                placeholder="user@domain.com or variable"
             />
+            <input type="hidden" id="node-input-userIdType" />
         </div>
     </fieldset>
 
@@ -160,8 +176,8 @@ Reads emails from an Azure user's inbox utilizing the `@azure/identity` `Default
 - **Load from msg.email** _boolean_ \
   If enabled, the node will ignore the UI options and expect `msg.email.limit` and `msg.email.downloadAttachments` to be provided dynamically.
 
-- **User ID / Email** _string_ \
-  The UserPrincipalName or Azure Object ID of the user whose inbox you want to read.
+- **User ID / Email** _string | env | msg | flow | global | jsonata_ \
+  The UserPrincipalName or Azure Object ID of the user whose inbox you want to read. The value is evaluated for every incoming message.
 
 - **Email Count** _number_ \
   The maximum number of emails to return (maps to OData `$top`).
