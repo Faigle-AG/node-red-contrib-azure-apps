@@ -94,13 +94,25 @@ Restart your Node-RED server to apply the credentials. Alternatively, you can au
 
 ### 1. azure-document-intelligence
 
-Analyzes a document using Azure Document Intelligence (API version `2023-07-31`).
+Analyzes documents using Azure Document Intelligence REST API version `2024-11-30`.
 
-- **Endpoint URL:** Your Cognitive Services endpoint (e.g., `https://<resource-name>.cognitiveservices.azure.com/`).
-- **Model / Prompt:** The model ID to use (e.g., `prebuilt-document`, `prebuilt-receipt`, `prebuilt-layout`).
-- **Document Data:** An HTTP/HTTPS URL string or a binary Buffer of the file.
+- **Endpoint URL:** Enter only the Azure resource endpoint, for example `https://<resource-name>.cognitiveservices.azure.com/`. Do not append `/formrecognizer` or `/documentintelligence`; the node builds the v4 route `/documentintelligence/documentModels/{modelId}:analyze`.
+- **Model / Prompt:** The model ID to use, such as `prebuilt-layout`, `prebuilt-read`, `prebuilt-invoice`, `prebuilt-receipt`, `prebuilt-idDocument`, or a custom model ID.
+- **General document extraction:** `prebuilt-document` is not available in v4. Use `prebuilt-layout`. Add the `keyValuePairs` feature when general key/value extraction is required.
+- **Document Data:** An HTTP/HTTPS URL string, Base64 string, or binary Buffer.
 - **Input Format:** Specify how to interpret the incoming data (`auto`, `buffer`, `base64`, or `url`).
-- **Dynamic Mode:** Override UI properties via `msg.document.modelId`, `msg.document.data`, and `msg.document.inputType`.
+- **Content Format:** Select `text` or `markdown`.
+- **Advanced Parameters:** Supports `pages`, `locale`, `stringIndexType`, `features`, `queryFields`, and additional outputs such as `pdf` or `figures`.
+- **Dynamic Mode:** Override settings through `msg.document`, including `modelId`, `data`, `inputType`, `outputContentFormat`, `pages`, `locale`, `stringIndexType`, `features`, `queryFields`, and `outputOptions`.
+
+Example for general document extraction:
+
+```text
+Model / Prompt: prebuilt-layout
+Features: keyValuePairs
+```
+
+Leave **Features** empty when only text, tables, structure, and layout information are required.
 
 ### 2. email-read
 
@@ -243,6 +255,9 @@ AZURE_CLIENT_SECRET="your-client-secret-value"
 - **Error 401: Unauthorized / PermissionDenied:** Ensure Node-RED was restarted after updating token permissions or `.env` variables. Verify the App Registration is assigned the **Cognitive Services User** role.
 - **Error 403: Forbidden (Graph API):** Ensure **Application permissions** (not Delegated) were granted and admin consent was executed in Entra ID.
 - **Error InvalidIdMalformed:** Verify you are passing the Graph API Object ID (`id`), not the header `internetMessageId`, and strip any whitespace.
+- **Document Intelligence 404 Resource not found:** Verify that the endpoint is the base resource endpoint and that the node uses `/documentintelligence/documentModels/...` with API version `2024-11-30`.
+- **Document Intelligence ModelNotFound:** Verify the exact model ID and resource. For v4 general document extraction, replace `prebuilt-document` with `prebuilt-layout`; add `features=keyValuePairs` when key/value pairs are required.
+- **Custom Document Intelligence model not found:** Custom models are resource-specific. Confirm that the model exists in the same Azure resource referenced by the configured endpoint.
 
 - **Foundry 401 Unauthorized:** Verify the endpoint, model deployment, identity, role assignment, and token audience. Entra ID authentication must request `https://ai.azure.com/.default`.
 - **Foundry ConnectTimeoutError:** Increase the node timeout, keep retries enabled, and verify DNS, proxy, firewall, private endpoint, and outbound network connectivity from the Node-RED host or container.

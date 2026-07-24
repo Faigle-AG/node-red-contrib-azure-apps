@@ -17,6 +17,12 @@ module.exports = function (RED) {
         this.documentDataType = config.documentDataType || 'msg';
         this.inputType = config.inputType || 'auto';
         this.outputContentFormat = config.outputContentFormat || 'text';
+        this.pages = config.pages;
+        this.locale = config.locale;
+        this.stringIndexType = config.stringIndexType || 'utf16CodeUnit';
+        this.features = config.features;
+        this.queryFields = config.queryFields;
+        this.outputOptions = config.outputOptions;
         this.output = config.output;
         this.outputType = config.outputType || 'msg';
 
@@ -35,9 +41,29 @@ module.exports = function (RED) {
                 const currentInputType = node.dynamic
                     ? (msg.document && msg.document.inputType) || node.inputType
                     : node.inputType;
+
                 const currentOutputFormat = node.dynamic
                     ? (msg.document && msg.document.outputContentFormat) || node.outputContentFormat
                     : node.outputContentFormat;
+                const currentPages = node.dynamic
+                    ? (msg.document && msg.document.pages) || node.pages
+                    : node.pages;
+                const currentLocale = node.dynamic
+                    ? (msg.document && msg.document.locale) || node.locale
+                    : node.locale;
+                const currentStringIndexType = node.dynamic
+                    ? (msg.document && msg.document.stringIndexType) || node.stringIndexType
+                    : node.stringIndexType;
+                const currentFeatures = node.dynamic
+                    ? (msg.document && msg.document.features) || node.features
+                    : node.features;
+                const currentQueryFields = node.dynamic
+                    ? (msg.document && msg.document.queryFields) || node.queryFields
+                    : node.queryFields;
+                const currentOutputOptions = node.dynamic
+                    ? (msg.document && (msg.document.outputOptions || msg.document.output)) ||
+                      node.outputOptions
+                    : node.outputOptions;
 
                 if (!this.endpoint) throw new Error('Endpoint URL is missing');
                 if (!modelRaw) throw new Error('Model ID is missing');
@@ -78,16 +104,63 @@ module.exports = function (RED) {
                     throw new Error('Invalid or unrecognized document input format');
                 }
 
-                const baseUrl = this.endpoint.replace(/\/$/, '');
+                const baseUrl = String(node.endpoint || '')
+                    .trim()
+                    .replace(/\/+$/, '')
+                    .replace(/\/(formrecognizer|documentintelligence)$/i, '');
 
-                // Build Analyze URL targeting 2024-11-30 API version
-                let analyzeUrl = `${baseUrl}/formrecognizer/documentModels/${encodeURIComponent(modelRaw)}:analyze?api-version=2024-11-30`;
+                const targetUrl = new URL(
+                    `${baseUrl}/documentintelligence/documentModels/${encodeURIComponent(modelRaw)}:analyze`,
+                );
+
+                targetUrl.searchParams.set('api-version', '2024-11-30');
 
                 if (currentOutputFormat && currentOutputFormat !== 'text') {
-                    analyzeUrl += `&outputContentFormat=${encodeURIComponent(currentOutputFormat)}`;
+                    targetUrl.searchParams.set('outputContentFormat', currentOutputFormat.trim());
+                }
+                if (
+                    currentPages &&
+                    typeof currentPages === 'string' &&
+                    currentPages.trim() !== ''
+                ) {
+                    targetUrl.searchParams.set('pages', currentPages.trim());
+                }
+                if (
+                    currentLocale &&
+                    typeof currentLocale === 'string' &&
+                    currentLocale.trim() !== ''
+                ) {
+                    targetUrl.searchParams.set('locale', currentLocale.trim());
+                }
+                if (
+                    currentStringIndexType &&
+                    typeof currentStringIndexType === 'string' &&
+                    currentStringIndexType.trim() !== ''
+                ) {
+                    targetUrl.searchParams.set('stringIndexType', currentStringIndexType.trim());
+                }
+                if (currentFeatures) {
+                    const featStr = Array.isArray(currentFeatures)
+                        ? currentFeatures.join(',')
+                        : String(currentFeatures);
+                    if (featStr.trim() !== '')
+                        targetUrl.searchParams.set('features', featStr.trim());
+                }
+                if (currentQueryFields) {
+                    const qfStr = Array.isArray(currentQueryFields)
+                        ? currentQueryFields.join(',')
+                        : String(currentQueryFields);
+                    if (qfStr.trim() !== '')
+                        targetUrl.searchParams.set('queryFields', qfStr.trim());
+                }
+                if (currentOutputOptions) {
+                    const outStr = Array.isArray(currentOutputOptions)
+                        ? currentOutputOptions.join(',')
+                        : String(currentOutputOptions);
+                    if (outStr.trim() !== '') targetUrl.searchParams.set('output', outStr.trim());
                 }
 
-                const initialResponse = await fetch(analyzeUrl, {
+                const initialResponse = await fetch(targetUrl.toString(), {
                     method: 'POST',
                     headers: {
                         Authorization: `Bearer ${tokenResponse.token}`,

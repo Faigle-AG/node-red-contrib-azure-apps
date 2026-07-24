@@ -38,6 +38,12 @@
             documentDataType: { value: 'msg' },
             inputType: { value: 'auto' },
             outputContentFormat: { value: 'text' },
+            pages: { value: '' },
+            locale: { value: '' },
+            stringIndexType: { value: 'utf16CodeUnit' },
+            features: { value: '' },
+            queryFields: { value: '' },
+            outputOptions: { value: '' },
             output: { value: 'analysis', required: true },
             outputType: { value: 'msg' },
         },
@@ -65,8 +71,13 @@
             });
 
             $('#node-input-dynamic').on('change', function () {
-                if ($(this).prop('checked')) $('#document-options-group').hide();
-                else $('#document-options-group').show();
+                if ($(this).prop('checked')) {
+                    $('#document-options-group').hide();
+                    $('#document-params-group').hide();
+                } else {
+                    $('#document-options-group').show();
+                    $('#document-params-group').show();
+                }
 
                 $('#node-input-modelId').trigger('change');
                 $('#node-input-documentData').trigger('change');
@@ -205,6 +216,87 @@
         </div>
     </fieldset>
 
+    <fieldset id="document-params-group" class="node-red-fieldset">
+        <legend>Advanced Parameters</legend>
+
+        <div class="form-row">
+            <label for="node-input-pages">
+                <i class="fa fa-clone"></i>
+                Pages
+            </label>
+            <input
+                type="text"
+                id="node-input-pages"
+                class="input-width-70"
+                placeholder="Ex: 1-3, 5, 7-9 (Leave blank for all)"
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-locale">
+                <i class="fa fa-language"></i>
+                Locale
+            </label>
+            <input
+                type="text"
+                id="node-input-locale"
+                class="input-width-70"
+                placeholder="Ex: en-US, de-DE, fr"
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-stringIndexType">
+                <i class="fa fa-sort-numeric-asc"></i>
+                String Index
+            </label>
+            <select id="node-input-stringIndexType" class="input-width-70">
+                <option value="utf16CodeUnit">utf16CodeUnit (Default for Node.js/JS)</option>
+                <option value="textElements">textElements (Grapheme clusters)</option>
+                <option value="unicodeCodePoint">unicodeCodePoint (Python style)</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-features">
+                <i class="fa fa-star"></i>
+                Features
+            </label>
+            <input
+                type="text"
+                id="node-input-features"
+                class="input-width-70"
+                placeholder="ocrHighResolution, barcodes, formulas, queryFields..."
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-queryFields">
+                <i class="fa fa-question-circle"></i>
+                Query Fields
+            </label>
+            <input
+                type="text"
+                id="node-input-queryFields"
+                class="input-width-70"
+                placeholder="Ex: SupplierName, TotalTax (Requires queryFields feature)"
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-outputOptions">
+                <i class="fa fa-files-o"></i>
+                Add. Outputs
+            </label>
+            <input
+                type="text"
+                id="node-input-outputOptions"
+                class="input-width-70"
+                placeholder="Ex: pdf, figures"
+            />
+        </div>
+    </fieldset>
+
     <fieldset class="node-red-fieldset">
         <legend>Output</legend>
         <div class="form-row">
@@ -221,57 +313,41 @@
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
 <script type="text/markdown" data-help-name="document-intelligence">
-Analyzes a document utilizing Azure Document Intelligence and the `@azure/identity` `DefaultAzureCredential`.
+Analyzes a document utilizing Azure Document Intelligence (`api-version=2024-11-30`) and the `@azure/identity` `DefaultAzureCredential`.
 
 ### Properties
 
 - **Load from msg.document** _boolean_ \
-  If enabled, the node ignores the UI properties and expects `msg.document.modelId` and `msg.document.data` to be
-  provided dynamically.
+  If enabled, expects parameters dynamically under `msg.document` (`modelId`, `data`, `inputType`, `outputContentFormat`, `pages`, `locale`, `stringIndexType`, `features`, `queryFields`, `outputOptions`).
 
 - **Endpoint URL** _string_ \
-Your Azure Cognitive Services endpoint (e.g., `https://<resource-name>.cognitiveservices.azure.com/`).
+  Your Azure Cognitive Services endpoint (e.g., `https://<resource-name>.cognitiveservices.azure.com/`).
 
 - **Model / Prompt** _string | msg_ \
-  The model ID to use (e.g., `prebuilt-document`, `prebuilt-receipt`, `prebuilt-layout` or a custom model ID).
+  The model ID to use (e.g., `prebuilt-layout`, `prebuilt-invoice`, or a custom model ID).
 
 - **Document Data** _string | buffer | msg_ \
   An HTTP/HTTPS URL string pointing to a document, or a binary Buffer of the file itself.
 
-- **Input Format** _string_ \
-  How to interpret the incoming document data (`auto`, `buffer`, `base64`, or `url`).
-
 - **Content Format** _string_ \
-  Format of the extracted text content in the output result (`text` or `markdown`).
+  Format of the extracted text content (`text` or `markdown`).
 
-- **Output to** _msg | flow | global_ \
-  The destination property where the analysis results will be stored.
+- **Pages** _string_ \
+  1-based page numbers to analyze (e.g., `"1-3, 5, 7-9"`).
 
----
+- **Locale** _string_ \
+  Locale hint for text recognition (e.g., `"en-US"`, `"de-DE"`).
 
-### Inputs
+- **String Index** _string_ \
+  Method used to compute string offset and length (`utf16CodeUnit`, `textElements`, `unicodeCodePoint`).
 
-- **msg.document** _object_ \
-  The incoming message triggers the operation if dynamic loading is checked.
+- **Features** _string_ \
+  Comma-separated list of optional add-on capabilities (`ocrHighResolution`, `barcodes`, `formulas`, `keyValuePairs`, `styleFont`, `languages`, `queryFields`).
 
-- **msg.document.modelId** _string_ \
-  The model ID to run.
+- **Query Fields** _string_ \
+  Comma-separated list of additional generative fields to extract on the fly (requires `features=queryFields`).
 
-- **msg.document.data** _string | buffer_ \
-  The URL or Buffer of the document to analyze.
-
-- **msg.document.inputType** _string_ \
-  Optional format override (`auto`, `buffer`, `base64`, or `url`).
-
-### Outputs
-
-- **msg.document** _object_ \
-  The object containing the event details.
-
-- **msg.document.action** _string_ \
-  The action performed (`analyze`).
-
-- **msg.document.status** _string_ \
-  The status of the API operation.
+- **Add. Outputs** _string_ \
+  Additional files to generate during analysis (`pdf`, `figures`).
 </script>
 <!-- @formatter:on -->
