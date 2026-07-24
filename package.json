@@ -1,6 +1,6 @@
 {
   "name": "@faigle/node-red-contrib-azure-apps",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"

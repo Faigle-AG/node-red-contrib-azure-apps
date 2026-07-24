@@ -6,6 +6,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
         this.userId = config.userId;
+        this.userIdType = config.userIdType || 'str';
         this.dynamic = config.dynamic;
         this.messageId = config.messageId;
         this.messageIdType = config.messageIdType || 'msg';
@@ -17,6 +18,15 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
+                const userIdRaw = await node.getTypedProperty(node.userId, node.userIdType, msg);
+
+                const currentUserId = String(userIdRaw || '').trim();
+                if (!currentUserId) {
+                    const error = new Error('User ID / Email resolved to an empty value');
+                    error.code = 'INVALID_USER_ID';
+                    throw error;
+                }
+
                 const msgIdRaw = node.dynamic
                     ? msg.email && msg.email.messageId
                     : await node.getTypedProperty(node.messageId, node.messageIdType, msg);
@@ -40,7 +50,7 @@ module.exports = function (RED) {
                     destinationId: destIdRaw,
                 };
 
-                const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(node.userId)}/messages/${encodeURIComponent(msgIdRaw)}/move`;
+                const url = `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(currentUserId)}/messages/${encodeURIComponent(msgIdRaw)}/move`;
 
                 const response = await fetch(url, {
                     method: 'POST',
