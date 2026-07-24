@@ -1,8 +1,14 @@
 # @faigle/node-red-contrib-azure-apps
 
-A collection of Node-RED nodes for interacting with Microsoft Azure services, specifically Microsoft Graph (Emails) and Azure Cognitive Services (Document Intelligence).
+A collection of Node-RED nodes for interacting with Microsoft Azure services, including Microsoft Graph email operations, Azure Document Intelligence, and Azure AI Foundry language models.
 
-These nodes utilize the `@azure/identity` package's `DefaultAzureCredential`, enabling seamless, zero-code authentication whether running locally via environment variables/Azure CLI or hosted in Azure via Managed Identities.
+The Azure nodes use `@azure/identity` and `DefaultAzureCredential`, enabling the same configuration to run locally with environment variables or Azure CLI credentials and in Azure with managed identity or workload identity. The Foundry LLM node also supports API-key authentication.
+
+## Requirements
+
+- Node.js 20 or later
+- Node-RED
+- Access to the Azure resources used by the configured nodes
 
 ## Installation
 
@@ -38,6 +44,23 @@ To authenticate using a Service Principal, configure the required resources and 
 2. Select **Access control (IAM)** > **Add** > **Add role assignment**.
 3. Select the **Cognitive Services User** role.
 4. Assign access to **User, group, or service principal**, and select your App Registration.
+
+### 4. Configure Azure AI Foundry RBAC
+
+For Microsoft Entra ID authentication:
+
+1. Navigate to the relevant **Azure AI Foundry account or project**.
+2. Select **Access control (IAM)** > **Add** > **Add role assignment**.
+3. Assign the **Foundry User** role to the managed identity, workload identity, user, or service principal used by Node-RED.
+4. Ensure that the identity can access the model deployment configured in the node.
+
+The Foundry node requests access tokens for:
+
+```text
+https://ai.azure.com/.default
+```
+
+API-key authentication can be selected directly in the node editor and does not use `DefaultAzureCredential`.
 
 ---
 
@@ -108,6 +131,111 @@ Moves an existing email to a different folder (e.g., Archive, DeletedItems).
 - **Dest. Folder:** The target folder ID (well-known names like `Archive`, `DeletedItems`, or custom IDs).
 - **Dynamic Mode:** Override UI properties via `msg.email.messageId` and `msg.email.destinationId`.
 
+### 5. foundry-llm
+
+Calls a deployed language model through the Azure AI Foundry **Responses API**.
+
+The runtime uses:
+
+- the `openai` JavaScript SDK for `client.responses.create()`
+- `@azure/identity` for Microsoft Entra ID authentication
+- SDK-managed connection and HTTP retries
+- a configurable overall request timeout
+
+#### Configuration
+
+- **Authentication:** Microsoft Entra ID or API key.
+- **Endpoint:** A Foundry resource endpoint or project endpoint.
+- **Model:** The deployed model name.
+- **Instructions:** Optional system-level instructions.
+- **Input:** A typed Node-RED value containing the prompt, Responses API input array, buffer, or JSON object.
+- **Max Tokens:** Optional `max_output_tokens` value.
+- **Temperature:** Optional value from `0` to `2`. Leave it empty when the selected model does not accept temperature.
+- **Max Retries:** Number of SDK retries. The default is `4`.
+- **Timeout:** Overall request timeout in milliseconds. The default is `120000`.
+- **Output Value:** Generated text or the complete Responses API object.
+- **Output To:** A `msg`, `flow`, or `global` property.
+- **Include Raw Response:** Adds the complete response to `msg.foundry.response`.
+- **Enable Logging:** Logs request metadata without logging authentication secrets.
+
+#### Endpoint examples
+
+Resource endpoint:
+
+```text
+https://<resource-name>.services.ai.azure.com
+```
+
+Project endpoint:
+
+```text
+https://<resource-name>.services.ai.azure.com/api/projects/<project-name>
+```
+
+The node normalizes either form to an `/openai/v1/` base URL.
+
+#### Input handling
+
+Strings and Responses API input arrays are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence output, are serialized as JSON.
+
+Example configuration for a Document Intelligence result:
+
+```text
+Input:  msg.document.content
+Output: msg.payload
+```
+
+#### Output metadata
+
+The incoming message is preserved. The selected result is written to the configured output, and request metadata is added to:
+
+```javascript
+msg.foundry = {
+    id,
+    requestId,
+    model,
+    status,
+    usage,
+    outputText,
+};
+```
+
+When **Include Raw Response** is enabled:
+
+```javascript
+msg.foundry.response;
+```
+
+contains the complete Responses API result.
+
+#### Retry behavior
+
+The OpenAI SDK retries transient connection failures and retryable HTTP responses, including:
+
+- `408 Request Timeout`
+- `409 Conflict`
+- `429 Too Many Requests`
+- `5xx` server errors
+
+Retries use exponential backoff. **Max Retries** controls the number of additional attempts. The timeout applies to each SDK request lifecycle.
+
+#### Authentication examples
+
+Local Azure CLI authentication:
+
+```bash
+az login
+az account get-access-token --scope https://ai.azure.com/.default
+```
+
+Service-principal environment variables:
+
+```env
+AZURE_TENANT_ID="your-directory-tenant-id"
+AZURE_CLIENT_ID="your-application-client-id"
+AZURE_CLIENT_SECRET="your-client-secret-value"
+```
+
 ---
 
 ## Troubleshooting
@@ -115,3 +243,8 @@ Moves an existing email to a different folder (e.g., Archive, DeletedItems).
 - **Error 401: Unauthorized / PermissionDenied:** Ensure Node-RED was restarted after updating token permissions or `.env` variables. Verify the App Registration is assigned the **Cognitive Services User** role.
 - **Error 403: Forbidden (Graph API):** Ensure **Application permissions** (not Delegated) were granted and admin consent was executed in Entra ID.
 - **Error InvalidIdMalformed:** Verify you are passing the Graph API Object ID (`id`), not the header `internetMessageId`, and strip any whitespace.
+
+- **Foundry 401 Unauthorized:** Verify the endpoint, model deployment, identity, role assignment, and token audience. Entra ID authentication must request `https://ai.azure.com/.default`.
+- **Foundry ConnectTimeoutError:** Increase the node timeout, keep retries enabled, and verify DNS, proxy, firewall, private endpoint, and outbound network connectivity from the Node-RED host or container.
+- **Foundry 429 or 5xx:** The SDK retries these responses automatically. Reduce concurrency or increase **Max Retries** when throttling persists.
+- **Foundry model rejects temperature:** Clear the **Temperature** field for reasoning models or deployments that do not support it.

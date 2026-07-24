@@ -1,0 +1,459 @@
+<script type="text/javascript">
+    RED.nodes.registerType('foundry-llm', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            authType: { value: 'entra', required: true },
+            endpoint: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('endpointType');
+                    return validator.call(this, v);
+                },
+            },
+            endpointType: { value: 'str' },
+            model: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('modelType');
+                    return validator.call(this, v);
+                },
+            },
+            modelType: { value: 'str' },
+            instructions: { value: '' },
+            instructionsType: { value: 'str' },
+            input: {
+                value: 'payload',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('inputType');
+                    return validator.call(this, v);
+                },
+            },
+            inputType: { value: 'msg' },
+            output: {
+                value: 'payload',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    var validator = RED.validators.typedInput('outputType');
+                    return validator.call(this, v);
+                },
+            },
+            outputType: { value: 'msg' },
+            outputMode: { value: 'text', required: true },
+            maxOutputTokens: {
+                value: '',
+                validate: function (v) {
+                    return v === '' || (Number.isInteger(Number(v)) && Number(v) > 0);
+                },
+            },
+            temperature: {
+                value: '',
+                validate: function (v) {
+                    return (
+                        v === '' || (!Number.isNaN(Number(v)) && Number(v) >= 0 && Number(v) <= 2)
+                    );
+                },
+            },
+            maxRetries: {
+                value: 4,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 10;
+                },
+            },
+            timeoutMs: {
+                value: 120000,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 1000;
+                },
+            },
+            includeRawResponse: { value: false },
+            enableLogging: { value: false },
+        },
+        credentials: {
+            apiKey: { type: 'password' },
+        },
+        oneditprepare: function () {
+            if (!this.output || typeof this.output !== 'string') {
+                this.output = 'payload';
+            }
+            if (!this.outputType || typeof this.outputType !== 'string') {
+                this.outputType = 'msg';
+            }
+
+            $('#node-input-endpoint').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-endpointType'),
+            });
+            $('#node-input-model').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-modelType'),
+            });
+            $('#node-input-instructions').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-instructionsType'),
+            });
+            $('#node-input-input').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-inputType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+
+            function updateAuthenticationRows() {
+                if ($('#node-input-authType').val() === 'apiKey') {
+                    $('#row-api-key').show();
+                    $('#row-entra-help').hide();
+                } else {
+                    $('#row-api-key').hide();
+                    $('#row-entra-help').show();
+                }
+            }
+
+            $('#node-input-authType').on('change', updateAuthenticationRows);
+            updateAuthenticationRows();
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-comments-o',
+        label: function () {
+            return this.name || (this.model ? 'Foundry: ' + this.model : 'foundry llm');
+        },
+        paletteLabel: 'foundry llm',
+    });
+</script>
+
+<style>
+    .foundry-checkbox-row {
+        display: flex;
+        align-items: center;
+        padding-left: 104px;
+        margin-bottom: 12px;
+    }
+
+    .foundry-checkbox-row input[type='checkbox'] {
+        width: auto !important;
+        margin: 0 8px 0 0 !important;
+    }
+
+    .foundry-checkbox-row label {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    fieldset.node-red-fieldset {
+        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        border-radius: 4px !important;
+    }
+
+    fieldset.node-red-fieldset legend {
+        border-bottom: none !important;
+        width: auto !important;
+        padding: 0 5px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        color: var(--red-ui-primary-text-color, #555) !important;
+        margin-bottom: 0 !important;
+    }
+
+    .foundry-input-width {
+        width: 70% !important;
+    }
+
+    .foundry-help {
+        margin-left: 104px;
+        max-width: 70%;
+        color: var(--red-ui-secondary-text-color, #777);
+        font-size: 12px;
+    }
+</style>
+
+<script type="text/html" data-template-name="foundry-llm">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" class="foundry-input-width" placeholder="Name" />
+    </div>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Azure Foundry</legend>
+
+        <div class="form-row">
+            <label for="node-input-authType">
+                <i class="fa fa-key"></i>
+                Authentication
+            </label>
+            <select id="node-input-authType" class="foundry-input-width">
+                <option value="entra">Microsoft Entra ID</option>
+                <option value="apiKey">API key</option>
+            </select>
+        </div>
+
+        <div class="form-row" id="row-api-key">
+            <label for="node-input-apiKey">
+                <i class="fa fa-lock"></i>
+                API Key
+            </label>
+            <input type="password" id="node-input-apiKey" class="foundry-input-width" />
+        </div>
+
+        <div id="row-entra-help" class="foundry-help">
+            Uses DefaultAzureCredential. Configure Azure CLI, service-principal environment
+            variables, workload identity, or managed identity on the Node-RED host.
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-endpoint">
+                <i class="fa fa-globe"></i>
+                Endpoint
+            </label>
+            <input
+                type="text"
+                id="node-input-endpoint"
+                class="foundry-input-width"
+                placeholder="https://resource.services.ai.azure.com/api/projects/project"
+            />
+            <input type="hidden" id="node-input-endpointType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-model">
+                <i class="fa fa-cube"></i>
+                Model
+            </label>
+            <input
+                type="text"
+                id="node-input-model"
+                class="foundry-input-width"
+                placeholder="Deployment name"
+            />
+            <input type="hidden" id="node-input-modelType" />
+        </div>
+    </fieldset>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Prompt</legend>
+
+        <div class="form-row">
+            <label for="node-input-instructions">
+                <i class="fa fa-list-alt"></i>
+                Instructions
+            </label>
+            <input
+                type="text"
+                id="node-input-instructions"
+                class="foundry-input-width"
+                placeholder="Optional system instructions"
+            />
+            <input type="hidden" id="node-input-instructionsType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-input">
+                <i class="fa fa-sign-in"></i>
+                Input
+            </label>
+            <input type="text" id="node-input-input" class="foundry-input-width" />
+            <input type="hidden" id="node-input-inputType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-maxOutputTokens">
+                <i class="fa fa-sort-numeric-asc"></i>
+                Max Tokens
+            </label>
+            <input
+                type="number"
+                id="node-input-maxOutputTokens"
+                class="foundry-input-width"
+                min="1"
+                step="1"
+                placeholder="Model default"
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-temperature">
+                <i class="fa fa-thermometer-half"></i>
+                Temperature
+            </label>
+            <input
+                type="number"
+                id="node-input-temperature"
+                class="foundry-input-width"
+                min="0"
+                max="2"
+                step="0.1"
+                placeholder="Model default"
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-maxRetries">
+                <i class="fa fa-repeat"></i>
+                Max Retries
+            </label>
+            <input
+                type="number"
+                id="node-input-maxRetries"
+                class="foundry-input-width"
+                min="0"
+                max="10"
+                step="1"
+            />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-timeoutMs">
+                <i class="fa fa-clock-o"></i>
+                Timeout (ms)
+            </label>
+            <input
+                type="number"
+                id="node-input-timeoutMs"
+                class="foundry-input-width"
+                min="1000"
+                step="1000"
+            />
+        </div>
+    </fieldset>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Output</legend>
+
+        <div class="form-row">
+            <label for="node-input-outputMode">
+                <i class="fa fa-file-text-o"></i>
+                Value
+            </label>
+            <select id="node-input-outputMode" class="foundry-input-width">
+                <option value="text">Generated text</option>
+                <option value="response">Complete response object</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-output">
+                <i class="fa fa-sign-out"></i>
+                Output To
+            </label>
+            <input type="text" id="node-input-output" class="foundry-input-width" />
+            <input type="hidden" id="node-input-outputType" />
+        </div>
+
+        <div class="form-row foundry-checkbox-row">
+            <input type="checkbox" id="node-input-includeRawResponse" />
+            <label for="node-input-includeRawResponse">
+                Include raw response in msg.foundry.response
+            </label>
+        </div>
+
+        <div class="form-row foundry-checkbox-row">
+            <input type="checkbox" id="node-input-enableLogging" />
+            <label for="node-input-enableLogging">Enable request metadata logging</label>
+        </div>
+    </fieldset>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="foundry-llm">
+Calls a deployed LLM through the Microsoft Foundry Responses API using the official OpenAI JavaScript client and Microsoft Azure Identity.
+
+### Authentication
+
+- **Microsoft Entra ID** uses `DefaultAzureCredential` and requests tokens for `https://ai.azure.com/.default`.
+- **API key** stores the key in Node-RED credentials and passes it to the OpenAI JavaScript SDK.
+
+For Entra ID, assign the Node-RED identity the **Foundry User** role on the relevant Foundry account or project. Local development can use `az login`; production should normally use managed identity, workload identity, or service-principal environment variables.
+
+### Properties
+
+- **Endpoint** _string | env | msg | flow | global | jsonata_ \
+  Foundry project or resource endpoint. The node normalizes it to an `/openai/v1/` SDK base URL.
+
+  Project endpoint example:
+
+  ```text
+  https://resource.services.ai.azure.com/api/projects/project-name
+  ```
+
+- **Model** _string | env | msg | flow | global | jsonata_ \
+  The deployed model name, for example `gpt-5-mini`.
+
+- **Instructions** _optional typed value_ \
+  System-level instructions sent as the Responses API `instructions` field.
+
+- **Input** _typed value_ \
+  Prompt data. Strings and Responses API input arrays are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence results, are JSON-encoded.
+
+- **Max Tokens** _integer_ \
+  Optional `max_output_tokens` value.
+
+- **Temperature** _number_ \
+  Optional value from 0 to 2. Some reasoning models do not accept this parameter; leave it blank for those deployments.
+
+- **Max Retries** _integer_ \
+  Number of retries performed by the OpenAI SDK. The default is `4`. Retryable connection errors, HTTP 408, 409, 429, and 5xx responses are handled by the SDK.
+
+- **Timeout (ms)** _integer_ \
+  Overall timeout for each SDK request attempt. The default is `120000` milliseconds.
+
+- **Value** _generated text | complete response_ \
+  Selects what is written to the configured output property.
+
+- **Output To** _msg | flow | global_ \
+  Destination for the selected output value.
+
+### Output
+
+The incoming message is forwarded. The node also writes metadata to:
+
+```js
+msg.foundry = {
+    id,
+    requestId,
+    model,
+    status,
+    usage,
+    outputText,
+    maxRetries,
+    timeoutMs
+};
+```
+
+When **Include raw response** is enabled, the complete service response is available at `msg.foundry.response`.
+
+### Document Intelligence example
+
+Configure **Input** as the message property containing extracted Markdown or JSON, such as `document.content` or `payload`. The node preserves the incoming message and writes the generated result to the configured destination.
+
+### 401 troubleshooting
+
+A 401 response normally indicates an expired token, the wrong token audience, an incorrect endpoint, or a missing role assignment. Entra ID tokens for this node are always requested with:
+
+```text
+https://ai.azure.com/.default
+```
+</script>
+<!-- @formatter:on -->
