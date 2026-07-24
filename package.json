@@ -1,6 +1,6 @@
 {
   "name": "@faigle/node-red-contrib-azure-apps",
-  "version": "0.1.4",
+  "version": "0.2.2",
   "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"
@@ -12,7 +12,8 @@
       "email-read": "src/email-read.js",
       "email-transfer": "src/email-transfer.js",
       "email-write": "src/email-write.js",
-      "document-intelligence": "src/document-intelligence.js"
+      "document-intelligence": "src/document-intelligence.js",
+      "foundry-llm": "src/foundry-llm.js"
     }
   },
   "devDependencies": {
@@ -33,7 +34,8 @@
   },
   "dependencies": {
     "@azure/identity": "^4.13.1",
-    "@faigle/node-red-runtime-utils": "^0.4.4"
+    "@faigle/node-red-runtime-utils": "^0.4.4",
+    "openai": "^6.49.0"
   },
   "workspaces": [
     "../../node-red-runtime/*"
