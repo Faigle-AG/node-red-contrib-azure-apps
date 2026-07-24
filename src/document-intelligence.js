@@ -16,6 +16,7 @@ module.exports = function (RED) {
         this.documentData = config.documentData;
         this.documentDataType = config.documentDataType || 'msg';
         this.inputType = config.inputType || 'auto';
+        this.outputContentFormat = config.outputContentFormat || 'text';
         this.output = config.output;
         this.outputType = config.outputType || 'msg';
 
@@ -34,6 +35,9 @@ module.exports = function (RED) {
                 const currentInputType = node.dynamic
                     ? (msg.document && msg.document.inputType) || node.inputType
                     : node.inputType;
+                const currentOutputFormat = node.dynamic
+                    ? (msg.document && msg.document.outputContentFormat) || node.outputContentFormat
+                    : node.outputContentFormat;
 
                 if (!this.endpoint) throw new Error('Endpoint URL is missing');
                 if (!modelRaw) throw new Error('Model ID is missing');
@@ -75,7 +79,13 @@ module.exports = function (RED) {
                 }
 
                 const baseUrl = this.endpoint.replace(/\/$/, '');
-                const analyzeUrl = `${baseUrl}/formrecognizer/documentModels/${encodeURIComponent(modelRaw)}:analyze?api-version=2023-07-31`;
+
+                // Build Analyze URL targeting 2024-11-30 API version
+                let analyzeUrl = `${baseUrl}/formrecognizer/documentModels/${encodeURIComponent(modelRaw)}:analyze?api-version=2024-11-30`;
+
+                if (currentOutputFormat && currentOutputFormat !== 'text') {
+                    analyzeUrl += `&outputContentFormat=${encodeURIComponent(currentOutputFormat)}`;
+                }
 
                 const initialResponse = await fetch(analyzeUrl, {
                     method: 'POST',

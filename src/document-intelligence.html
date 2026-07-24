@@ -37,6 +37,7 @@
             },
             documentDataType: { value: 'msg' },
             inputType: { value: 'auto' },
+            outputContentFormat: { value: 'text' },
             output: { value: 'analysis', required: true },
             outputType: { value: 'msg' },
         },
@@ -191,6 +192,17 @@
                 <option value="url">URL String</option>
             </select>
         </div>
+
+        <div class="form-row">
+            <label for="node-input-outputContentFormat">
+                <i class="fa fa-file-code-o"></i>
+                Content Format
+            </label>
+            <select id="node-input-outputContentFormat" class="input-width-70">
+                <option value="text">Plain Text (Default)</option>
+                <option value="markdown">Markdown</option>
+            </select>
+        </div>
     </fieldset>
 
     <fieldset class="node-red-fieldset">
@@ -228,6 +240,9 @@ Your Azure Cognitive Services endpoint (e.g., `https://<resource-name>.cognitive
 
 - **Input Format** _string_ \
   How to interpret the incoming document data (`auto`, `buffer`, `base64`, or `url`).
+
+- **Content Format** _string_ \
+  Format of the extracted text content in the output result (`text` or `markdown`).
 
 - **Output to** _msg | flow | global_ \
   The destination property where the analysis results will be stored.
