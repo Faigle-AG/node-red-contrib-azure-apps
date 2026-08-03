@@ -15,6 +15,8 @@
                 },
             },
             userIdType: { value: 'str' },
+            folderId: { value: 'inbox', required: true },
+            folderName: { value: 'Inbox' },
             limit: {
                 value: 10,
                 validate: function (v) {
@@ -32,6 +34,9 @@
             outputType: { value: 'msg' },
         },
         oneditprepare: function () {
+            var currentFolderId = this.folderId || 'inbox';
+            var currentFolderName = this.folderName || 'Inbox';
+
             $('#node-input-userId').typedInput({
                 default: 'str',
                 types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
@@ -44,12 +49,81 @@
                 typeField: $('#node-input-outputType'),
             });
 
+            var folderSelect = $('#node-input-folderId');
+
+            folderSelect
+                .empty()
+                .append($('<option></option>').val(currentFolderId).text(currentFolderName));
+
+            folderSelect.on('change', function () {
+                $('#node-input-folderName').val($('#node-input-folderId option:selected').text());
+            });
+
+            function loadFolders(showWarning) {
+                var userId = $('#node-input-userId').val();
+                var userIdType = $('#node-input-userIdType').val();
+                var button = $('#node-input-loadFolders');
+                var selectedFolderId = folderSelect.val() || currentFolderId;
+
+                if (userIdType !== 'str' || !userId || userId.trim() === '') {
+                    if (showWarning) {
+                        RED.notify('Folder loading requires a static User ID / Email.', 'warning');
+                    }
+                    return;
+                }
+
+                button.prop('disabled', true);
+                folderSelect.prop('disabled', true);
+
+                $.getJSON('email-read/folders', { userId: userId.trim() })
+                    .done(function (folders) {
+                        folderSelect.empty();
+
+                        folders.forEach(function (folder) {
+                            folderSelect.append(
+                                $('<option></option>').val(folder.id).text(folder.path),
+                            );
+                        });
+
+                        if (
+                            folderSelect.find('option').filter(function () {
+                                return $(this).val() === selectedFolderId;
+                            }).length
+                        ) {
+                            folderSelect.val(selectedFolderId);
+                        } else if (folderSelect.find('option[value="inbox"]').length) {
+                            folderSelect.val('inbox');
+                        } else if (folderSelect.find('option').length) {
+                            folderSelect.prop('selectedIndex', 0);
+                        }
+
+                        folderSelect.trigger('change');
+                    })
+                    .fail(function (xhr) {
+                        var message =
+                            xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : 'Unable to load mail folders.';
+
+                        if (showWarning) RED.notify(message, 'error');
+                    })
+                    .always(function () {
+                        button.prop('disabled', false);
+                        folderSelect.prop('disabled', false);
+                    });
+            }
+
+            $('#node-input-loadFolders').on('click', function () {
+                loadFolders(true);
+            });
+
             $('#node-input-dynamic').on('change', function () {
                 if ($(this).prop('checked')) $('#email-options-group').hide();
                 else $('#email-options-group').show();
             });
 
             $('#node-input-dynamic').trigger('change');
+            loadFolders(false);
         },
         inputs: 1,
         outputs: 1,
@@ -98,6 +172,15 @@
     .input-width-70 {
         width: 70% !important;
     }
+
+    .folder-select {
+        width: calc(70% - 42px) !important;
+    }
+
+    .folder-load-button {
+        margin-left: 4px !important;
+        min-width: 36px !important;
+    }
 </style>
 
 <script type="text/html" data-template-name="email-read">
@@ -139,6 +222,25 @@
         <legend>Read Options</legend>
 
         <div class="form-row">
+            <label for="node-input-folderId">
+                <i class="fa fa-folder"></i>
+                Mail Folder
+            </label>
+            <select id="node-input-folderId" class="folder-select">
+                <option value="inbox">Inbox</option>
+            </select>
+            <button
+                type="button"
+                id="node-input-loadFolders"
+                class="red-ui-button folder-load-button"
+                title="Reload folders"
+            >
+                <i class="fa fa-refresh"></i>
+            </button>
+            <input type="hidden" id="node-input-folderName" />
+        </div>
+
+        <div class="form-row">
             <label for="node-input-limit">
                 <i class="fa fa-list-ol"></i>
                 Email Count
@@ -169,15 +271,18 @@
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
 <script type="text/markdown" data-help-name="email-read">
-Reads emails from an Azure user's inbox utilizing the `@azure/identity` `DefaultAzureCredential`.
+Reads emails from an Azure user's selected mail folder utilizing the `@azure/identity` `DefaultAzureCredential`.
 
 ### Properties
 
 - **Load from msg.email** _boolean_ \
-  If enabled, the node will ignore the UI options and expect `msg.email.limit` and `msg.email.downloadAttachments` to be provided dynamically.
+  If enabled, the node will ignore the UI options and expect `msg.email.folderId`, `msg.email.limit`, and `msg.email.downloadAttachments` to be provided dynamically.
 
 - **User ID / Email** _string | env | msg | flow | global | jsonata_ \
-  The UserPrincipalName or Azure Object ID of the user whose inbox you want to read. The value is evaluated for every incoming message.
+  The UserPrincipalName or Azure Object ID of the user whose mailbox you want to read. The value is evaluated for every incoming message.
+
+- **Mail Folder** _string_ \
+  The Microsoft Graph mail folder ID to read. Use **Load Folders** to retrieve all root and nested folders for a static User ID / Email.
 
 - **Email Count** _number_ \
   The maximum number of emails to return (maps to OData `$top`).
@@ -195,6 +300,12 @@ Reads emails from an Azure user's inbox utilizing the `@azure/identity` `Default
 - **msg.email** _object_ \
   The incoming message triggers the operation.
 
+  - **msg.email.folderId** _string_ \
+    The Microsoft Graph mail folder ID to read.
+
+  - **msg.email.folderName** _string_ \
+    Optional display name or path for the selected folder.
+
   - **msg.email.limit** _number_ \
     The maximum number of emails to return.
 
@@ -208,6 +319,12 @@ Reads emails from an Azure user's inbox utilizing the `@azure/identity` `Default
 
   - **msg.email.action** _string_ \
     The action performed (`read`).
+
+  - **msg.email.folderId** _string_ \
+    The Microsoft Graph ID of the folder that was read.
+
+  - **msg.email.folderName** _string_ \
+    The configured folder display name or path.
 
   - **msg.email.count** _number_ \
     The number of emails retrieved.
