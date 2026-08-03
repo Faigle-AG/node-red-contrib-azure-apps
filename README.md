@@ -187,12 +187,54 @@ Sends an HTML or plain text email from a specified user's mailbox.
 
 ### 4. email-transfer
 
-Moves an existing email to a different folder (e.g., Archive, DeletedItems).
+Moves an existing email to a selected Microsoft 365 mail folder. The destination is selected from a dropdown containing the mailbox folder hierarchy.
 
-- **User ID / Email:** The UserPrincipalName or Azure Object ID of the mailbox.
-- **Message ID:** The Graph API message ID.
-- **Dest. Folder:** The target folder ID (well-known names like `Archive`, `DeletedItems`, or custom IDs).
-- **Dynamic Mode:** Override UI properties via `msg.email.messageId` and `msg.email.destinationId`.
+- **User ID / Email:** The UserPrincipalName or Azure Object ID of the mailbox. The value can be configured as `str`, `env`, `msg`, `flow`, `global`, or `jsonata`.
+- **Message ID:** The Microsoft Graph message ID to move. The value can be configured as `str`, `msg`, `flow`, `global`, `jsonata`, or `env`.
+- **Dest. Folder:** Select the target folder from the dropdown. The refresh button loads root, nested, and hidden mail folders and displays their paths, such as `Projects › Customer A`.
+- **Dynamic Mode:** Override the transfer properties through `msg.email.messageId`, `msg.email.destinationId`, and optionally `msg.email.destinationName`.
+
+#### Destination-folder dropdown
+
+The dropdown is populated through Microsoft Graph when the editor opens and when the refresh button is selected.
+
+Folder loading in the editor requires **User ID / Email** to use the static `str` type. Other typed-input values are resolved only when the deployed node receives a message.
+
+The selected Microsoft Graph folder ID is saved in `destinationId`. Its displayed path is saved in `destinationName`. Folder discovery follows Microsoft Graph pagination and recursively loads child folders.
+
+The `/email-transfer/folders` admin endpoint is protected by the Node-RED `email-transfer.read` permission. Microsoft Graph authentication remains in the Node-RED runtime and is not exposed to the editor browser.
+
+#### Dynamic input example
+
+Enable **Load from msg.email** and send:
+
+```javascript
+msg.email = {
+    messageId: 'AAMkAG...',
+    destinationId: 'AAMkAG...',
+    destinationName: 'Projects › Customer A',
+};
+
+return msg;
+```
+
+`destinationId` is required in dynamic mode. It may contain a Microsoft Graph folder ID or a supported well-known folder name such as `archive` or `deleteditems`. `destinationName` is optional and descriptive only.
+
+#### Output
+
+The node merges the transfer result into `msg.email`:
+
+```javascript
+msg.email = {
+    action: 'transfer',
+    messageId: 'AAMkAG...',
+    destinationId: 'AAMkAG...',
+    destinationName: 'Projects › Customer A',
+    apiResponse: {},
+};
+```
+
+`apiResponse` contains the Microsoft Graph message object returned by the move operation.
 
 ### 5. foundry-llm
 
@@ -309,6 +351,10 @@ AZURE_CLIENT_SECRET="your-client-secret-value"
 - **Mail Folder dropdown shows an error:** Check the Node-RED runtime log for the Microsoft Graph response. The folder-discovery request runs through the protected `/email-read/folders` admin endpoint.
 - **Previously selected folder is unavailable:** Reload the dropdown. If the folder was deleted or its ID changed, select the folder again; the node falls back to `inbox` only when no folder ID is supplied.
 - **Dynamic folder selection reads the Inbox:** Ensure `msg.email.folderId` contains the Microsoft Graph folder ID, not only its display name or path.
+- **Destination Folder dropdown does not load:** Configure **User ID / Email** as a static `str` value, verify that `DefaultAzureCredential` can authenticate, and confirm that the identity has the Microsoft Graph `Mail.ReadWrite` application permission with admin consent.
+- **Destination Folder dropdown shows an error:** Check the Node-RED runtime log for the Microsoft Graph response. The transfer folder-discovery request runs through the protected `/email-transfer/folders` admin endpoint.
+- **Previously selected transfer destination is unavailable:** Reload the dropdown. If the folder was deleted or its ID changed, select it again before deploying the flow.
+- **Dynamic transfer reports Destination Folder ID is missing:** Ensure `msg.email.destinationId` contains a Microsoft Graph folder ID or supported well-known folder name. `msg.email.destinationName` is descriptive only and cannot replace the ID.
 - **Error InvalidIdMalformed:** Verify you are passing the Graph API Object ID (`id`), not the header `internetMessageId`, and strip any whitespace.
 - **Document Intelligence 404 Resource not found:** Verify that the endpoint is the base resource endpoint and that the node uses `/documentintelligence/documentModels/...` with API version `2024-11-30`.
 - **Document Intelligence ModelNotFound:** Verify the exact model ID and resource. For v4 general document extraction, replace `prebuilt-document` with `prebuilt-layout`; add `features=keyValuePairs` when key/value pairs are required.
