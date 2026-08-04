@@ -1,0 +1,579 @@
+<script type="text/javascript">
+    RED.nodes.registerType('file-share', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            dynamic: { value: false },
+            authType: { value: 'entra', required: true },
+            serviceUrl: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-authType').length &&
+                        $('#node-input-authType').val() === 'connectionString'
+                    ) {
+                        return true;
+                    }
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('serviceUrlType').call(this, v);
+                },
+            },
+            serviceUrlType: { value: 'str' },
+            accountName: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-authType').length &&
+                        $('#node-input-authType').val() !== 'accountKey'
+                    ) {
+                        return true;
+                    }
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('accountNameType').call(this, v);
+                },
+            },
+            accountNameType: { value: 'str' },
+            operation: { value: 'list', required: true },
+            shareName: {
+                value: '',
+                validate: function (v) {
+                    var dynamic = $('#node-input-dynamic').length
+                        ? $('#node-input-dynamic').prop('checked')
+                        : this.dynamic;
+                    if (dynamic) return true;
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('shareNameType').call(this, v);
+                },
+            },
+            shareNameType: { value: 'str' },
+            path: {
+                value: '',
+                validate: function (v) {
+                    var dynamic = $('#node-input-dynamic').length
+                        ? $('#node-input-dynamic').prop('checked')
+                        : this.dynamic;
+                    if (dynamic) return true;
+
+                    var operation = $('#node-input-operation').length
+                        ? $('#node-input-operation').val()
+                        : this.operation;
+                    if (operation === 'list' || operation === 'stat' || operation === 'exists') {
+                        return !v || RED.validators.typedInput('pathType').call(this, v);
+                    }
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('pathType').call(this, v);
+                },
+            },
+            pathType: { value: 'str' },
+            data: {
+                value: 'payload',
+                validate: function (v) {
+                    var dynamic = $('#node-input-dynamic').length
+                        ? $('#node-input-dynamic').prop('checked')
+                        : this.dynamic;
+                    var operation = $('#node-input-operation').length
+                        ? $('#node-input-operation').val()
+                        : this.operation;
+                    if (dynamic || operation !== 'write') return true;
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('dataType').call(this, v);
+                },
+            },
+            dataType: { value: 'msg' },
+            writeFormat: { value: 'auto' },
+            readFormat: { value: 'buffer' },
+            contentType: { value: '' },
+            contentTypeType: { value: 'str' },
+            createParents: { value: true },
+            overwrite: { value: true },
+            recursive: { value: false },
+            maxItems: {
+                value: 1000,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) > 0;
+                },
+            },
+            output: {
+                value: 'fileShare',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('outputType').call(this, v);
+                },
+            },
+            outputType: { value: 'msg' },
+            enableLogging: { value: false },
+        },
+        credentials: {
+            accountKey: { type: 'password' },
+            connectionString: { type: 'password' },
+            sasToken: { type: 'password' },
+        },
+        oneditprepare: function () {
+            $('#node-input-serviceUrl').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-serviceUrlType'),
+            });
+            $('#node-input-accountName').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-accountNameType'),
+            });
+            $('#node-input-shareName').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-shareNameType'),
+            });
+            $('#node-input-path').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-pathType'),
+            });
+            $('#node-input-data').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
+                typeField: $('#node-input-dataType'),
+            });
+            $('#node-input-contentType').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-contentTypeType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+
+            function updateAuthenticationRows() {
+                var authType = $('#node-input-authType').val();
+                $('#row-service-url').toggle(authType !== 'connectionString');
+                $('#row-account-name').toggle(authType === 'accountKey');
+                $('#row-account-key').toggle(authType === 'accountKey');
+                $('#row-connection-string').toggle(authType === 'connectionString');
+                $('#row-sas-token').toggle(authType === 'sas');
+                $('#row-entra-help').toggle(authType === 'entra');
+            }
+
+            function updateOperationRows() {
+                var dynamic = $('#node-input-dynamic').prop('checked');
+                var operation = $('#node-input-operation').val();
+
+                $('#file-operation-group').toggle(!dynamic);
+                if (dynamic) return;
+
+                $('#row-path').show();
+                $('#row-data').toggle(operation === 'write');
+                $('#row-write-format').toggle(operation === 'write');
+                $('#row-content-type').toggle(operation === 'write');
+                $('#row-read-format').toggle(operation === 'read');
+                $('#row-create-parents').toggle(operation === 'write' || operation === 'mkdir');
+                $('#row-overwrite').toggle(operation === 'write');
+                $('#row-recursive').toggle(operation === 'list' || operation === 'rmdir');
+                $('#row-max-items').toggle(operation === 'list');
+
+                var pathLabel = 'File Path';
+                var pathPlaceholder = 'folder/file.ext';
+                if (operation === 'list' || operation === 'mkdir' || operation === 'rmdir') {
+                    pathLabel = 'Directory Path';
+                    pathPlaceholder = operation === 'list' ? 'optional/folder' : 'folder/subfolder';
+                } else if (operation === 'stat' || operation === 'exists') {
+                    pathLabel = 'Target Path';
+                    pathPlaceholder = 'file or directory; blank means share root';
+                }
+                $('#label-path-text').text(pathLabel);
+                $('#node-input-path').attr('placeholder', pathPlaceholder);
+            }
+
+            $('#node-input-authType').on('change', updateAuthenticationRows);
+            $('#node-input-dynamic').on('change', updateOperationRows);
+            $('#node-input-operation').on('change', updateOperationRows);
+
+            updateAuthenticationRows();
+            updateOperationRows();
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-folder-open',
+        label: function () {
+            return this.name || 'azure file share';
+        },
+        paletteLabel: 'file share',
+    });
+</script>
+
+<style>
+    .azure-file-checkbox-row {
+        display: flex;
+        align-items: center;
+        padding-left: 104px;
+        margin-bottom: 12px;
+    }
+
+    .azure-file-checkbox-row input[type='checkbox'] {
+        width: auto !important;
+        margin: 0 8px 0 0 !important;
+    }
+
+    .azure-file-checkbox-row label {
+        width: auto !important;
+        margin: 0 !important;
+    }
+
+    fieldset.node-red-fieldset {
+        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
+        padding: 12px !important;
+        margin-bottom: 12px !important;
+        border-radius: 4px !important;
+    }
+
+    fieldset.node-red-fieldset legend {
+        border-bottom: none !important;
+        width: auto !important;
+        padding: 0 5px !important;
+        font-size: 13px !important;
+        font-weight: bold !important;
+        color: var(--red-ui-primary-text-color, #555) !important;
+        margin-bottom: 0 !important;
+    }
+
+    .azure-file-input-width {
+        width: 70% !important;
+    }
+
+    .azure-file-help {
+        margin-left: 104px;
+        max-width: 70%;
+        color: var(--red-ui-secondary-text-color, #777);
+        font-size: 12px;
+    }
+</style>
+
+<script type="text/html" data-template-name="file-share">
+    <div class="form-row">
+        <label for="node-input-name">
+            <i class="fa fa-tag"></i>
+            Name
+        </label>
+        <input type="text" id="node-input-name" class="azure-file-input-width" placeholder="Name" />
+    </div>
+
+    <div class="form-row azure-file-checkbox-row">
+        <input type="checkbox" id="node-input-dynamic" />
+        <label for="node-input-dynamic">
+            <i class="fa fa-usb"></i>
+            Load operation from msg.fileShare
+        </label>
+    </div>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Azure Configuration</legend>
+
+        <div class="form-row">
+            <label for="node-input-authType">
+                <i class="fa fa-key"></i>
+                Authentication
+            </label>
+            <select id="node-input-authType" class="azure-file-input-width">
+                <option value="entra">Microsoft Entra ID</option>
+                <option value="accountKey">Storage account key</option>
+                <option value="connectionString">Connection string</option>
+                <option value="sas">SAS token</option>
+            </select>
+        </div>
+
+        <div class="form-row" id="row-service-url">
+            <label for="node-input-serviceUrl">
+                <i class="fa fa-globe"></i>
+                File Service URL
+            </label>
+            <input
+                type="text"
+                id="node-input-serviceUrl"
+                class="azure-file-input-width"
+                placeholder="https://account.file.core.windows.net or account name"
+            />
+            <input type="hidden" id="node-input-serviceUrlType" />
+        </div>
+
+        <div class="form-row" id="row-account-name">
+            <label for="node-input-accountName">
+                <i class="fa fa-building"></i>
+                Account Name
+            </label>
+            <input type="text" id="node-input-accountName" class="azure-file-input-width" />
+            <input type="hidden" id="node-input-accountNameType" />
+        </div>
+
+        <div class="form-row" id="row-account-key">
+            <label for="node-input-accountKey">
+                <i class="fa fa-lock"></i>
+                Account Key
+            </label>
+            <input type="password" id="node-input-accountKey" class="azure-file-input-width" />
+        </div>
+
+        <div class="form-row" id="row-connection-string">
+            <label for="node-input-connectionString">
+                <i class="fa fa-link"></i>
+                Connection String
+            </label>
+            <input
+                type="password"
+                id="node-input-connectionString"
+                class="azure-file-input-width"
+            />
+        </div>
+
+        <div class="form-row" id="row-sas-token">
+            <label for="node-input-sasToken">
+                <i class="fa fa-ticket"></i>
+                SAS Token
+            </label>
+            <input
+                type="password"
+                id="node-input-sasToken"
+                class="azure-file-input-width"
+                placeholder="sv=...&ss=f&..."
+            />
+        </div>
+
+        <div id="row-entra-help" class="azure-file-help">
+            Uses DefaultAzureCredential with Azure Files OAuth over REST and request intent
+            "backup".
+        </div>
+    </fieldset>
+
+    <fieldset id="file-operation-group" class="node-red-fieldset">
+        <legend>File Operation</legend>
+
+        <div class="form-row">
+            <label for="node-input-operation">
+                <i class="fa fa-cogs"></i>
+                Operation
+            </label>
+            <select id="node-input-operation" class="azure-file-input-width">
+                <option value="list">List directory</option>
+                <option value="read">Read file</option>
+                <option value="write">Write file</option>
+                <option value="delete">Delete file</option>
+                <option value="stat">Get properties</option>
+                <option value="exists">Check existence</option>
+                <option value="mkdir">Create directory</option>
+                <option value="rmdir">Remove directory</option>
+            </select>
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-shareName">
+                <i class="fa fa-hdd-o"></i>
+                Share Name
+            </label>
+            <input type="text" id="node-input-shareName" class="azure-file-input-width" />
+            <input type="hidden" id="node-input-shareNameType" />
+        </div>
+
+        <div class="form-row" id="row-path">
+            <label for="node-input-path">
+                <i class="fa fa-folder"></i>
+                <span id="label-path-text">Directory Path</span>
+            </label>
+            <input type="text" id="node-input-path" class="azure-file-input-width" />
+            <input type="hidden" id="node-input-pathType" />
+        </div>
+
+        <div class="form-row" id="row-data">
+            <label for="node-input-data">
+                <i class="fa fa-sign-in"></i>
+                Data
+            </label>
+            <input type="text" id="node-input-data" class="azure-file-input-width" />
+            <input type="hidden" id="node-input-dataType" />
+        </div>
+
+        <div class="form-row" id="row-write-format">
+            <label for="node-input-writeFormat">
+                <i class="fa fa-code"></i>
+                Data Format
+            </label>
+            <select id="node-input-writeFormat" class="azure-file-input-width">
+                <option value="auto">Auto</option>
+                <option value="buffer">Buffer</option>
+                <option value="text">UTF-8 text</option>
+                <option value="base64">Base64 string</option>
+                <option value="json">JSON</option>
+            </select>
+        </div>
+
+        <div class="form-row" id="row-read-format">
+            <label for="node-input-readFormat">
+                <i class="fa fa-code"></i>
+                Return Format
+            </label>
+            <select id="node-input-readFormat" class="azure-file-input-width">
+                <option value="buffer">Buffer</option>
+                <option value="text">UTF-8 text</option>
+                <option value="base64">Base64 string</option>
+                <option value="json">Parsed JSON</option>
+            </select>
+        </div>
+
+        <div class="form-row" id="row-content-type">
+            <label for="node-input-contentType">
+                <i class="fa fa-file-o"></i>
+                Content Type
+            </label>
+            <input
+                type="text"
+                id="node-input-contentType"
+                class="azure-file-input-width"
+                placeholder="application/json"
+            />
+            <input type="hidden" id="node-input-contentTypeType" />
+        </div>
+
+        <div class="form-row azure-file-checkbox-row" id="row-create-parents">
+            <input type="checkbox" id="node-input-createParents" />
+            <label for="node-input-createParents">Create parent directories</label>
+        </div>
+
+        <div class="form-row azure-file-checkbox-row" id="row-overwrite">
+            <input type="checkbox" id="node-input-overwrite" />
+            <label for="node-input-overwrite">Overwrite existing file</label>
+        </div>
+
+        <div class="form-row azure-file-checkbox-row" id="row-recursive">
+            <input type="checkbox" id="node-input-recursive" />
+            <label for="node-input-recursive">Recursive</label>
+        </div>
+
+        <div class="form-row" id="row-max-items">
+            <label for="node-input-maxItems">
+                <i class="fa fa-list-ol"></i>
+                Max Items
+            </label>
+            <input
+                type="number"
+                id="node-input-maxItems"
+                class="azure-file-input-width"
+                min="1"
+                step="1"
+            />
+        </div>
+    </fieldset>
+
+    <fieldset class="node-red-fieldset">
+        <legend>Output</legend>
+
+        <div class="form-row">
+            <label for="node-input-output">
+                <i class="fa fa-sign-out"></i>
+                Output To
+            </label>
+            <input type="text" id="node-input-output" class="azure-file-input-width" />
+            <input type="hidden" id="node-input-outputType" />
+        </div>
+
+        <div class="form-row azure-file-checkbox-row">
+            <input type="checkbox" id="node-input-enableLogging" />
+            <label for="node-input-enableLogging">Enable operation logging</label>
+        </div>
+    </fieldset>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="file-share">
+Accesses files and directories in a classic Azure Storage Account file share by using `@azure/storage-file-share`.
+
+### Supported operations
+
+- **List directory**: lists files and directories. An empty path targets the share root.
+- **Read file**: downloads a file as a Buffer, UTF-8 text, Base64, or parsed JSON.
+- **Write file**: uploads or replaces a file from a Buffer, string, Base64 string, or object.
+- **Delete file**: deletes a file if it exists.
+- **Get properties**: returns file or directory properties.
+- **Check existence**: checks whether a file or directory exists.
+- **Create directory**: creates one directory or the full parent path.
+- **Remove directory**: removes an empty directory or recursively deletes its contents.
+
+### Authentication
+
+- **Microsoft Entra ID** uses `DefaultAzureCredential` and Azure Files OAuth over REST with `fileRequestIntent: "backup"`.
+- **Storage account key** stores the key in Node-RED credentials.
+- **Connection string** stores the full connection string in Node-RED credentials.
+- **SAS token** stores the token in Node-RED credentials and appends it to the file-service URL.
+
+For Entra ID, assign a role containing the Azure Files backup-semantics data actions, such as **Storage File Data Privileged Reader** or **Storage File Data Privileged Contributor**, depending on the required operations.
+
+### Dynamic input
+
+When **Load operation from msg.fileShare** is enabled, provide operation parameters in:
+
+```js
+msg.fileShare = {
+    operation: "write",
+    shareName: "documents",
+    path: "inbound/example.json",
+    data: { hello: "world" },
+    writeFormat: "json",
+    contentType: "application/json",
+    createParents: true,
+    overwrite: true,
+    recursive: false,
+    maxItems: 1000,
+    readFormat: "buffer"
+};
+```
+
+Authentication remains configured on the node. The configured typed **Output To** property receives a result object.
+
+### Output examples
+
+Read:
+
+```js
+msg.fileShare = {
+    action: "read",
+    status: "succeeded",
+    accountName: "account",
+    shareName: "documents",
+    path: "inbound/example.json",
+    kind: "file",
+    size: 18,
+    format: "json",
+    data: { hello: "world" },
+    properties: { contentType: "application/json" }
+};
+```
+
+List:
+
+```js
+msg.fileShare = {
+    action: "list",
+    status: "succeeded",
+    shareName: "documents",
+    path: "inbound",
+    recursive: false,
+    count: 2,
+    list: [
+        { kind: "file", name: "a.txt", path: "inbound/a.txt" },
+        { kind: "directory", name: "archive", path: "inbound/archive" }
+    ]
+};
+```
+
+### Dependencies
+
+```json
+{
+  "@azure/identity": "^4.0.0",
+  "@azure/storage-file-share": "^12.32.0",
+  "@faigle/node-red-runtime-utils": "<your current version>"
+}
+```
+</script>
+<!-- @formatter:on -->
