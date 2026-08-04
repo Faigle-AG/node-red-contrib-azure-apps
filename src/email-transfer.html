@@ -30,21 +30,8 @@
                 },
             },
             messageIdType: { value: 'msg' },
-            destinationId: {
-                value: 'email.destinationId',
-                validate: function (v) {
-                    if (
-                        $('#node-input-dynamic').length
-                            ? $('#node-input-dynamic').prop('checked')
-                            : this.dynamic
-                    )
-                        return true;
-                    if (!v || v.trim() === '') return false;
-                    var builtInValidator = RED.validators.typedInput('destinationIdType');
-                    return builtInValidator.call(this, v);
-                },
-            },
-            destinationIdType: { value: 'msg' },
+            destinationId: { value: 'archive', required: true },
+            destinationName: { value: 'Archive' },
         },
         inputs: 1,
         outputs: 1,
@@ -53,6 +40,9 @@
             return this.name || 'email - transfer';
         },
         oneditprepare: function () {
+            var currentDestinationId = this.destinationId || 'archive';
+            var currentDestinationName = this.destinationName || 'Archive';
+
             $('#node-input-userId').typedInput({
                 default: 'str',
                 types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
@@ -63,10 +53,85 @@
                 types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
                 typeField: $('#node-input-messageIdType'),
             });
-            $('#node-input-destinationId').typedInput({
-                default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
-                typeField: $('#node-input-destinationIdType'),
+
+            var folderSelect = $('#node-input-destinationId');
+
+            folderSelect
+                .empty()
+                .append(
+                    $('<option></option>').val(currentDestinationId).text(currentDestinationName),
+                );
+
+            folderSelect.on('change', function () {
+                $('#node-input-destinationName').val(
+                    $('#node-input-destinationId option:selected').text(),
+                );
+            });
+
+            function loadFolders(showWarning) {
+                var userId = $('#node-input-userId').val();
+                var userIdType = $('#node-input-userIdType').val();
+                var button = $('#node-input-loadFolders');
+                var selectedDestinationId = folderSelect.val() || currentDestinationId;
+                var selectedDestinationName =
+                    $('#node-input-destinationName').val() || currentDestinationName;
+
+                if (userIdType !== 'str' || !userId || userId.trim() === '') {
+                    if (showWarning) {
+                        RED.notify('Folder loading requires a static User ID / Email.', 'warning');
+                    }
+                    return;
+                }
+
+                button.prop('disabled', true);
+                folderSelect.prop('disabled', true);
+
+                $.getJSON('email-transfer/folders', { userId: userId.trim() })
+                    .done(function (response) {
+                        var folders = Array.isArray(response) ? response : response.folders || [];
+
+                        folderSelect.empty();
+
+                        folders.forEach(function (folder) {
+                            folderSelect.append(
+                                $('<option></option>').val(folder.id).text(folder.path),
+                            );
+                        });
+
+                        var selectedOption = folderSelect.find('option').filter(function () {
+                            return $(this).val() === selectedDestinationId;
+                        });
+
+                        if (!selectedOption.length && selectedDestinationName) {
+                            selectedOption = folderSelect.find('option').filter(function () {
+                                return $(this).text() === selectedDestinationName;
+                            });
+                        }
+
+                        if (selectedOption.length) {
+                            folderSelect.val(selectedOption.first().val());
+                        } else if (folderSelect.find('option').length) {
+                            folderSelect.prop('selectedIndex', 0);
+                        }
+
+                        folderSelect.trigger('change');
+                    })
+                    .fail(function (xhr) {
+                        var message =
+                            xhr.responseJSON && xhr.responseJSON.message
+                                ? xhr.responseJSON.message
+                                : 'Unable to load mail folders.';
+
+                        if (showWarning) RED.notify(message, 'error');
+                    })
+                    .always(function () {
+                        button.prop('disabled', false);
+                        folderSelect.prop('disabled', false);
+                    });
+            }
+
+            $('#node-input-loadFolders').on('click', function () {
+                loadFolders(true);
             });
 
             $('#node-input-dynamic').on('change', function () {
@@ -74,10 +139,10 @@
                 else $('#email-options-group').show();
 
                 $('#node-input-messageId').trigger('change');
-                $('#node-input-destinationId').trigger('change');
             });
 
             $('#node-input-dynamic').trigger('change');
+            loadFolders(false);
         },
     });
 </script>
@@ -117,6 +182,15 @@
 
     .input-width-70 {
         width: 70% !important;
+    }
+
+    .folder-select {
+        width: calc(70% - 42px) !important;
+    }
+
+    .folder-load-button {
+        margin-left: 4px !important;
+        min-width: 36px !important;
     }
 </style>
 
@@ -172,13 +246,18 @@
                 <i class="fa fa-folder-open"></i>
                 Dest. Folder
             </label>
-            <input
-                type="text"
-                id="node-input-destinationId"
-                class="input-width-70"
-                placeholder="Archive, DeletedItems, etc."
-            />
-            <input type="hidden" id="node-input-destinationIdType" />
+            <select id="node-input-destinationId" class="folder-select">
+                <option value="archive">Archive</option>
+            </select>
+            <button
+                type="button"
+                id="node-input-loadFolders"
+                class="red-ui-button folder-load-button"
+                title="Reload folders"
+            >
+                <i class="fa fa-refresh"></i>
+            </button>
+            <input type="hidden" id="node-input-destinationName" />
         </div>
     </fieldset>
 </script>
@@ -186,7 +265,7 @@
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
 <script type="text/markdown" data-help-name="email-transfer">
-Moves an email to a different folder utilizing the `@azure/identity` `DefaultAzureCredential`.
+Moves an email to a selected mail folder utilizing the `@azure/identity` `DefaultAzureCredential`.
 
 ### Properties
 
@@ -196,11 +275,13 @@ Moves an email to a different folder utilizing the `@azure/identity` `DefaultAzu
 - **User ID / Email** _string | env | msg | flow | global | jsonata_ \
   The UserPrincipalName or Azure Object ID of the user whose mailbox contains the message.
 
-- **Message ID** _string | msg_ \
-  The unique ID of the message to move.
+- **Message ID** _string | msg | flow | global | jsonata | env_ \
+  The unique Microsoft Graph ID of the message to move.
 
-- **Dest. Folder** _string | msg_ \
-  The ID of the destination folder (e.g., `Archive`, `DeletedItems`, `JunkEmail`, or a specific custom folder ID).
+- **Dest. Folder** _string_ \
+  The Microsoft Graph mail folder ID to which the message will be moved. Use the refresh button to retrieve all root and nested folders for a static User ID / Email.
+
+Folder loading in the editor requires **User ID / Email** to use the static `str` type. Dynamic account values cannot be resolved until the node receives a message.
 
 ---
 
@@ -210,10 +291,13 @@ Moves an email to a different folder utilizing the `@azure/identity` `DefaultAzu
   The incoming message triggers the operation.
 
   - **msg.email.messageId** _string_ \
-    The ID of the message to move.
+    The Microsoft Graph ID of the message to move.
 
   - **msg.email.destinationId** _string_ \
-    The target folder ID.
+    The Microsoft Graph ID or well-known name of the target folder.
+
+  - **msg.email.destinationName** _string_ \
+    Optional display name or path for the selected destination folder.
 
 ### Outputs
 
@@ -223,10 +307,19 @@ Moves an email to a different folder utilizing the `@azure/identity` `DefaultAzu
   - **msg.email.action** _string_ \
     The action performed (`transfer`).
 
+  - **msg.email.userId** _string_ \
+    The resolved UserPrincipalName or Azure Object ID.
+
   - **msg.email.messageId** _string_ \
     The ID of the transferred message.
 
   - **msg.email.destinationId** _string_ \
-    The folder where the message was transferred.
+    The Microsoft Graph ID or well-known name of the destination folder.
+
+  - **msg.email.destinationName** _string_ \
+    The configured destination folder display name or path.
+
+  - **msg.email.apiResponse** _object_ \
+    The Microsoft Graph message object returned after the move operation.
 </script>
 <!-- @formatter:on -->
