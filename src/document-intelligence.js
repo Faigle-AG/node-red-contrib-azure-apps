@@ -1,6 +1,5 @@
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
-    const { DefaultAzureCredential } = require('@azure/identity');
 
     function wait(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
@@ -9,6 +8,7 @@ module.exports = function (RED) {
     function AzureDocumentIntelligenceNode(config) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
+        this.configNode = RED.nodes.getNode(config.config);
         this.endpoint = config.endpoint;
         this.dynamic = config.dynamic;
         this.modelId = config.modelId;
@@ -31,6 +31,8 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
+                if (!node.configNode) throw new Error('Missing Azure configuration');
+
                 let modelRaw = node.dynamic
                     ? msg.document && msg.document.modelId
                     : await node.getTypedProperty(node.modelId, node.modelIdType, msg);
@@ -71,8 +73,7 @@ module.exports = function (RED) {
 
                 node.status.processing('authenticating...');
 
-                const credential = new DefaultAzureCredential();
-                const tokenResponse = await credential.getToken(
+                const accessToken = await node.configNode.getToken(
                     'https://cognitiveservices.azure.com/.default',
                 );
 
@@ -163,7 +164,7 @@ module.exports = function (RED) {
                 const initialResponse = await fetch(targetUrl.toString(), {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${tokenResponse.token}`,
+                        Authorization: `Bearer ${accessToken}`,
                         'Content-Type': contentType,
                     },
                     body: body,
@@ -190,7 +191,7 @@ module.exports = function (RED) {
                     const pollResponse = await fetch(operationLocation, {
                         method: 'GET',
                         headers: {
-                            Authorization: `Bearer ${tokenResponse.token}`,
+                            Authorization: `Bearer ${accessToken}`,
                         },
                     });
 

@@ -1,10 +1,10 @@
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
-    const { DefaultAzureCredential } = require('@azure/identity');
 
     function AzureEmailWriteNode(config) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
+        this.configNode = RED.nodes.getNode(config.config);
         this.userId = config.userId;
         this.userIdType = config.userIdType || 'str';
         this.dynamic = config.dynamic;
@@ -22,6 +22,8 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
+                if (!node.configNode) throw new Error('Missing Azure configuration');
+
                 const userIdRaw = await node.getTypedProperty(node.userId, node.userIdType, msg);
 
                 const currentUserId = String(userIdRaw || '').trim();
@@ -59,8 +61,7 @@ module.exports = function (RED) {
 
                 node.status.processing('authenticating...');
 
-                const credential = new DefaultAzureCredential();
-                const tokenResponse = await credential.getToken(
+                const accessToken = await node.configNode.getToken(
                     'https://graph.microsoft.com/.default',
                 );
 
@@ -135,7 +136,7 @@ module.exports = function (RED) {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${tokenResponse.token}`,
+                        Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(payload),

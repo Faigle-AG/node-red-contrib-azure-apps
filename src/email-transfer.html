@@ -4,6 +4,7 @@
         color: '#0072C6',
         defaults: {
             name: { value: '' },
+            config: { type: 'azure-config', required: true },
             userId: {
                 value: '',
                 required: true,
@@ -69,12 +70,19 @@
             });
 
             function loadFolders(showWarning) {
+                var configId = $('#node-input-config').val();
                 var userId = $('#node-input-userId').val();
                 var userIdType = $('#node-input-userIdType').val();
                 var button = $('#node-input-loadFolders');
                 var selectedDestinationId = folderSelect.val() || currentDestinationId;
                 var selectedDestinationName =
                     $('#node-input-destinationName').val() || currentDestinationName;
+
+                if (!configId || configId === '_ADD_') {
+                    if (showWarning)
+                        RED.notify('Select and deploy an Azure Config first.', 'warning');
+                    return;
+                }
 
                 if (userIdType !== 'str' || !userId || userId.trim() === '') {
                     if (showWarning) {
@@ -86,7 +94,7 @@
                 button.prop('disabled', true);
                 folderSelect.prop('disabled', true);
 
-                $.getJSON('email-transfer/folders', { userId: userId.trim() })
+                $.getJSON('email-transfer/folders', { config: configId, userId: userId.trim() })
                     .done(function (response) {
                         var folders = Array.isArray(response) ? response : response.folders || [];
 
@@ -147,127 +155,94 @@
     });
 </script>
 
-<style>
-    .flex-checkbox-row {
-        display: flex;
-        align-items: center;
-        padding-left: 104px;
-        margin-bottom: 12px;
-    }
-    .flex-checkbox-row input[type='checkbox'] {
-        width: auto !important;
-        margin: 0 8px 0 0 !important;
-    }
-    .flex-checkbox-row label {
-        width: auto !important;
-        margin: 0 !important;
-    }
-
-    fieldset.node-red-fieldset {
-        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
-        padding: 12px !important;
-        margin-bottom: 12px !important;
-        border-radius: 4px !important;
-    }
-
-    fieldset.node-red-fieldset legend {
-        border-bottom: none !important;
-        width: auto !important;
-        padding: 0 5px !important;
-        font-size: 13px !important;
-        font-weight: bold !important;
-        color: var(--red-ui-primary-text-color, #555) !important;
-        margin-bottom: 0 !important;
-    }
-
-    .input-width-70 {
-        width: 70% !important;
-    }
-
-    .folder-select {
-        width: calc(70% - 42px) !important;
-    }
-
-    .folder-load-button {
-        margin-left: 4px !important;
-        min-width: 36px !important;
-    }
-</style>
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
 <script type="text/html" data-template-name="email-transfer">
-    <div class="form-row">
-        <label for="node-input-name">
-            <i class="fa fa-tag"></i>
-            <span>Name</span>
-        </label>
-        <input type="text" id="node-input-name" placeholder="Name" class="input-width-70" />
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <input type="checkbox" id="node-input-dynamic" />
+            <label for="node-input-dynamic">
+                <i class="fa fa-usb"></i>
+                Load from msg.email
+            </label>
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure Configuration</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-input-config">
+                    <i class="fa fa-cogs"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-input-config" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-userId">
+                    <i class="fa fa-user"></i>
+                    User ID / Email
+                </label>
+                <input
+                    type="text"
+                    id="node-input-userId"
+                    placeholder="user@domain.com or variable"
+                />
+                <input type="hidden" id="node-input-userIdType" />
+            </div>
+        </fieldset>
+
+        <fieldset id="email-options-group" class="node-red-fieldset">
+            <legend>Transfer Details</legend>
+
+            <div class="form-row">
+                <label for="node-input-messageId">
+                    <i class="fa fa-file-text-o"></i>
+                    Message ID
+                </label>
+                <input type="text" id="node-input-messageId" />
+                <input type="hidden" id="node-input-messageIdType" />
+            </div>
+
+            <div class="form-row input-button-row">
+                <label for="node-input-destinationId">
+                    <i class="fa fa-folder-open"></i>
+                    Dest. Folder
+                </label>
+                <select id="node-input-destinationId">
+                    <option value="archive">Archive</option>
+                </select>
+                <button
+                    type="button"
+                    id="node-input-loadFolders"
+                    class="red-ui-button"
+                    title="Reload folders"
+                >
+                    <i class="fa fa-refresh"></i>
+                </button>
+                <input type="hidden" id="node-input-destinationName" />
+            </div>
+        </fieldset>
     </div>
-
-    <div class="form-row flex-checkbox-row">
-        <input type="checkbox" id="node-input-dynamic" class="input-width-70" />
-        <label for="node-input-dynamic">
-            <i class="fa fa-usb"></i>
-            Load from msg.email
-        </label>
-    </div>
-
-    <fieldset class="node-red-fieldset">
-        <legend>Azure Configuration</legend>
-
-        <div class="form-row">
-            <label for="node-input-userId">
-                <i class="fa fa-user"></i>
-                User ID / Email
-            </label>
-            <input
-                type="text"
-                id="node-input-userId"
-                class="input-width-70"
-                placeholder="user@domain.com or variable"
-            />
-            <input type="hidden" id="node-input-userIdType" />
-        </div>
-    </fieldset>
-
-    <fieldset id="email-options-group" class="node-red-fieldset">
-        <legend>Transfer Details</legend>
-
-        <div class="form-row">
-            <label for="node-input-messageId">
-                <i class="fa fa-file-text-o"></i>
-                Message ID
-            </label>
-            <input type="text" id="node-input-messageId" class="input-width-70" />
-            <input type="hidden" id="node-input-messageIdType" />
-        </div>
-
-        <div class="form-row">
-            <label for="node-input-destinationId">
-                <i class="fa fa-folder-open"></i>
-                Dest. Folder
-            </label>
-            <select id="node-input-destinationId" class="folder-select">
-                <option value="archive">Archive</option>
-            </select>
-            <button
-                type="button"
-                id="node-input-loadFolders"
-                class="red-ui-button folder-load-button"
-                title="Reload folders"
-            >
-                <i class="fa fa-refresh"></i>
-            </button>
-            <input type="hidden" id="node-input-destinationName" />
-        </div>
-    </fieldset>
 </script>
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
 <script type="text/markdown" data-help-name="email-transfer">
-Moves an email to a selected mail folder utilizing the `@azure/identity` `DefaultAzureCredential`.
+Moves an email to a selected Microsoft Graph mail folder using the selected **Azure Config**.
 
 ### Properties
+
+- **Azure Config** _config_ \
+  Shared Azure authentication configuration. Microsoft Graph requires **Microsoft Entra ID**.
 
 - **Load from msg.email** _boolean_ \
   If enabled, the node will ignore the UI properties and expect `msg.email.messageId` and `msg.email.destinationId` to be provided dynamically.
@@ -281,7 +256,7 @@ Moves an email to a selected mail folder utilizing the `@azure/identity` `Defaul
 - **Dest. Folder** _string_ \
   The Microsoft Graph mail folder ID to which the message will be moved. Use the refresh button to retrieve all root and nested folders for a static User ID / Email.
 
-Folder loading in the editor requires **User ID / Email** to use the static `str` type. Dynamic account values cannot be resolved until the node receives a message.
+Folder loading in the editor requires a deployed **Azure Config** and **User ID / Email** to use the static `str` type. Dynamic account values cannot be resolved until the node receives a message.
 
 ---
 

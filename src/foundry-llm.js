@@ -2,7 +2,6 @@
 
 module.exports = function (RED) {
     const OpenAIModule = require('openai');
-    const { DefaultAzureCredential, getBearerTokenProvider } = require('@azure/identity');
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
     const OpenAI = OpenAIModule.OpenAI || OpenAIModule.default || OpenAIModule;
@@ -115,7 +114,7 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
 
         this.name = config.name;
-        this.authType = config.authType || 'entra';
+        this.configNode = RED.nodes.getNode(config.config);
         this.endpoint = config.endpoint;
         this.endpointType = config.endpointType || 'str';
         this.model = config.model;
@@ -143,11 +142,10 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
-        const credential = node.authType === 'entra' ? new DefaultAzureCredential() : null;
-        const tokenProvider = credential ? getBearerTokenProvider(credential, FOUNDRY_SCOPE) : null;
-
         node.on('input', async function (msg, send, done) {
             try {
+                if (!node.configNode) throw new Error('Missing Azure configuration');
+
                 node.status.processing('calling Azure Foundry');
 
                 const endpointValue = await node.getTypedProperty(
@@ -199,14 +197,14 @@ module.exports = function (RED) {
                 if (temperature !== undefined) requestBody.temperature = temperature;
 
                 let apiKey;
-                if (node.authType === 'apiKey') {
-                    apiKey = node.credentials && node.credentials.apiKey;
-                    if (!apiKey) throw new Error('Azure Foundry API key is missing');
+                if (node.configNode.authType === 'apiKey') {
+                    apiKey = node.configNode.getApiKey();
+                } else if (node.configNode.authType === 'entra') {
+                    apiKey = await node.configNode.getToken(FOUNDRY_SCOPE);
                 } else {
-                    apiKey = await tokenProvider();
-                    if (!apiKey) {
-                        throw new Error('DefaultAzureCredential did not return an access token');
-                    }
+                    throw new Error(
+                        `Azure Foundry requires Entra ID or API key authentication, but Azure Config uses '${node.configNode.authType}'`,
+                    );
                 }
 
                 const client = new OpenAI({
@@ -279,9 +277,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('foundry-llm', AzureFoundryLlmNode, {
-        credentials: {
-            apiKey: { type: 'password' },
-        },
-    });
+    RED.nodes.registerType('foundry-llm', AzureFoundryLlmNode);
 };
