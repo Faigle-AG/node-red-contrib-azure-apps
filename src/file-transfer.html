@@ -1,0 +1,236 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-file-transfer', {
+        category: 'azure',
+        color: '#0072C6',
+        paletteLabel: 'file-transfer',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-config', required: true },
+            shareName: {
+                value: '',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('shareNameType').call(this, v);
+                },
+            },
+            shareNameType: { value: 'str' },
+            dynamic: { value: false },
+            action: {
+                value: 'move',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    return ['move', 'copy', 'delete'].includes(v);
+                },
+            },
+            source: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('sourceType').call(this, v);
+                },
+            },
+            sourceType: { value: 'str' },
+            destination: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+
+                    var action = $('#node-input-action').length
+                        ? $('#node-input-action').val()
+                        : this.action;
+                    if (action === 'delete') return true;
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('destinationType').call(this, v);
+                },
+            },
+            destinationType: { value: 'str' },
+            createDir: { value: true },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-files-o',
+        label: function () {
+            return (
+                this.name ||
+                (!this.dynamic ? (this.action + ' ' + (this.source || '')).trim() : 'file-transfer')
+            );
+        },
+        oneditprepare: function () {
+            $('#node-input-shareName').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-shareNameType'),
+            });
+            $('#node-input-source').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-sourceType'),
+            });
+            $('#node-input-destination').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-destinationType'),
+            });
+
+            var $action = $('#node-input-action');
+            var $actionRadios = $('input[name="node-input-action-radio"]');
+            $actionRadios.filter('[value="' + $action.val() + '"]').prop('checked', true);
+            $actionRadios.on('change', function () {
+                $action.val(this.value).trigger('change');
+            });
+
+            $('#node-input-action').on('change', function () {
+                var transfer = $(this).val() !== 'delete';
+                $('#row-destination').toggle(transfer);
+                $('#row-createDir').toggle(transfer);
+                $('#node-input-destination').trigger('change');
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                $('#file-options-group').toggle(!$(this).prop('checked'));
+                $('#node-input-action').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-file-transfer">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row config-node-row">
+            <label for="node-input-config">
+                <i class="fa fa-cogs"></i>
+                <span>Azure Config</span>
+            </label>
+            <input type="text" id="node-input-config" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-shareName">
+                <i class="fa fa-hdd-o"></i>
+                <span>Share Name</span>
+            </label>
+            <input type="text" id="node-input-shareName" />
+            <input type="hidden" id="node-input-shareNameType" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <input type="checkbox" id="node-input-dynamic" />
+            <label for="node-input-dynamic">
+                <i class="fa fa-usb"></i>
+                Load from msg.file
+            </label>
+        </div>
+
+        <fieldset id="file-options-group" class="node-red-fieldset">
+            <legend>File Options</legend>
+
+            <div class="form-row">
+                <label>
+                    <i class="fa fa-tasks"></i>
+                    Action
+                </label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="move" />
+                        Move / Rename
+                    </label>
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="copy" />
+                        Copy
+                    </label>
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="delete" />
+                        Delete
+                    </label>
+                </div>
+                <input type="hidden" id="node-input-action" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-source">
+                    <i class="fa fa-sign-out"></i>
+                    Source Path
+                </label>
+                <input type="text" id="node-input-source" />
+                <input type="hidden" id="node-input-sourceType" />
+            </div>
+
+            <div class="form-row" id="row-destination">
+                <label for="node-input-destination">
+                    <i class="fa fa-sign-in"></i>
+                    Destination Path
+                </label>
+                <input type="text" id="node-input-destination" />
+                <input type="hidden" id="node-input-destinationType" />
+            </div>
+
+            <div class="form-row flex-checkbox-row" id="row-createDir">
+                <input type="checkbox" id="node-input-createDir" />
+                <label for="node-input-createDir">
+                    <i class="fa fa-plus"></i>
+                    Create target directory
+                </label>
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-file-transfer">
+Moves, renames, copies, or deletes a file inside one Azure Storage file share.
+
+### Properties
+
+- **Azure Config**: shared `azure-config` authentication configuration.
+- **Share Name**: Azure file-share name; always resolved from the configured typed property.
+- **Load from msg.file**: reads `msg.file.action`, `msg.file.source`, optional `msg.file.destination`, and optional `msg.file.createDir`.
+- **Action**: Move / Rename, Copy, or Delete.
+- **Source Path**: source file path inside the share.
+- **Destination Path**: destination file path for Copy and Move / Rename.
+- **Create target directory**: creates missing destination parent directories.
+
+### Dynamic input
+
+```js
+msg.file = {
+    action: 'copy',
+    source: 'inbox/a.txt',
+    destination: 'archive/a.txt',
+    createDir: true
+};
+```
+
+### Output
+
+`msg.file` contains `filetype`, `action`, `source`, `destination`, `path`, and normalized path metadata.
+</script>
+<!-- @formatter:on -->

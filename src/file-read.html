@@ -1,0 +1,222 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-file-read', {
+        category: 'azure',
+        color: '#0072C6',
+        paletteLabel: 'file-read',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-config', required: true },
+            shareName: {
+                value: '',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('shareNameType').call(this, v);
+                },
+            },
+            shareNameType: { value: 'str' },
+            target: {
+                value: 'file',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('targetType').call(this, v);
+                },
+            },
+            targetType: { value: 'msg' },
+            dynamic: { value: false },
+            actionRead: { value: true },
+            actionExists: { value: true },
+            actionStat: { value: true },
+            source: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    ) {
+                        return true;
+                    }
+
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('sourceType').call(this, v);
+                },
+            },
+            sourceType: { value: 'str' },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'file-in.svg',
+        label: function () {
+            if (this.name) return this.name;
+            if (this.dynamic) return 'file-read (dynamic)';
+
+            var acts = [];
+            if (this.actionRead) acts.push('read');
+            if (this.actionExists) acts.push('exists');
+            if (this.actionStat) acts.push('stat');
+
+            var actStr = acts.join('+') || 'no action';
+            return (actStr + ' ' + (this.source || '')).trim() || 'file-read';
+        },
+        oneditprepare: function () {
+            $('#node-input-shareName').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-shareNameType'),
+            });
+
+            $('#node-input-source').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-sourceType'),
+            });
+
+            $('#node-input-target').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-targetType'),
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                if ($(this).prop('checked')) $('#file-options-group').hide();
+                else $('#file-options-group').show();
+
+                $('#node-input-source').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-file-read">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row config-node-row">
+            <label for="node-input-config">
+                <i class="fa fa-cogs"></i>
+                <span>Azure Config</span>
+            </label>
+            <input type="text" id="node-input-config" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-shareName">
+                <i class="fa fa-hdd-o"></i>
+                <span>Share Name</span>
+            </label>
+            <input type="text" id="node-input-shareName" />
+            <input type="hidden" id="node-input-shareNameType" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <input type="checkbox" id="node-input-dynamic" />
+            <label for="node-input-dynamic">
+                <i class="fa fa-usb"></i>
+                Load from msg.file
+            </label>
+        </div>
+
+        <fieldset id="file-options-group" class="node-red-fieldset">
+            <legend>File Options</legend>
+
+            <div class="form-row" id="row-action">
+                <label>
+                    <i class="fa fa-tasks"></i>
+                    Actions
+                </label>
+
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="node-input-actionRead" />
+                        Read
+                    </label>
+
+                    <label>
+                        <input type="checkbox" id="node-input-actionExists" />
+                        Check Exists
+                    </label>
+
+                    <label>
+                        <input type="checkbox" id="node-input-actionStat" />
+                        Get Stat
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row" id="row-source">
+                <label for="node-input-source">
+                    <i class="fa fa-sign-out"></i>
+                    Source Path
+                </label>
+                <input type="text" id="node-input-source" />
+                <input type="hidden" id="node-input-sourceType" />
+            </div>
+        </fieldset>
+
+        <div class="form-row">
+            <label for="node-input-target">
+                <i class="fa fa-arrow-right"></i>
+                <span>Output To</span>
+            </label>
+            <input type="text" id="node-input-target" />
+            <input type="hidden" id="node-input-targetType" />
+        </div>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-file-read">
+Reads a file from an Azure Storage file share, checks whether it exists, and/or retrieves its properties.
+
+### Properties
+
+- **Azure Config**: shared `azure-config` authentication configuration.
+- **Share Name**: Azure file-share name. This is always resolved from the configured typed property, including in dynamic mode.
+- **Load from msg.file**: when enabled, the node reads `msg.file.action` and `msg.file.path` instead of the static File Options.
+- **Actions**: one or more of Read, Check Exists, and Get Stat.
+- **Source Path**: path to the file inside the Azure file share.
+- **Output To**: target `msg`, `flow`, or `global` property receiving the file object.
+
+### Dynamic input
+
+```js
+msg.file = {
+    action: ['read', 'exists', 'stat'],
+    path: 'folder/example.txt'
+};
+```
+
+`action` may also be a single string such as `read`, a delimited string such as `read+stat`, or an object such as `{ read: true, stat: true }`.
+
+### Output
+
+The output follows the same basic `msg.file` contract as the local `file-read` node:
+
+```js
+msg.file = {
+    filetype: 'file',
+    path: 'folder/example.txt',
+    dir: 'folder',
+    name: 'example',
+    base: 'example.txt',
+    ext: '.txt',
+    data: Buffer(...),
+    exists: true,
+    stats: { ... }
+};
+```
+
+Fields are included according to the selected actions.
+</script>
+<!-- @formatter:on -->

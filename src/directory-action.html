@@ -1,0 +1,210 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-directory-action', {
+        category: 'azure',
+        color: '#0072C6',
+        paletteLabel: 'directory-action',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-config', required: true },
+            shareName: {
+                value: '',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('shareNameType').call(this, v);
+                },
+            },
+            shareNameType: { value: 'str' },
+            dynamic: { value: false },
+            action: { value: 'list' },
+            source: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    )
+                        return true;
+
+                    var action = $('#node-input-action').length
+                        ? $('#node-input-action').val()
+                        : this.action;
+                    if (action === 'list' && (!v || v.trim() === '')) return true;
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('sourceType').call(this, v);
+                },
+            },
+            sourceType: { value: 'str' },
+            property: { value: 'file.content' },
+            propertyType: { value: 'msg' },
+            recursive: { value: true },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-folder-o',
+        label: function () {
+            return (
+                this.name ||
+                (!this.dynamic
+                    ? (this.action + ' ' + (this.source || '')).trim()
+                    : 'directory-action')
+            );
+        },
+        oneditprepare: function () {
+            $('#node-input-shareName').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-shareNameType'),
+            });
+            $('#node-input-source').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-sourceType'),
+            });
+            $('#node-input-property').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-propertyType'),
+            });
+
+            var $action = $('#node-input-action');
+            var $actionRadios = $('input[name="node-input-action-radio"]');
+            $actionRadios.filter('[value="' + $action.val() + '"]').prop('checked', true);
+            $actionRadios.on('change', function () {
+                $action.val(this.value).trigger('change');
+            });
+
+            $('#node-input-action').on('change', function () {
+                var action = $(this).val();
+                $('#row-recursive').toggle(action === 'create' || action === 'delete');
+                $('#row-recursive label').html(
+                    action === 'delete'
+                        ? '<i class="fa fa-trash"></i> Delete recursive inner folders'
+                        : '<i class="fa fa-plus"></i> Create parent folders',
+                );
+                $('#node-input-source').trigger('change');
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                $('#directory-options-group').toggle(!$(this).prop('checked'));
+                $('#node-input-action').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-directory-action">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row config-node-row">
+            <label for="node-input-config">
+                <i class="fa fa-cogs"></i>
+                <span>Azure Config</span>
+            </label>
+            <input type="text" id="node-input-config" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-shareName">
+                <i class="fa fa-hdd-o"></i>
+                <span>Share Name</span>
+            </label>
+            <input type="text" id="node-input-shareName" />
+            <input type="hidden" id="node-input-shareNameType" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <input type="checkbox" id="node-input-dynamic" />
+            <label for="node-input-dynamic">
+                <i class="fa fa-usb"></i>
+                Load from msg.file
+            </label>
+        </div>
+
+        <fieldset id="directory-options-group" class="node-red-fieldset">
+            <legend>Directory Options</legend>
+
+            <div class="form-row">
+                <label>
+                    <i class="fa fa-tasks"></i>
+                    Action
+                </label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="create" />
+                        Create
+                    </label>
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="delete" />
+                        Delete
+                    </label>
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="list" />
+                        List Contents
+                    </label>
+                </div>
+                <input type="hidden" id="node-input-action" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-source">
+                    <i class="fa fa-folder-open"></i>
+                    Source Path
+                </label>
+                <input
+                    type="text"
+                    id="node-input-source"
+                    placeholder="Blank lists the share root"
+                />
+                <input type="hidden" id="node-input-sourceType" />
+            </div>
+
+            <div class="form-row flex-checkbox-row" id="row-recursive">
+                <input type="checkbox" id="node-input-recursive" />
+                <label for="node-input-recursive">
+                    <i class="fa fa-plus"></i>
+                    Create parent folders
+                </label>
+            </div>
+        </fieldset>
+
+        <div class="form-row">
+            <label for="node-input-property">
+                <i class="fa fa-arrow-right"></i>
+                <span>Output To</span>
+            </label>
+            <input type="text" id="node-input-property" />
+            <input type="hidden" id="node-input-propertyType" />
+        </div>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-directory-action">
+Creates, deletes, or lists directories in an Azure Storage file share.
+
+### Properties
+
+- **Azure Config**: shared `azure-config` authentication configuration.
+- **Share Name**: Azure file-share name; always resolved from the configured typed property.
+- **Load from msg.file**: reads `msg.file.action`, `msg.file.path`, and optional `msg.file.recursive`.
+- **Action**: Create, Delete, or List Contents.
+- **Source Path**: path inside the share. For List Contents, an empty path lists the share root.
+- **Recursive**: creates missing parent directories for Create or recursively removes children for Delete.
+- **Output To**: Create/Delete writes `true`; List writes the complete directory metadata object including `contents`.
+
+List output uses the same simple contents contract as the local `directory-action`: an array of child names.
+</script>
+<!-- @formatter:on -->
