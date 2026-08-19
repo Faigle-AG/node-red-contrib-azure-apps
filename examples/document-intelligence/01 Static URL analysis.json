@@ -1,0 +1,96 @@
+[
+  {
+    "id": "azdi1001",
+    "type": "inject",
+    "name": "Analyze document",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 130,
+    "y": 160,
+    "wires": [
+      [
+        "azdi1004"
+      ]
+    ]
+  },
+  {
+    "id": "azdi1004",
+    "type": "azure-file-read",
+    "name": "read sample",
+    "config": "azdi1000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "target": "file",
+    "targetType": "msg",
+    "dynamic": false,
+    "actionRead": true,
+    "actionExists": true,
+    "actionStat": true,
+    "source": "examples/sample.pdf",
+    "sourceType": "str",
+    "x": 350,
+    "y": 160,
+    "wires": [
+      [
+        "azdi1002"
+      ]
+    ]
+  },
+  {
+    "id": "azdi1002",
+    "type": "document-intelligence",
+    "name": "Analyze public document",
+    "config": "azdi1000",
+    "dynamic": false,
+    "endpoint": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
+    "modelId": "prebuilt-layout",
+    "modelIdType": "str",
+    "documentData": "file.data",
+    "documentDataType": "msg",
+    "inputType": "buffer",
+    "outputContentFormat": "markdown",
+    "pages": "",
+    "locale": "",
+    "stringIndexType": "utf16CodeUnit",
+    "features": "",
+    "queryFields": "",
+    "outputOptions": "",
+    "output": "analysis",
+    "outputType": "msg",
+    "x": 610,
+    "y": 160,
+    "wires": [
+      [
+        "azdi1003"
+      ]
+    ]
+  },
+  {
+    "id": "azdi1003",
+    "type": "debug",
+    "name": "msg.analysis",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "analysis",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 870,
+    "y": 160,
+    "wires": []
+  },
+  {
+    "id": "azdi1000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

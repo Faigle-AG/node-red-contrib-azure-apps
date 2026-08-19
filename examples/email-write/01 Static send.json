@@ -1,0 +1,68 @@
+[
+  {
+    "id": "azew1001",
+    "type": "inject",
+    "name": "Send email",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azew1002"
+      ]
+    ]
+  },
+  {
+    "id": "azew1002",
+    "type": "email-write",
+    "name": "Send hello",
+    "config": "azew1000",
+    "userId": "sender@example.com",
+    "userIdType": "str",
+    "dynamic": false,
+    "to": "recipient@example.com",
+    "toType": "str",
+    "subject": "Hello from Node-RED",
+    "subjectType": "str",
+    "body": "<p>Hello from the Azure email node.</p>",
+    "bodyType": "str",
+    "attachments": "",
+    "attachmentsType": "msg",
+    "x": 380,
+    "y": 120,
+    "wires": [
+      [
+        "azew1003"
+      ]
+    ]
+  },
+  {
+    "id": "azew1003",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 590,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azew1000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

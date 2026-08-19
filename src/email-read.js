@@ -1,6 +1,5 @@
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
-    const { DefaultAzureCredential } = require('@azure/identity');
 
     async function getGraphCollection(url, token) {
         var result = [];
@@ -67,7 +66,14 @@ module.exports = function (RED) {
         RED.auth.needsPermission('email-read.read'),
         async function (req, res) {
             try {
+                const configNode = RED.nodes.getNode(String(req.query.config || '').trim());
                 const userId = String(req.query.userId || '').trim();
+
+                if (!configNode) {
+                    return res.status(400).json({
+                        message: 'A deployed Azure Config is required',
+                    });
+                }
 
                 if (!userId) {
                     return res.status(400).json({
@@ -75,12 +81,11 @@ module.exports = function (RED) {
                     });
                 }
 
-                const credential = new DefaultAzureCredential();
-                const tokenResponse = await credential.getToken(
+                const accessToken = await configNode.getToken(
                     'https://graph.microsoft.com/.default',
                 );
 
-                const folders = await getMailFolders(userId, tokenResponse.token);
+                const folders = await getMailFolders(userId, accessToken);
 
                 res.json(folders);
             } catch (err) {
@@ -95,6 +100,7 @@ module.exports = function (RED) {
     function AzureEmailReadNode(config) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
+        this.configNode = RED.nodes.getNode(config.config);
         this.dynamic = config.dynamic;
         this.userId = config.userId;
         this.userIdType = config.userIdType || 'str';
@@ -110,6 +116,8 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
+                if (!node.configNode) throw new Error('Missing Azure configuration');
+
                 const currentFolderId =
                     node.dynamic && msg.email && msg.email.folderId !== undefined
                         ? msg.email.folderId
@@ -152,8 +160,7 @@ module.exports = function (RED) {
 
                 node.status.processing('authenticating...');
 
-                const credential = new DefaultAzureCredential();
-                const tokenResponse = await credential.getToken(
+                const accessToken = await node.configNode.getToken(
                     'https://graph.microsoft.com/.default',
                 );
 
@@ -165,7 +172,7 @@ module.exports = function (RED) {
 
                 const response = await fetch(url, {
                     headers: {
-                        Authorization: `Bearer ${tokenResponse.token}`,
+                        Authorization: `Bearer ${accessToken}`,
                         Accept: 'application/json',
                     },
                 });

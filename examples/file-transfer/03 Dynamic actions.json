@@ -1,0 +1,120 @@
+[
+  {
+    "id": "azt3001",
+    "type": "inject",
+    "name": "Dynamic copy",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"copy\",\"source\":\"examples/copy-source.txt\",\"destination\":\"examples/dynamic-copy.txt\",\"createDir\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 250,
+    "y": 440,
+    "wires": [
+      [
+        "azt3004"
+      ]
+    ]
+  },
+  {
+    "id": "azt3002",
+    "type": "inject",
+    "name": "Dynamic move",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"move\",\"source\":\"examples/dynamic-copy.txt\",\"destination\":\"examples/dynamic-moved.txt\",\"createDir\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 250,
+    "y": 500,
+    "wires": [
+      [
+        "azt3004"
+      ]
+    ]
+  },
+  {
+    "id": "azt3003",
+    "type": "inject",
+    "name": "Dynamic delete",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"delete\",\"source\":\"examples/dynamic-moved.txt\"}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 250,
+    "y": 560,
+    "wires": [
+      [
+        "azt3004"
+      ]
+    ]
+  },
+  {
+    "id": "azt3004",
+    "type": "azure-file-transfer",
+    "name": "Dynamic file transfer",
+    "config": "azt3000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": true,
+    "action": "move",
+    "source": "",
+    "sourceType": "str",
+    "destination": "",
+    "destinationType": "str",
+    "createDir": true,
+    "x": 520,
+    "y": 500,
+    "wires": [
+      [
+        "azt3005"
+      ]
+    ]
+  },
+  {
+    "id": "azt3005",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 750,
+    "y": 500,
+    "wires": []
+  },
+  {
+    "id": "azt3000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

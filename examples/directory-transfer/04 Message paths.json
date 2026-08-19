@@ -1,0 +1,77 @@
+[
+  {
+    "id": "azdt4001",
+    "type": "inject",
+    "name": "Set source + destination",
+    "props": [
+      {
+        "p": "sourcePath",
+        "v": "examples/input",
+        "vt": "str"
+      },
+      {
+        "p": "destinationPath",
+        "v": "examples/from-message",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 190,
+    "y": 120,
+    "wires": [
+      [
+        "azdt4002"
+      ]
+    ]
+  },
+  {
+    "id": "azdt4002",
+    "type": "azure-directory-transfer",
+    "name": "Copy paths from msg",
+    "config": "azdt4000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "copy",
+    "source": "sourcePath",
+    "sourceType": "msg",
+    "destination": "destinationPath",
+    "destinationType": "msg",
+    "recursive": true,
+    "x": 440,
+    "y": 120,
+    "wires": [
+      [
+        "azdt4003"
+      ]
+    ]
+  },
+  {
+    "id": "azdt4003",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 680,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azdt4000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

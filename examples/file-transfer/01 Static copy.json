@@ -1,0 +1,94 @@
+[
+  {
+    "id": "azt1001",
+    "type": "inject",
+    "name": "Copy settings.json",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "payload": "Temporary Azure file to move",
+    "payloadType": "str",
+    "x": 230,
+    "y": 180,
+    "wires": [
+      [
+        "azt1004"
+      ]
+    ]
+  },
+  {
+    "id": "azt1004",
+    "type": "azure-file-write",
+    "name": "Create copy-source.txt",
+    "config": "azt1000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "write",
+    "target": "examples/copy-source.txt",
+    "targetType": "str",
+    "data": "payload",
+    "dataType": "msg",
+    "createDir": true,
+    "x": 470,
+    "y": 180,
+    "wires": [
+      [
+        "azt1002"
+      ]
+    ]
+  },
+  {
+    "id": "azt1002",
+    "type": "azure-file-transfer",
+    "name": "Copy source",
+    "config": "azt1000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "copy",
+    "source": "examples/copy-source.txt",
+    "sourceType": "str",
+    "destination": "examples/copied.txt",
+    "destinationType": "str",
+    "createDir": true,
+    "x": 710,
+    "y": 180,
+    "wires": [
+      [
+        "azt1003"
+      ]
+    ]
+  },
+  {
+    "id": "azt1003",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 920,
+    "y": 180,
+    "wires": []
+  },
+  {
+    "id": "azt1000",
+    "type": "azure-config",
+    "name": "Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

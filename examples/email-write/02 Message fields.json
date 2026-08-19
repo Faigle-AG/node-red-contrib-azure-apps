@@ -1,0 +1,84 @@
+[
+  {
+    "id": "azew2001",
+    "type": "inject",
+    "name": "Set email fields",
+    "props": [
+      {
+        "p": "recipient",
+        "v": "recipient@example.com",
+        "vt": "str"
+      },
+      {
+        "p": "subject",
+        "v": "Message-driven email",
+        "vt": "str"
+      },
+      {
+        "p": "payload",
+        "v": "<p>The recipient, subject and body came from msg.</p>",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azew2002"
+      ]
+    ]
+  },
+  {
+    "id": "azew2002",
+    "type": "email-write",
+    "name": "Send from message fields",
+    "config": "azew2000",
+    "userId": "sender@example.com",
+    "userIdType": "str",
+    "dynamic": false,
+    "to": "recipient",
+    "toType": "msg",
+    "subject": "subject",
+    "subjectType": "msg",
+    "body": "payload",
+    "bodyType": "msg",
+    "attachments": "",
+    "attachmentsType": "msg",
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azew2003"
+      ]
+    ]
+  },
+  {
+    "id": "azew2003",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 660,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azew2000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

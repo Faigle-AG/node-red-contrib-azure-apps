@@ -4,6 +4,7 @@
         color: '#0072C6',
         defaults: {
             name: { value: '' },
+            config: { type: 'azure-config', required: true },
             userId: {
                 value: '',
                 required: true,
@@ -118,126 +119,102 @@
     });
 </script>
 
-<style>
-    .flex-checkbox-row {
-        display: flex;
-        align-items: center;
-        padding-left: 104px;
-        margin-bottom: 12px;
-    }
-    .flex-checkbox-row input[type='checkbox'] {
-        width: auto !important;
-        margin: 0 8px 0 0 !important;
-    }
-    .flex-checkbox-row label {
-        width: auto !important;
-        margin: 0 !important;
-    }
-
-    fieldset.node-red-fieldset {
-        border: 1px solid var(--red-ui-form-input-border-color, #ccc) !important;
-        padding: 12px !important;
-        margin-bottom: 12px !important;
-        border-radius: 4px !important;
-    }
-
-    fieldset.node-red-fieldset legend {
-        border-bottom: none !important;
-        width: auto !important;
-        padding: 0 5px !important;
-        font-size: 13px !important;
-        font-weight: bold !important;
-        color: var(--red-ui-primary-text-color, #555) !important;
-        margin-bottom: 0 !important;
-    }
-
-    .input-width-70 {
-        width: 70% !important;
-    }
-</style>
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
 <script type="text/html" data-template-name="email-write">
-    <div class="form-row">
-        <label for="node-input-name">
-            <i class="fa fa-tag"></i>
-            <span>Name</span>
-        </label>
-        <input type="text" id="node-input-name" placeholder="Name" class="input-width-70" />
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <input type="checkbox" id="node-input-dynamic" />
+            <label for="node-input-dynamic">
+                <i class="fa fa-usb"></i>
+                Load from msg.email
+            </label>
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure Configuration</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-input-config">
+                    <i class="fa fa-cogs"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-input-config" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-userId">
+                    <i class="fa fa-user"></i>
+                    User ID / Email
+                </label>
+                <input
+                    type="text"
+                    id="node-input-userId"
+                    placeholder="user@domain.com or variable"
+                />
+                <input type="hidden" id="node-input-userIdType" />
+            </div>
+        </fieldset>
+
+        <fieldset id="email-options-group" class="node-red-fieldset">
+            <legend>Message Details</legend>
+
+            <div class="form-row">
+                <label for="node-input-to">
+                    <i class="fa fa-envelope"></i>
+                    To
+                </label>
+                <input type="text" id="node-input-to" />
+                <input type="hidden" id="node-input-toType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-subject">
+                    <i class="fa fa-header"></i>
+                    Subject
+                </label>
+                <input type="text" id="node-input-subject" />
+                <input type="hidden" id="node-input-subjectType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-body">
+                    <i class="fa fa-align-left"></i>
+                    Body
+                </label>
+                <input type="text" id="node-input-body" />
+                <input type="hidden" id="node-input-bodyType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-attachments">
+                    <i class="fa fa-paperclip"></i>
+                    Attachments
+                </label>
+                <input type="text" id="node-input-attachments" />
+                <input type="hidden" id="node-input-attachmentsType" />
+            </div>
+        </fieldset>
     </div>
-
-    <div class="form-row flex-checkbox-row">
-        <input type="checkbox" id="node-input-dynamic" class="input-width-70" />
-        <label for="node-input-dynamic">
-            <i class="fa fa-usb"></i>
-            Load from msg.email
-        </label>
-    </div>
-
-    <fieldset class="node-red-fieldset">
-        <legend>Azure Configuration</legend>
-
-        <div class="form-row">
-            <label for="node-input-userId">
-                <i class="fa fa-user"></i>
-                User ID / Email
-            </label>
-            <input
-                type="text"
-                id="node-input-userId"
-                class="input-width-70"
-                placeholder="user@domain.com or variable"
-            />
-            <input type="hidden" id="node-input-userIdType" />
-        </div>
-    </fieldset>
-
-    <fieldset id="email-options-group" class="node-red-fieldset">
-        <legend>Message Details</legend>
-
-        <div class="form-row">
-            <label for="node-input-to">
-                <i class="fa fa-envelope"></i>
-                To
-            </label>
-            <input type="text" id="node-input-to" class="input-width-70" />
-            <input type="hidden" id="node-input-toType" />
-        </div>
-
-        <div class="form-row">
-            <label for="node-input-subject">
-                <i class="fa fa-header"></i>
-                Subject
-            </label>
-            <input type="text" id="node-input-subject" class="input-width-70" />
-            <input type="hidden" id="node-input-subjectType" />
-        </div>
-
-        <div class="form-row">
-            <label for="node-input-body">
-                <i class="fa fa-align-left"></i>
-                Body
-            </label>
-            <input type="text" id="node-input-body" class="input-width-70" />
-            <input type="hidden" id="node-input-bodyType" />
-        </div>
-
-        <div class="form-row">
-            <label for="node-input-attachments">
-                <i class="fa fa-paperclip"></i>
-                Attachments
-            </label>
-            <input type="text" id="node-input-attachments" class="input-width-70" />
-            <input type="hidden" id="node-input-attachmentsType" />
-        </div>
-    </fieldset>
 </script>
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
 <script type="text/markdown" data-help-name="email-write">
-Sends an email from an Azure user's mailbox utilizing the `@azure/identity` `DefaultAzureCredential`.
+Sends an email from an Azure user's mailbox through Microsoft Graph using the selected **Azure Config**.
 
 ### Properties
+
+- **Azure Config** _config_ \
+  Shared Azure authentication configuration. Microsoft Graph requires **Microsoft Entra ID**.
 
 - **Load from msg.email** _boolean_ \
   If enabled, the node ignores the UI properties and expects `msg.email.to`, `msg.email.subject`, `msg.email.body`, and optionally `msg.email.attachments` to be provided dynamically.

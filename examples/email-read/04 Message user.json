@@ -1,0 +1,72 @@
+[
+  {
+    "id": "azer4001",
+    "type": "inject",
+    "name": "Set msg.mailbox",
+    "props": [
+      {
+        "p": "mailbox",
+        "v": "user@example.com",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azer4002"
+      ]
+    ]
+  },
+  {
+    "id": "azer4002",
+    "type": "email-read",
+    "name": "Read mailbox from msg",
+    "config": "azer4000",
+    "dynamic": false,
+    "userId": "mailbox",
+    "userIdType": "msg",
+    "folderId": "inbox",
+    "folderName": "Inbox",
+    "limit": 10,
+    "downloadAttachments": true,
+    "output": "emails",
+    "outputType": "msg",
+    "x": 420,
+    "y": 120,
+    "wires": [
+      [
+        "azer4003"
+      ]
+    ]
+  },
+  {
+    "id": "azer4003",
+    "type": "debug",
+    "name": "msg.emails",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "emails",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 640,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azer4000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

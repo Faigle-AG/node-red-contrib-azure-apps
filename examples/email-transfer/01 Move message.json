@@ -1,0 +1,70 @@
+[
+  {
+    "id": "azet1001",
+    "type": "inject",
+    "name": "Set message ID",
+    "props": [
+      {
+        "p": "messageId",
+        "v": "REPLACE-WITH-GRAPH-MESSAGE-ID",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azet1002"
+      ]
+    ]
+  },
+  {
+    "id": "azet1002",
+    "type": "email-transfer",
+    "name": "Move to Archive",
+    "config": "azet1000",
+    "userId": "user@example.com",
+    "userIdType": "str",
+    "dynamic": false,
+    "messageId": "messageId",
+    "messageIdType": "msg",
+    "destinationId": "archive",
+    "destinationName": "Archive",
+    "x": 390,
+    "y": 120,
+    "wires": [
+      [
+        "azet1003"
+      ]
+    ]
+  },
+  {
+    "id": "azet1003",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 600,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azet1000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

@@ -1,0 +1,226 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-file-write', {
+        category: 'azure',
+        color: '#0072C6',
+        paletteLabel: 'file-write',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-config', required: true },
+            shareName: {
+                value: '',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('shareNameType').call(this, v);
+                },
+            },
+            shareNameType: { value: 'str' },
+            dynamic: { value: false },
+            action: {
+                value: 'write',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    ) {
+                        return true;
+                    }
+                    return v === 'write' || v === 'append';
+                },
+            },
+            target: {
+                value: '',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    ) {
+                        return true;
+                    }
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('targetType').call(this, v);
+                },
+            },
+            targetType: { value: 'str' },
+            data: {
+                value: 'file.data',
+                validate: function (v) {
+                    if (
+                        $('#node-input-dynamic').length
+                            ? $('#node-input-dynamic').prop('checked')
+                            : this.dynamic
+                    ) {
+                        return true;
+                    }
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('dataType').call(this, v);
+                },
+            },
+            dataType: { value: 'msg' },
+            createDir: { value: true },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'file-out.svg',
+        label: function () {
+            return (
+                this.name ||
+                (!this.dynamic ? (this.action + ' ' + (this.target || '')).trim() : 'file-write')
+            );
+        },
+        oneditprepare: function () {
+            $('#node-input-shareName').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-shareNameType'),
+            });
+
+            $('#node-input-target').typedInput({
+                default: 'str',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-targetType'),
+            });
+
+            $('#node-input-data').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
+                typeField: $('#node-input-dataType'),
+            });
+
+            var $action = $('#node-input-action');
+            var $actionRadios = $('input[name="node-input-action-radio"]');
+            $actionRadios.filter('[value="' + $action.val() + '"]').prop('checked', true);
+            $actionRadios.on('change', function () {
+                $action.val(this.value).trigger('change');
+            });
+
+            $('#node-input-dynamic').on('change', function () {
+                $('#file-options-group').toggle(!$(this).prop('checked'));
+                $('#node-input-target').trigger('change');
+                $('#node-input-data').trigger('change');
+            });
+
+            $('#node-input-dynamic').trigger('change');
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-file-write">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row config-node-row">
+            <label for="node-input-config">
+                <i class="fa fa-cogs"></i>
+                <span>Azure Config</span>
+            </label>
+            <input type="text" id="node-input-config" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-shareName">
+                <i class="fa fa-hdd-o"></i>
+                <span>Share Name</span>
+            </label>
+            <input type="text" id="node-input-shareName" />
+            <input type="hidden" id="node-input-shareNameType" />
+        </div>
+
+        <div class="form-row flex-checkbox-row">
+            <input type="checkbox" id="node-input-dynamic" />
+            <label for="node-input-dynamic">
+                <i class="fa fa-usb"></i>
+                Load from msg.file
+            </label>
+        </div>
+
+        <fieldset id="file-options-group" class="node-red-fieldset">
+            <legend>File Options</legend>
+
+            <div class="form-row">
+                <label>
+                    <i class="fa fa-tasks"></i>
+                    Action
+                </label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="write" />
+                        Write
+                    </label>
+                    <label>
+                        <input type="radio" name="node-input-action-radio" value="append" />
+                        Append
+                    </label>
+                </div>
+                <input type="hidden" id="node-input-action" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-target">
+                    <i class="fa fa-sign-in"></i>
+                    Destination Path
+                </label>
+                <input type="text" id="node-input-target" />
+                <input type="hidden" id="node-input-targetType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-data">
+                    <i class="fa fa-envelope"></i>
+                    Data
+                </label>
+                <input type="text" id="node-input-data" />
+                <input type="hidden" id="node-input-dataType" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-createDir" />
+                <label for="node-input-createDir">
+                    <i class="fa fa-plus"></i>
+                    Create target directory
+                </label>
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-file-write">
+Writes or appends data to a file in an Azure Storage file share.
+
+### Properties
+
+- **Azure Config**: shared `azure-config` authentication configuration.
+- **Share Name**: Azure file-share name; always resolved from the configured typed property.
+- **Load from msg.file**: reads `msg.file.action`, `msg.file.path`, `msg.file.data`, and optional `msg.file.createDir`.
+- **Action**: `write` replaces/creates the file; `append` appends to the existing file or creates it when missing.
+- **Destination Path**: file path inside the share.
+- **Data**: Buffer, ArrayBuffer, typed array, string, primitive, or object. Objects are JSON-stringified.
+- **Create target directory**: creates missing parent directories before writing.
+
+### Dynamic input
+
+```js
+msg.file = {
+    action: 'write',
+    path: 'folder/example.json',
+    data: { hello: 'world' },
+    createDir: true
+};
+```
+
+### Output
+
+The node preserves the input message and merges Azure file path metadata into `msg.file`.
+</script>
+<!-- @formatter:on -->

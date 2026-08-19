@@ -1,0 +1,74 @@
+[
+  {
+    "id": "azew4001",
+    "type": "inject",
+    "name": "Send with attachment",
+    "props": [
+      {
+        "p": "email",
+        "v": "{\"to\":\"recipient@example.com\",\"subject\":\"Email with attachment\",\"body\":\"<p>This email contains a small text attachment.</p>\",\"attachments\":[{\"name\":\"hello.txt\",\"contentType\":\"text/plain\",\"content\":\"SGVsbG8gZnJvbSBOb2RlLVJFRCENCg==\"}]}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azew4002"
+      ]
+    ]
+  },
+  {
+    "id": "azew4002",
+    "type": "email-write",
+    "name": "Dynamic email + attachment",
+    "config": "azew4000",
+    "userId": "sender@example.com",
+    "userIdType": "str",
+    "dynamic": true,
+    "to": "",
+    "toType": "str",
+    "subject": "",
+    "subjectType": "str",
+    "body": "",
+    "bodyType": "str",
+    "attachments": "",
+    "attachmentsType": "msg",
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azew4003"
+      ]
+    ]
+  },
+  {
+    "id": "azew4003",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 660,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azew4000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

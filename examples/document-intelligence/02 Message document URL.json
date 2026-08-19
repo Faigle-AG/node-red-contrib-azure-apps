@@ -1,0 +1,79 @@
+[
+  {
+    "id": "azdi2001",
+    "type": "inject",
+    "name": "Set msg.documentUrl",
+    "props": [
+      {
+        "p": "documentUrl",
+        "v": "https://example-files.online-convert.com/document/pdf/example.pdf",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 140,
+    "y": 300,
+    "wires": [
+      [
+        "azdi2002"
+      ]
+    ]
+  },
+  {
+    "id": "azdi2002",
+    "type": "document-intelligence",
+    "name": "Analyze URL from msg",
+    "config": "azdi2000",
+    "dynamic": false,
+    "endpoint": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
+    "modelId": "prebuilt-layout",
+    "modelIdType": "str",
+    "documentData": "documentUrl",
+    "documentDataType": "msg",
+    "inputType": "url",
+    "outputContentFormat": "markdown",
+    "pages": "",
+    "locale": "",
+    "stringIndexType": "utf16CodeUnit",
+    "features": "",
+    "queryFields": "",
+    "outputOptions": "",
+    "output": "analysis",
+    "outputType": "msg",
+    "x": 380,
+    "y": 300,
+    "wires": [
+      [
+        "azdi2003"
+      ]
+    ]
+  },
+  {
+    "id": "azdi2003",
+    "type": "debug",
+    "name": "msg.analysis",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "analysis",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 610,
+    "y": 300,
+    "wires": []
+  },
+  {
+    "id": "azdi2000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

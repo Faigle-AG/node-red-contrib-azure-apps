@@ -1,0 +1,72 @@
+[
+  {
+    "id": "azda4001",
+    "type": "inject",
+    "name": "Set msg.directoryPath",
+    "props": [
+      {
+        "p": "directoryPath",
+        "v": "examples/input",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 190,
+    "y": 120,
+    "wires": [
+      [
+        "azda4002"
+      ]
+    ]
+  },
+  {
+    "id": "azda4002",
+    "type": "azure-directory-action",
+    "name": "List path from msg",
+    "config": "azda4000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "list",
+    "source": "directoryPath",
+    "sourceType": "msg",
+    "property": "result",
+    "propertyType": "msg",
+    "recursive": true,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azda4003"
+      ]
+    ]
+  },
+  {
+    "id": "azda4003",
+    "type": "debug",
+    "name": "msg.result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "result",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azda4000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]
