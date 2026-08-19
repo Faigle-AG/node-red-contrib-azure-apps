@@ -1,0 +1,72 @@
+[
+  {
+    "id": "azw2001",
+    "type": "inject",
+    "name": "Append log line",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "payload": "$now() & \" - New Azure log entry\\n\"",
+    "payloadType": "jsonata",
+    "x": 190,
+    "y": 120,
+    "wires": [
+      [
+        "azw2002"
+      ]
+    ]
+  },
+  {
+    "id": "azw2002",
+    "type": "azure-file-write",
+    "name": "Append application.log",
+    "config": "azw2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "append",
+    "target": "examples/output/application.log",
+    "targetType": "str",
+    "data": "payload",
+    "dataType": "msg",
+    "createDir": true,
+    "x": 440,
+    "y": 120,
+    "wires": [
+      [
+        "azw2003"
+      ]
+    ]
+  },
+  {
+    "id": "azw2003",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 680,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azw2000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

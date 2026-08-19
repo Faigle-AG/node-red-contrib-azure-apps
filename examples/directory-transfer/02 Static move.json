@@ -1,0 +1,110 @@
+[
+  {
+    "id": "azdt2001",
+    "type": "inject",
+    "name": "Create source directory",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 180,
+    "y": 200,
+    "wires": [
+      [
+        "azdt2002"
+      ]
+    ]
+  },
+  {
+    "id": "azdt2002",
+    "type": "azure-directory-action",
+    "name": "Create move-source",
+    "config": "azdt2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "create",
+    "source": "examples/source",
+    "sourceType": "str",
+    "property": "result",
+    "propertyType": "msg",
+    "recursive": true,
+    "x": 420,
+    "y": 200,
+    "wires": [
+      [
+        "azdt2003"
+      ]
+    ]
+  },
+  {
+    "id": "azdt2003",
+    "type": "azure-file-write",
+    "name": "create example.txt",
+    "config": "azdt2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "write",
+    "target": "examples/source/example.txt",
+    "targetType": "str",
+    "data": "Directory move example",
+    "dataType": "str",
+    "createDir": true,
+    "x": 640,
+    "y": 200,
+    "wires": [
+      [
+        "azdt2004"
+      ]
+    ]
+  },
+  {
+    "id": "azdt2004",
+    "type": "azure-directory-transfer",
+    "name": "Move directory",
+    "config": "azdt2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "move",
+    "source": "examples/source/example.txt",
+    "sourceType": "str",
+    "destination": "examples/moved-source/example.txt",
+    "destinationType": "str",
+    "recursive": true,
+    "x": 850,
+    "y": 200,
+    "wires": [
+      [
+        "azdt2005"
+      ]
+    ]
+  },
+  {
+    "id": "azdt2005",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1040,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "azdt2000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

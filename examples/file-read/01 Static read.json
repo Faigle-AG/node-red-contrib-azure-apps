@@ -1,0 +1,67 @@
+[
+  {
+    "id": "azr1001",
+    "type": "inject",
+    "name": "Read settings.json",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 180,
+    "y": 120,
+    "wires": [
+      [
+        "azr1002"
+      ]
+    ]
+  },
+  {
+    "id": "azr1002",
+    "type": "azure-file-read",
+    "name": "Read settings.json",
+    "config": "azr1000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "target": "file",
+    "targetType": "msg",
+    "dynamic": false,
+    "actionRead": true,
+    "actionExists": true,
+    "actionStat": true,
+    "source": "examples/input/settings.json",
+    "sourceType": "str",
+    "x": 420,
+    "y": 120,
+    "wires": [
+      [
+        "azr1003"
+      ]
+    ]
+  },
+  {
+    "id": "azr1003",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azr1000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

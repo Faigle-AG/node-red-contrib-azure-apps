@@ -1,0 +1,86 @@
+[
+  {
+    "id": "azet2001",
+    "type": "inject",
+    "name": "Read newest Inbox message",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 240,
+    "y": 260,
+    "wires": [
+      [
+        "azet2002"
+      ]
+    ]
+  },
+  {
+    "id": "azet2002",
+    "type": "email-read",
+    "name": "Read one Inbox message",
+    "config": "azet2000",
+    "dynamic": false,
+    "userId": "user@example.com",
+    "userIdType": "str",
+    "folderId": "inbox",
+    "folderName": "Inbox",
+    "limit": 1,
+    "downloadAttachments": false,
+    "output": "emails",
+    "outputType": "msg",
+    "x": 510,
+    "y": 260,
+    "wires": [
+      [
+        "azet2003"
+      ]
+    ]
+  },
+  {
+    "id": "azet2003",
+    "type": "email-transfer",
+    "name": "Move first result to Archive",
+    "config": "azet2000",
+    "userId": "user@example.com",
+    "userIdType": "str",
+    "dynamic": false,
+    "messageId": "emails.list[0].id",
+    "messageIdType": "msg",
+    "destinationId": "archive",
+    "destinationName": "Archive",
+    "x": 780,
+    "y": 260,
+    "wires": [
+      [
+        "azet2004"
+      ]
+    ]
+  },
+  {
+    "id": "azet2004",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1010,
+    "y": 260,
+    "wires": []
+  },
+  {
+    "id": "azet2000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

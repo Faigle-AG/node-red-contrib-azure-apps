@@ -1,0 +1,73 @@
+[
+  {
+    "id": "azr4001",
+    "type": "inject",
+    "name": "Set msg.filename",
+    "props": [
+      {
+        "p": "filename",
+        "v": "examples/input/settings.json",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 180,
+    "y": 120,
+    "wires": [
+      [
+        "azr4002"
+      ]
+    ]
+  },
+  {
+    "id": "azr4002",
+    "type": "azure-file-read",
+    "name": "Read path from msg.filename",
+    "config": "azr4000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "target": "file",
+    "targetType": "msg",
+    "dynamic": false,
+    "actionRead": true,
+    "actionExists": true,
+    "actionStat": true,
+    "source": "filename",
+    "sourceType": "msg",
+    "x": 450,
+    "y": 120,
+    "wires": [
+      [
+        "azr4003"
+      ]
+    ]
+  },
+  {
+    "id": "azr4003",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 690,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azr4000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

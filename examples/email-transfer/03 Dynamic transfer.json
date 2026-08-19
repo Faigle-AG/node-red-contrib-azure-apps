@@ -1,0 +1,70 @@
+[
+  {
+    "id": "azet3001",
+    "type": "inject",
+    "name": "Dynamic move",
+    "props": [
+      {
+        "p": "email",
+        "v": "{\"action\":\"transfer\",\"messageId\":\"REPLACE-WITH-GRAPH-MESSAGE-ID\",\"destinationId\":\"deleteditems\",\"destnationName\":\"Deleted Items\"}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 280,
+    "y": 340,
+    "wires": [
+      [
+        "azet3002"
+      ]
+    ]
+  },
+  {
+    "id": "azet3002",
+    "type": "email-transfer",
+    "name": "Dynamic email transfer",
+    "config": "azet3000",
+    "userId": "user@example.com",
+    "userIdType": "str",
+    "dynamic": true,
+    "messageId": "",
+    "messageIdType": "str",
+    "destinationId": "archive",
+    "destinationName": "Archive",
+    "x": 530,
+    "y": 340,
+    "wires": [
+      [
+        "azet3003"
+      ]
+    ]
+  },
+  {
+    "id": "azet3003",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 760,
+    "y": 340,
+    "wires": []
+  },
+  {
+    "id": "azet3000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

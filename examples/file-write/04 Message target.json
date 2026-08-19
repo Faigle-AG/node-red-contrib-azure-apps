@@ -1,0 +1,77 @@
+[
+  {
+    "id": "azw4001",
+    "type": "inject",
+    "name": "Set filename + payload",
+    "props": [
+      {
+        "p": "filename",
+        "v": "examples/output/from-message.txt",
+        "vt": "str"
+      },
+      {
+        "p": "payload",
+        "v": "Target path came from msg.filename",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 190,
+    "y": 120,
+    "wires": [
+      [
+        "azw4002"
+      ]
+    ]
+  },
+  {
+    "id": "azw4002",
+    "type": "azure-file-write",
+    "name": "Write path from msg.filename",
+    "config": "azw4000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "write",
+    "target": "filename",
+    "targetType": "msg",
+    "data": "payload",
+    "dataType": "msg",
+    "createDir": true,
+    "x": 460,
+    "y": 120,
+    "wires": [
+      [
+        "azw4003"
+      ]
+    ]
+  },
+  {
+    "id": "azw4003",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azw4000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

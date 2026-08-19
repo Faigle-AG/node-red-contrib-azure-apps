@@ -1,0 +1,80 @@
+[
+  {
+    "id": "azf4001",
+    "type": "inject",
+    "name": "Request full response",
+    "props": [
+      {
+        "p": "payload",
+        "v": "Return a one-sentence summary of the benefits of message queues.",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 190,
+    "y": 120,
+    "wires": [
+      [
+        "azf4002"
+      ]
+    ]
+  },
+  {
+    "id": "azf4002",
+    "type": "foundry-llm",
+    "name": "Full Foundry response",
+    "config": "azf4000",
+    "endpoint": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
+    "endpointType": "str",
+    "model": "YOUR-MODEL-DEPLOYMENT",
+    "modelType": "str",
+    "instructions": "",
+    "instructionsType": "str",
+    "input": "payload",
+    "inputType": "msg",
+    "output": "result",
+    "outputType": "msg",
+    "outputMode": "response",
+    "maxOutputTokens": "300",
+    "temperature": "",
+    "maxRetries": 4,
+    "timeoutMs": 120000,
+    "includeRawResponse": true,
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azf4003"
+      ]
+    ]
+  },
+  {
+    "id": "azf4003",
+    "type": "debug",
+    "name": "msg",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azf4000",
+    "type": "azure-config",
+    "name": "EDIT: Azure API Key",
+    "authType": "apiKey",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

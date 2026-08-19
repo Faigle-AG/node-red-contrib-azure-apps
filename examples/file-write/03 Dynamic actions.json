@@ -1,0 +1,96 @@
+[
+  {
+    "id": "azw3001",
+    "type": "inject",
+    "name": "Dynamic write",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"write\",\"path\":\"examples/output/dynamic.txt\",\"data\":\"Created dynamically\\n\",\"createDir\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 90,
+    "wires": [
+      [
+        "azw3003"
+      ]
+    ]
+  },
+  {
+    "id": "azw3002",
+    "type": "inject",
+    "name": "Dynamic append",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"append\",\"path\":\"examples/output/dynamic.txt\",\"data\":\"Appended dynamically\\n\",\"createDir\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 150,
+    "wires": [
+      [
+        "azw3003"
+      ]
+    ]
+  },
+  {
+    "id": "azw3003",
+    "type": "azure-file-write",
+    "name": "Dynamic file write",
+    "config": "azw3000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": true,
+    "action": "write",
+    "target": "",
+    "targetType": "str",
+    "data": "file.data",
+    "dataType": "msg",
+    "createDir": true,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azw3004"
+      ]
+    ]
+  },
+  {
+    "id": "azw3004",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azw3000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

@@ -1,0 +1,96 @@
+[
+  {
+    "id": "azer2001",
+    "type": "inject",
+    "name": "Read 3 from Inbox",
+    "props": [
+      {
+        "p": "email",
+        "v": "{\"folderId\":\"inbox\",\"folderName\":\"Inbox\",\"limit\":3,\"downloadAttachments\":false}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 90,
+    "wires": [
+      [
+        "azer2003"
+      ]
+    ]
+  },
+  {
+    "id": "azer2002",
+    "type": "inject",
+    "name": "Read 5 from Archive",
+    "props": [
+      {
+        "p": "email",
+        "v": "{\"folderId\":\"archive\",\"folderName\":\"Archive\",\"limit\":5,\"downloadAttachments\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 180,
+    "y": 150,
+    "wires": [
+      [
+        "azer2003"
+      ]
+    ]
+  },
+  {
+    "id": "azer2003",
+    "type": "email-read",
+    "name": "Dynamic email read",
+    "config": "azer2000",
+    "dynamic": true,
+    "userId": "user@example.com",
+    "userIdType": "str",
+    "folderId": "inbox",
+    "folderName": "Inbox",
+    "limit": 10,
+    "downloadAttachments": true,
+    "output": "emails",
+    "outputType": "msg",
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azer2004"
+      ]
+    ]
+  },
+  {
+    "id": "azer2004",
+    "type": "debug",
+    "name": "msg.emails",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "emails",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azer2000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

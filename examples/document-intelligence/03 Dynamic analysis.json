@@ -1,0 +1,79 @@
+[
+  {
+    "id": "azdi3001",
+    "type": "inject",
+    "name": "Dynamic document analysis",
+    "props": [
+      {
+        "p": "document",
+        "v": "{\"modelId\":\"prebuilt-layout\",\"data\":\"https://example-files.online-convert.com/document/pdf/example.pdf\",\"inputType\":\"url\",\"outputContentFormat\":\"text\",\"pages\":\"1\"}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 180,
+    "y": 440,
+    "wires": [
+      [
+        "azdi3002"
+      ]
+    ]
+  },
+  {
+    "id": "azdi3002",
+    "type": "document-intelligence",
+    "name": "Dynamic document analysis",
+    "config": "azdi3000",
+    "dynamic": true,
+    "endpoint": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
+    "modelId": "prebuilt-document",
+    "modelIdType": "str",
+    "documentData": "payload",
+    "documentDataType": "msg",
+    "inputType": "auto",
+    "outputContentFormat": "text",
+    "pages": "",
+    "locale": "",
+    "stringIndexType": "utf16CodeUnit",
+    "features": "",
+    "queryFields": "",
+    "outputOptions": "",
+    "output": "analysis",
+    "outputType": "msg",
+    "x": 440,
+    "y": 120,
+    "wires": [
+      [
+        "azdi3003"
+      ]
+    ]
+  },
+  {
+    "id": "azdi3003",
+    "type": "debug",
+    "name": "msg.analysis",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "analysis",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 730,
+    "y": 440,
+    "wires": []
+  },
+  {
+    "id": "azdi3000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

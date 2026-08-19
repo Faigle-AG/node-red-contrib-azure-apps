@@ -1,0 +1,66 @@
+[
+  {
+    "id": "azer1001",
+    "type": "inject",
+    "name": "Read Inbox",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azer1002"
+      ]
+    ]
+  },
+  {
+    "id": "azer1002",
+    "type": "email-read",
+    "name": "Read Inbox",
+    "config": "azer1000",
+    "dynamic": false,
+    "userId": "user@example.com",
+    "userIdType": "str",
+    "folderId": "inbox",
+    "folderName": "Inbox",
+    "limit": 10,
+    "downloadAttachments": true,
+    "output": "emails",
+    "outputType": "msg",
+    "x": 390,
+    "y": 120,
+    "wires": [
+      [
+        "azer1003"
+      ]
+    ]
+  },
+  {
+    "id": "azer1003",
+    "type": "debug",
+    "name": "msg.emails",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "emails",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 600,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azer1000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

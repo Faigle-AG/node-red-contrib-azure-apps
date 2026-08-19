@@ -1,0 +1,96 @@
+[
+  {
+    "id": "azdt3001",
+    "type": "inject",
+    "name": "Dynamic copy",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"copy\",\"source\":\"examples/input\",\"destination\":\"examples/dynamic-copy\",\"recursive\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 90,
+    "wires": [
+      [
+        "azdt3003"
+      ]
+    ]
+  },
+  {
+    "id": "azdt3002",
+    "type": "inject",
+    "name": "Dynamic move",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"move\",\"source\":\"examples/dynamic-copy\",\"destination\":\"examples/archive/dynamic-moved\",\"recursive\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 160,
+    "wires": [
+      [
+        "azdt3003"
+      ]
+    ]
+  },
+  {
+    "id": "azdt3003",
+    "type": "azure-directory-transfer",
+    "name": "Dynamic directory transfer",
+    "config": "azdt3000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": true,
+    "action": "move",
+    "source": "",
+    "sourceType": "str",
+    "destination": "",
+    "destinationType": "str",
+    "recursive": true,
+    "x": 440,
+    "y": 125,
+    "wires": [
+      [
+        "azdt3004"
+      ]
+    ]
+  },
+  {
+    "id": "azdt3004",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 690,
+    "y": 125,
+    "wires": []
+  },
+  {
+    "id": "azdt3000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

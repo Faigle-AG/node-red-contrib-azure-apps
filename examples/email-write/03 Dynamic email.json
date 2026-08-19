@@ -1,0 +1,74 @@
+[
+  {
+    "id": "azew3001",
+    "type": "inject",
+    "name": "Dynamic email",
+    "props": [
+      {
+        "p": "email",
+        "v": "{\"to\":\"recipient@example.com\",\"subject\":\"Dynamic email\",\"body\":\"<p>Everything came from msg.email.</p>\"}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "azew3002"
+      ]
+    ]
+  },
+  {
+    "id": "azew3002",
+    "type": "email-write",
+    "name": "Dynamic email write",
+    "config": "azew3000",
+    "userId": "sender@example.com",
+    "userIdType": "str",
+    "dynamic": true,
+    "to": "",
+    "toType": "str",
+    "subject": "",
+    "subjectType": "str",
+    "body": "",
+    "bodyType": "str",
+    "attachments": "",
+    "attachmentsType": "msg",
+    "x": 410,
+    "y": 120,
+    "wires": [
+      [
+        "azew3003"
+      ]
+    ]
+  },
+  {
+    "id": "azew3003",
+    "type": "debug",
+    "name": "msg.email",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "email",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 630,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azew3000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

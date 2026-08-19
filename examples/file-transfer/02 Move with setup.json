@@ -1,0 +1,94 @@
+[
+  {
+    "id": "azt2001",
+    "type": "inject",
+    "name": "Create source file",
+    "props": [
+      {
+        "p": "payload"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "payload": "Temporary Azure file to move",
+    "payloadType": "str",
+    "x": 240,
+    "y": 320,
+    "wires": [
+      [
+        "azt2002"
+      ]
+    ]
+  },
+  {
+    "id": "azt2002",
+    "type": "azure-file-write",
+    "name": "Create move-source.txt",
+    "config": "azt2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "write",
+    "target": "examples/move-source.txt",
+    "targetType": "str",
+    "data": "payload",
+    "dataType": "msg",
+    "createDir": true,
+    "x": 490,
+    "y": 320,
+    "wires": [
+      [
+        "azt2003"
+      ]
+    ]
+  },
+  {
+    "id": "azt2003",
+    "type": "azure-file-transfer",
+    "name": "Move source",
+    "config": "azt2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "move",
+    "source": "examples/move-source.txt",
+    "sourceType": "str",
+    "destination": "examples/moved.txt",
+    "destinationType": "str",
+    "createDir": true,
+    "x": 730,
+    "y": 320,
+    "wires": [
+      [
+        "azt2004"
+      ]
+    ]
+  },
+  {
+    "id": "azt2004",
+    "type": "debug",
+    "name": "msg.file",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "file",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 920,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "azt2000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

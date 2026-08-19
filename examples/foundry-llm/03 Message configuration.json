@@ -1,0 +1,95 @@
+[
+  {
+    "id": "azf3001",
+    "type": "inject",
+    "name": "Set request configuration",
+    "props": [
+      {
+        "p": "foundryEndpoint",
+        "v": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
+        "vt": "str"
+      },
+      {
+        "p": "foundryModel",
+        "v": "YOUR-MODEL-DEPLOYMENT",
+        "vt": "str"
+      },
+      {
+        "p": "systemPrompt",
+        "v": "Respond as a technical assistant. Keep the answer under 100 words.",
+        "vt": "str"
+      },
+      {
+        "p": "payload",
+        "v": "What is the difference between authentication and authorization?",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 190,
+    "y": 120,
+    "wires": [
+      [
+        "azf3002"
+      ]
+    ]
+  },
+  {
+    "id": "azf3002",
+    "type": "foundry-llm",
+    "name": "Config from msg",
+    "config": "azf3000",
+    "endpoint": "foundryEndpoint",
+    "endpointType": "msg",
+    "model": "foundryModel",
+    "modelType": "msg",
+    "instructions": "systemPrompt",
+    "instructionsType": "msg",
+    "input": "payload",
+    "inputType": "msg",
+    "output": "payload",
+    "outputType": "msg",
+    "outputMode": "text",
+    "maxOutputTokens": "300",
+    "temperature": "0",
+    "maxRetries": 4,
+    "timeoutMs": 120000,
+    "includeRawResponse": false,
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "azf3003"
+      ]
+    ]
+  },
+  {
+    "id": "azf3003",
+    "type": "debug",
+    "name": "msg",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 640,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "azf3000",
+    "type": "azure-config",
+    "name": "Azure Entra",
+    "authType": "entra",
+    "serviceUrl": "",
+    "accountName": ""
+  }
+]

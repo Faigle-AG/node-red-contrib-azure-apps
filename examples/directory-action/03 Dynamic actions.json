@@ -1,0 +1,120 @@
+[
+  {
+    "id": "azda3001",
+    "type": "inject",
+    "name": "Dynamic create",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"create\",\"path\":\"examples/dynamic/nested\",\"recursive\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 80,
+    "wires": [
+      [
+        "azda3004"
+      ]
+    ]
+  },
+  {
+    "id": "azda3002",
+    "type": "inject",
+    "name": "Dynamic list",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"list\",\"path\":\"examples/dynamic\"}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 160,
+    "y": 140,
+    "wires": [
+      [
+        "azda3004"
+      ]
+    ]
+  },
+  {
+    "id": "azda3003",
+    "type": "inject",
+    "name": "Dynamic delete",
+    "props": [
+      {
+        "p": "file",
+        "v": "{\"action\":\"delete\",\"path\":\"examples/dynamic\",\"recursive\":true}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 200,
+    "wires": [
+      [
+        "azda3004"
+      ]
+    ]
+  },
+  {
+    "id": "azda3004",
+    "type": "azure-directory-action",
+    "name": "Dynamic directory action",
+    "config": "azda3000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": true,
+    "action": "list",
+    "source": "",
+    "sourceType": "str",
+    "property": "file.content",
+    "propertyType": "msg",
+    "recursive": true,
+    "x": 440,
+    "y": 140,
+    "wires": [
+      [
+        "azda3005"
+      ]
+    ]
+  },
+  {
+    "id": "azda3005",
+    "type": "debug",
+    "name": "msg",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 680,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "azda3000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]

@@ -1,0 +1,106 @@
+[
+  {
+    "id": "azda2001",
+    "type": "inject",
+    "name": "Create directory",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 170,
+    "y": 100,
+    "wires": [
+      [
+        "azda2002"
+      ]
+    ]
+  },
+  {
+    "id": "azda2002",
+    "type": "azure-directory-action",
+    "name": "Create examples/new/nested",
+    "config": "azda2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "create",
+    "source": "examples/new/nested",
+    "sourceType": "str",
+    "property": "result",
+    "propertyType": "msg",
+    "recursive": true,
+    "x": 430,
+    "y": 100,
+    "wires": [
+      [
+        "azda2005"
+      ]
+    ]
+  },
+  {
+    "id": "azda2003",
+    "type": "inject",
+    "name": "Delete directory tree",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 5,
+    "topic": "",
+    "x": 180,
+    "y": 180,
+    "wires": [
+      [
+        "azda2004"
+      ]
+    ]
+  },
+  {
+    "id": "azda2004",
+    "type": "azure-directory-action",
+    "name": "Delete examples/new",
+    "config": "azda2000",
+    "shareName": "documents",
+    "shareNameType": "str",
+    "dynamic": false,
+    "action": "delete",
+    "source": "examples/new",
+    "sourceType": "str",
+    "property": "result",
+    "propertyType": "msg",
+    "recursive": true,
+    "x": 420,
+    "y": 180,
+    "wires": [
+      [
+        "azda2005"
+      ]
+    ]
+  },
+  {
+    "id": "azda2005",
+    "type": "debug",
+    "name": "msg",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 650,
+    "y": 140,
+    "wires": []
+  },
+  {
+    "id": "azda2000",
+    "type": "azure-config",
+    "name": "EDIT: Azure Storage",
+    "authType": "entra",
+    "serviceUrl": "yourstorageaccount",
+    "accountName": ""
+  }
+]
