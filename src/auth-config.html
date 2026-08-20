@@ -1,20 +1,9 @@
 <script type="text/javascript">
-    RED.nodes.registerType('azure-config', {
+    RED.nodes.registerType('azure-auth-config', {
         category: 'config',
         defaults: {
             name: { value: '' },
             authType: { value: 'entra', required: true },
-            serviceUrl: {
-                value: '',
-                validate: function (v) {
-                    var authType = $('#node-config-input-authType').length
-                        ? $('#node-config-input-authType').val()
-                        : this.authType;
-
-                    if (authType !== 'accountKey' && authType !== 'sas') return true;
-                    return !!v && v.trim() !== '';
-                },
-            },
             accountName: {
                 value: '',
                 validate: function (v) {
@@ -41,15 +30,11 @@
                 var authType = $('#node-config-input-authType').val();
 
                 $('#row-api-key').toggle(authType === 'apiKey');
-                $('#row-service-url').toggle(
-                    authType === 'entra' || authType === 'accountKey' || authType === 'sas',
-                );
                 $('#row-account-name').toggle(authType === 'accountKey');
                 $('#row-account-key').toggle(authType === 'accountKey');
                 $('#row-connection-string').toggle(authType === 'connectionString');
                 $('#row-sas-token').toggle(authType === 'sas');
                 $('#row-entra-help').toggle(authType === 'entra');
-                $('#row-file-service-help').toggle(authType === 'entra');
             }
 
             $('#node-config-input-authType').on('change', updateAuthenticationRows);
@@ -60,7 +45,7 @@
 
 <link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
-<script type="text/html" data-template-name="azure-config">
+<script type="text/html" data-template-name="azure-auth-config">
     <div class="faigle-node-editor">
         <div class="form-row">
             <label for="node-config-input-name">
@@ -93,26 +78,6 @@
                     API Key
                 </label>
                 <input type="password" id="node-config-input-apiKey" />
-            </div>
-
-            <div class="form-row" id="row-service-url">
-                <label for="node-config-input-serviceUrl">
-                    <i class="fa fa-globe"></i>
-                    File Service URL
-                </label>
-                <input
-                    type="text"
-                    id="node-config-input-serviceUrl"
-                    placeholder="https://account.file.core.windows.net or account name"
-                />
-            </div>
-
-            <div class="form-row form-help-row" id="row-file-service-help">
-                <label></label>
-                <div class="form-help">
-                    Optional for general Entra ID usage. Required only when this config is also used
-                    by Azure File nodes.
-                </div>
             </div>
 
             <div class="form-row" id="row-account-name">
@@ -164,7 +129,7 @@
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
-<script type="text/markdown" data-help-name="azure-config">
+<script type="text/markdown" data-help-name="azure-auth-config">
 Shared authentication configuration for Azure nodes.
 
 ### Authentication
@@ -173,8 +138,5 @@ Shared authentication configuration for Azure nodes.
 - **API key** stores a generic Azure service API key in Node-RED credentials.
 - **Storage account key**, **Storage connection string**, and **Storage SAS token** are intended for Azure File nodes.
 
-### File Service URL
-
-The **File Service URL** is optional when the config is used only for Entra-authenticated services such as Microsoft Graph, Document Intelligence, or Foundry. Azure File nodes require it when using Entra ID, account-key, or SAS authentication.
 </script>
 <!-- @formatter:on -->

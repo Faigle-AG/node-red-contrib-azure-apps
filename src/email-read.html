@@ -1,21 +1,12 @@
 <script type="text/javascript">
-    RED.nodes.registerType('email-read', {
+    RED.nodes.registerType('azure-email-read', {
         category: 'azure',
         color: '#0072C6',
+        paletteLabel: 'email-read',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
+            config: { type: 'azure-email-config', required: true },
             dynamic: { value: false },
-            userId: {
-                value: '',
-                required: true,
-                validate: function (v) {
-                    if (!v || v.trim() === '') return false;
-                    var validator = RED.validators.typedInput('userIdType');
-                    return validator.call(this, v);
-                },
-            },
-            userIdType: { value: 'str' },
             folderId: { value: 'inbox', required: true },
             folderName: { value: 'Inbox' },
             limit: {
@@ -38,12 +29,6 @@
             var currentFolderId = this.folderId || 'inbox';
             var currentFolderName = this.folderName || 'Inbox';
 
-            $('#node-input-userId').typedInput({
-                default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
-                typeField: $('#node-input-userIdType'),
-            });
-
             $('#node-input-output').typedInput({
                 default: 'msg',
                 types: ['msg', 'flow', 'global'],
@@ -62,28 +47,19 @@
 
             function loadFolders(showWarning) {
                 var configId = $('#node-input-config').val();
-                var userId = $('#node-input-userId').val();
-                var userIdType = $('#node-input-userIdType').val();
                 var button = $('#node-input-loadFolders');
                 var selectedFolderId = folderSelect.val() || currentFolderId;
 
                 if (!configId || configId === '_ADD_') {
                     if (showWarning)
-                        RED.notify('Select and deploy an Azure Config first.', 'warning');
-                    return;
-                }
-
-                if (userIdType !== 'str' || !userId || userId.trim() === '') {
-                    if (showWarning) {
-                        RED.notify('Folder loading requires a static User ID / Email.', 'warning');
-                    }
+                        RED.notify('Select and deploy an Email Config first.', 'warning');
                     return;
                 }
 
                 button.prop('disabled', true);
                 folderSelect.prop('disabled', true);
 
-                $.getJSON('email-read/folders', { config: configId, userId: userId.trim() })
+                $.getJSON('email-read/folders', { config: configId })
                     .done(function (folders) {
                         folderSelect.empty();
 
@@ -144,7 +120,7 @@
 
 <link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
-<script type="text/html" data-template-name="email-read">
+<script type="text/html" data-template-name="azure-email-read">
     <div class="faigle-node-editor">
         <div class="form-row">
             <label for="node-input-name">
@@ -163,27 +139,14 @@
         </div>
 
         <fieldset class="node-red-fieldset">
-            <legend>Azure Configuration</legend>
+            <legend>Email Configuration</legend>
 
             <div class="form-row config-node-row">
                 <label for="node-input-config">
                     <i class="fa fa-cogs"></i>
-                    Azure Config
+                    Email Config
                 </label>
                 <input type="text" id="node-input-config" />
-            </div>
-
-            <div class="form-row">
-                <label for="node-input-userId">
-                    <i class="fa fa-user"></i>
-                    User ID / Email
-                </label>
-                <input
-                    type="text"
-                    id="node-input-userId"
-                    placeholder="user@domain.com or variable"
-                />
-                <input type="hidden" id="node-input-userIdType" />
             </div>
         </fieldset>
 
@@ -242,22 +205,19 @@
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
-<script type="text/markdown" data-help-name="email-read">
+<script type="text/markdown" data-help-name="azure-email-read">
 Reads emails from an Azure user's selected Microsoft Graph mail folder using the selected **Azure Config**.
 
 ### Properties
 
-- **Azure Config** _config_ \
-  Shared Azure authentication configuration. Microsoft Graph requires **Microsoft Entra ID**.
+- **Email Config** _config_ \
+  Shared mailbox and Azure authentication configuration.
 
 - **Load from msg.email** _boolean_ \
   If enabled, the node will ignore the UI options and expect `msg.email.folderId`, `msg.email.limit`, and `msg.email.downloadAttachments` to be provided dynamically.
 
-- **User ID / Email** _string | env | msg | flow | global | jsonata_ \
-  The UserPrincipalName or Azure Object ID of the user whose mailbox you want to read. The value is evaluated for every incoming message.
-
 - **Mail Folder** _string_ \
-  The Microsoft Graph mail folder ID to read. Use **Load Folders** to retrieve all root and nested folders for a static User ID / Email. The selected Azure Config must already be deployed.
+  The Microsoft Graph mail folder ID to read. Use **Load Folders** to retrieve all root and nested folders for a static User ID / Email. The selected Email Config must already be deployed.
 
 - **Email Count** _number_ \
   The maximum number of emails to return (maps to OData `$top`).

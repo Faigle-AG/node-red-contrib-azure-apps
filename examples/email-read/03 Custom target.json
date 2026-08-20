@@ -19,7 +19,7 @@
   },
   {
     "id": "azer3002",
-    "type": "email-read",
+    "type": "azure-email-read",
     "name": "Store under msg.result",
     "config": "azer3000",
     "dynamic": false,
@@ -54,13 +54,5 @@
     "x": 630,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azer3000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

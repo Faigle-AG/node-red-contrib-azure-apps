@@ -33,9 +33,9 @@ To authenticate using a Service Principal, configure the required resources and 
 
 1. In your App Registration, navigate to **API permissions** > **Add a permission** > **Microsoft Graph** > **Application permissions**.
 2. Select the required permissions based on the nodes you use:
-    - `Mail.Read` (for `email-read`)
-    - `Mail.ReadWrite` (for `email-transfer`)
-    - `Mail.Send` (for `email-write`)
+    - `Mail.Read` (for `azure-email-read`)
+    - `Mail.ReadWrite` (for `azure-email-transfer`)
+    - `Mail.Send` (for `azure-email-write`)
 3. Click **Grant admin consent for [Your Tenant]** to activate the permissions.
 
 ### 3. Configure Document Intelligence RBAC Role
@@ -114,7 +114,7 @@ Features: keyValuePairs
 
 Leave **Features** empty when only text, tables, structure, and layout information are required.
 
-### 2. email-read
+### 2. azure-email-read
 
 Reads emails from a selected Microsoft 365 mail folder. The node editor provides a folder dropdown that can load the complete mailbox folder hierarchy, including nested and hidden folders.
 
@@ -174,7 +174,7 @@ The configured output property contains:
 
 `list` contains the Microsoft Graph message objects returned from the selected folder.
 
-### 3. email-write
+### 3. azure-email-write
 
 Sends an HTML or plain text email from a specified user's mailbox.
 
@@ -185,7 +185,7 @@ Sends an HTML or plain text email from a specified user's mailbox.
 - **Attachments:** An optional array of objects containing `name` and `content` (Buffer or Base64 string).
 - **Dynamic Mode:** Override UI properties via `msg.email.to`, `msg.email.subject`, `msg.email.body`, and `msg.email.attachments`.
 
-### 4. email-transfer
+### 4. azure-email-transfer
 
 Moves an existing email to a selected Microsoft 365 mail folder. The destination is selected from a dropdown containing the mailbox folder hierarchy.
 
@@ -236,7 +236,7 @@ msg.email = {
 
 `apiResponse` contains the Microsoft Graph message object returned by the move operation.
 
-### 5. foundry-llm
+### 5. azure-document-intelligence
 
 Calls a deployed language model through the Azure AI Foundry **Responses API**.
 
@@ -348,7 +348,7 @@ AZURE_CLIENT_SECRET="your-client-secret-value"
 - **Error 401: Unauthorized / PermissionDenied:** Ensure Node-RED was restarted after updating token permissions or `.env` variables. Verify the App Registration is assigned the **Cognitive Services User** role.
 - **Error 403: Forbidden (Graph API):** Ensure **Application permissions** (not Delegated) were granted and admin consent was executed in Entra ID.
 - **Mail Folder dropdown does not load:** Configure **User ID / Email** as a static `str` value, verify that `DefaultAzureCredential` can authenticate, and confirm that the identity has the Microsoft Graph `Mail.Read` application permission with admin consent.
-- **Mail Folder dropdown shows an error:** Check the Node-RED runtime log for the Microsoft Graph response. The folder-discovery request runs through the protected `/email-read/folders` admin endpoint.
+- **Mail Folder dropdown shows an error:** Check the Node-RED runtime log for the Microsoft Graph response. The folder-discovery request runs through the protected `/azure-email-read/folders` admin endpoint.
 - **Previously selected folder is unavailable:** Reload the dropdown. If the folder was deleted or its ID changed, select the folder again; the node falls back to `inbox` only when no folder ID is supplied.
 - **Dynamic folder selection reads the Inbox:** Ensure `msg.email.folderId` contains the Microsoft Graph folder ID, not only its display name or path.
 - **Destination Folder dropdown does not load:** Configure **User ID / Email** as a static `str` value, verify that `DefaultAzureCredential` can authenticate, and confirm that the identity has the Microsoft Graph `Mail.ReadWrite` application permission with admin consent.

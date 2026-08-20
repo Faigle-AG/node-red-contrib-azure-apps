@@ -1,6 +1,6 @@
 # Azure Foundry LLM examples
 
-Examples for the `foundry-llm` node using the shared `azure-config`.
+Examples for the `azure-document-intelligence` node using the shared `azure-auth-config`.
 
 ## Before running
 
@@ -13,7 +13,7 @@ The node accepts the project endpoint and deployment/model name through typed in
 
 ## Authentication
 
-Examples 01–03 use **Microsoft Entra ID** through `azure-config`.
+Examples 01–03 use **Microsoft Entra ID** through `azure-auth-config`.
 
 Example 04 uses **API key** authentication. After importing it:
 

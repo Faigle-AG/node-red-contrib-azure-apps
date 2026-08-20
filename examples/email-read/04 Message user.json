@@ -25,7 +25,7 @@
   },
   {
     "id": "azer4002",
-    "type": "email-read",
+    "type": "azure-email-read",
     "name": "Read mailbox from msg",
     "config": "azer4000",
     "dynamic": false,
@@ -60,13 +60,5 @@
     "x": 640,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azer4000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

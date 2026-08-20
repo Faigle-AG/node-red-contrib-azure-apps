@@ -1,0 +1,77 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-email-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            auth: { type: 'azure-auth-config', required: true },
+            userId: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('userIdType').call(this, v);
+                },
+            },
+            userIdType: { value: 'str' },
+        },
+        label: function () {
+            return this.name || this.userId || 'Azure Email Config';
+        },
+        oneditprepare: function () {
+            $('#node-config-input-userId').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-config-input-userIdType'),
+            });
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-email-config">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-config-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-config-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure Email</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-config-input-auth">
+                    <i class="fa fa-key"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-config-input-auth" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-config-input-userId">
+                    <i class="fa fa-user"></i>
+                    User ID / Email
+                </label>
+                <input
+                    type="text"
+                    id="node-config-input-userId"
+                    placeholder="user@domain.com or variable"
+                />
+                <input type="hidden" id="node-config-input-userIdType" />
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-email-config">
+Shared Microsoft Graph mailbox configuration for email read, write, and transfer nodes.
+
+- **Azure Config**: shared Azure authentication configuration. Microsoft Graph requires Microsoft Entra ID.
+- **User ID / Email**: UserPrincipalName, Azure Object ID, or typed value identifying the mailbox.
+</script>
+<!-- @formatter:on -->

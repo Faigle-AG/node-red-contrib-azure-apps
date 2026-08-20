@@ -277,5 +277,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('foundry-llm', AzureFoundryLlmNode);
+    RED.nodes.registerType('azure-foundry-llm', AzureFoundryLlmNode);
 };

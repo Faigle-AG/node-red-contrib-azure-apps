@@ -61,17 +61,24 @@ module.exports = function (RED) {
         async function (req, res) {
             try {
                 const configNode = RED.nodes.getNode(String(req.query.config || '').trim());
-                const userId = String(req.query.userId || '').trim();
 
                 if (!configNode) {
                     return res.status(400).json({
-                        message: 'A deployed Azure Config is required',
+                        message: 'A deployed Azure Email Config is required',
                     });
                 }
 
+                if ((configNode.userIdType || 'str') !== 'str') {
+                    return res.status(400).json({
+                        message:
+                            'Folder loading requires a static User ID / Email in Azure Email Config',
+                    });
+                }
+
+                const userId = String(configNode.userId || '').trim();
                 if (!userId) {
                     return res.status(400).json({
-                        message: 'User ID / Email is required',
+                        message: 'User ID / Email is required in Azure Email Config',
                     });
                 }
 
@@ -94,8 +101,6 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
         this.configNode = RED.nodes.getNode(config.config);
-        this.userId = config.userId;
-        this.userIdType = config.userIdType || 'str';
         this.dynamic = config.dynamic;
         this.messageId = config.messageId;
         this.messageIdType = config.messageIdType || 'msg';
@@ -107,9 +112,13 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
-                if (!node.configNode) throw new Error('Missing Azure configuration');
+                if (!node.configNode) throw new Error('Missing Azure Email configuration');
 
-                const userIdRaw = await node.getTypedProperty(node.userId, node.userIdType, msg);
+                const userIdRaw = await node.getTypedProperty(
+                    node.configNode.userId,
+                    node.configNode.userIdType || 'str',
+                    msg,
+                );
 
                 const currentUserId = String(userIdRaw || '').trim();
                 if (!currentUserId) {
@@ -183,5 +192,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('email-transfer', AzureEmailTransferNode);
+    RED.nodes.registerType('azure-email-transfer', AzureEmailTransferNode);
 };

@@ -1,0 +1,85 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-file-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            auth: { type: 'azure-auth-config', required: true },
+            serviceUrl: {
+                value: '',
+                validate: function (v) {
+                    var authId = $('#node-config-input-auth').length
+                        ? $('#node-config-input-auth').val()
+                        : this.auth;
+                    var authNode = authId && authId !== '_ADD_' ? RED.nodes.node(authId) : null;
+
+                    if (authNode && authNode.authType === 'connectionString') return true;
+                    return !!v && v.trim() !== '';
+                },
+            },
+        },
+        label: function () {
+            return this.name || this.serviceUrl || 'Azure Files Config';
+        },
+        oneditprepare: function () {
+            function updateServiceUrlRow() {
+                var authId = $('#node-config-input-auth').val();
+                var authNode = authId && authId !== '_ADD_' ? RED.nodes.node(authId) : null;
+                $('#row-service-url').toggle(!authNode || authNode.authType !== 'connectionString');
+            }
+
+            $('#node-config-input-auth').on('change', function () {
+                updateServiceUrlRow();
+                $('#node-config-input-serviceUrl').trigger('change');
+            });
+            updateServiceUrlRow();
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-file-config">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-config-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-config-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure Files</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-config-input-auth">
+                    <i class="fa fa-key"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-config-input-auth" />
+            </div>
+
+            <div class="form-row" id="row-service-url">
+                <label for="node-config-input-serviceUrl">
+                    <i class="fa fa-globe"></i>
+                    File Service URL
+                </label>
+                <input
+                    type="text"
+                    id="node-config-input-serviceUrl"
+                    placeholder="https://account.file.core.windows.net or account name"
+                />
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-file-config">
+Shared Azure Files service configuration for file and directory nodes.
+
+- **Azure Config**: shared Azure authentication configuration.
+- **File Service URL**: `https://<account>.file.core.windows.net` or the storage account name. Not required when the selected authentication uses a storage connection string.
+</script>
+<!-- @formatter:on -->

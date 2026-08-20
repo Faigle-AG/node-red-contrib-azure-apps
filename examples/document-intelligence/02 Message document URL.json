@@ -25,7 +25,7 @@
   },
   {
     "id": "azdi2002",
-    "type": "document-intelligence",
+    "type": "azure-document-intelligence",
     "name": "Analyze URL from msg",
     "config": "azdi2000",
     "dynamic": false,
@@ -67,13 +67,5 @@
     "x": 610,
     "y": 300,
     "wires": []
-  },
-  {
-    "id": "azdi2000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

@@ -25,7 +25,7 @@
   },
   {
     "id": "azf2002",
-    "type": "foundry-llm",
+    "type": "azure-document-intelligence",
     "name": "Question to msg.answer",
     "config": "azf2000",
     "endpoint": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
@@ -68,13 +68,5 @@
     "x": 640,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azf2000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

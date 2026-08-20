@@ -1,20 +1,11 @@
 <script type="text/javascript">
-    RED.nodes.registerType('email-write', {
+    RED.nodes.registerType('azure-email-write', {
         category: 'azure',
         color: '#0072C6',
+        paletteLabel: 'email-write',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
-            userId: {
-                value: '',
-                required: true,
-                validate: function (v) {
-                    if (!v || v.trim() === '') return false;
-                    var validator = RED.validators.typedInput('userIdType');
-                    return validator.call(this, v);
-                },
-            },
-            userIdType: { value: 'str' },
+            config: { type: 'azure-email-config', required: true },
             dynamic: { value: false },
             to: {
                 value: 'email.to',
@@ -78,11 +69,6 @@
             return this.name || 'email - write';
         },
         oneditprepare: function () {
-            $('#node-input-userId').typedInput({
-                default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
-                typeField: $('#node-input-userIdType'),
-            });
             $('#node-input-to').typedInput({
                 default: 'msg',
                 types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
@@ -121,7 +107,7 @@
 
 <link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
-<script type="text/html" data-template-name="email-write">
+<script type="text/html" data-template-name="azure-email-write">
     <div class="faigle-node-editor">
         <div class="form-row">
             <label for="node-input-name">
@@ -140,27 +126,14 @@
         </div>
 
         <fieldset class="node-red-fieldset">
-            <legend>Azure Configuration</legend>
+            <legend>Email Configuration</legend>
 
             <div class="form-row config-node-row">
                 <label for="node-input-config">
                     <i class="fa fa-cogs"></i>
-                    Azure Config
+                    Email Config
                 </label>
                 <input type="text" id="node-input-config" />
-            </div>
-
-            <div class="form-row">
-                <label for="node-input-userId">
-                    <i class="fa fa-user"></i>
-                    User ID / Email
-                </label>
-                <input
-                    type="text"
-                    id="node-input-userId"
-                    placeholder="user@domain.com or variable"
-                />
-                <input type="hidden" id="node-input-userIdType" />
             </div>
         </fieldset>
 
@@ -208,19 +181,16 @@
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
-<script type="text/markdown" data-help-name="email-write">
+<script type="text/markdown" data-help-name="azure-email-write">
 Sends an email from an Azure user's mailbox through Microsoft Graph using the selected **Azure Config**.
 
 ### Properties
 
-- **Azure Config** _config_ \
-  Shared Azure authentication configuration. Microsoft Graph requires **Microsoft Entra ID**.
+- **Email Config** _config_ \
+  Shared mailbox and Azure authentication configuration.
 
 - **Load from msg.email** _boolean_ \
   If enabled, the node ignores the UI properties and expects `msg.email.to`, `msg.email.subject`, `msg.email.body`, and optionally `msg.email.attachments` to be provided dynamically.
-
-- **User ID / Email** _string | env | msg | flow | global | jsonata_ \
-  The UserPrincipalName or Azure Object ID of the sender.
 
 - **To** _string | msg_ \
   A comma-separated list of recipient email addresses.

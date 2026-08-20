@@ -30,7 +30,7 @@
   },
   {
     "id": "azet4002",
-    "type": "email-transfer",
+    "type": "azure-email-transfer",
     "name": "Move using message properties",
     "config": "azet4000",
     "userId": "mailbox",
@@ -63,13 +63,5 @@
     "x": 690,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azet4000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

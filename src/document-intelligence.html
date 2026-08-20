@@ -1,10 +1,11 @@
 <script type="text/javascript">
-    RED.nodes.registerType('document-intelligence', {
+    RED.nodes.registerType('azure-document-intelligence', {
         category: 'azure',
         color: '#0072C6',
+        paletteLabel: 'document intelligence',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
+            config: { type: 'azure-auth-config', required: true },
             dynamic: { value: false },
             endpoint: { value: '', required: true },
             modelId: {
@@ -91,7 +92,7 @@
 
 <link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
-<script type="text/html" data-template-name="document-intelligence">
+<script type="text/html" data-template-name="azure-document-intelligence">
     <div class="faigle-node-editor">
         <div class="form-row">
             <label for="node-input-name">
@@ -263,7 +264,7 @@
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
-<script type="text/markdown" data-help-name="document-intelligence">
+<script type="text/markdown" data-help-name="azure-document-intelligence">
 Analyzes a document using Azure Document Intelligence (`api-version=2024-11-30`) and the selected **Azure Config**.
 
 ### Properties

@@ -84,13 +84,5 @@
     "x": 690,
     "y": 125,
     "wires": []
-  },
-  {
-    "id": "azdt3000",
-    "type": "azure-config",
-    "name": "EDIT: Azure Storage",
-    "authType": "entra",
-    "serviceUrl": "yourstorageaccount",
-    "accountName": ""
   }
 ]

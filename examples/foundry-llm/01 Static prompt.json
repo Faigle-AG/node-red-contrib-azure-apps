@@ -25,7 +25,7 @@
   },
   {
     "id": "azf1002",
-    "type": "foundry-llm",
+    "type": "azure-document-intelligence",
     "name": "Basic Foundry request",
     "config": "azf1000",
     "endpoint": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
@@ -68,13 +68,5 @@
     "x": 640,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azf1000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

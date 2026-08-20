@@ -49,7 +49,7 @@
   },
   {
     "id": "azer2003",
-    "type": "email-read",
+    "type": "azure-email-read",
     "name": "Dynamic email read",
     "config": "azer2000",
     "dynamic": true,
@@ -84,13 +84,5 @@
     "x": 650,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azer2000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

@@ -2,7 +2,6 @@
 
 module.exports = function (RED) {
     const { ShareServiceClient, StorageSharedKeyCredential } = require('@azure/storage-file-share');
-    const { DefaultAzureCredential } = require('@azure/identity');
 
     function createError(message, code, cause) {
         const err = new Error(message);
@@ -57,85 +56,37 @@ module.exports = function (RED) {
 
         const url = new URL(serviceUrl);
         const params = new URLSearchParams(token);
-
-        for (const [key, value] of params.entries()) {
-            url.searchParams.set(key, value);
-        }
-
+        for (const [key, value] of params.entries()) url.searchParams.set(key, value);
         return url.toString();
     }
 
-    function AzureConfigNode(config) {
+    function AzureFilesConfigNode(config) {
         RED.nodes.createNode(this, config);
 
         this.name = config.name;
-        this.authType = config.authType || 'entra';
+        this.authNode = RED.nodes.getNode(config.auth);
         this.serviceUrl = config.serviceUrl;
-        this.accountName = config.accountName;
 
         const node = this;
-
-        let credential = null;
         let fileServiceClient = null;
-
-        node.getCredential = function () {
-            if (node.authType !== 'entra') {
-                throw createError(
-                    `Microsoft Entra ID authentication is required, but Azure Config uses '${node.authType}'`,
-                    'ENTRA_AUTH_REQUIRED',
-                );
-            }
-
-            if (!credential) credential = new DefaultAzureCredential();
-            return credential;
-        };
-
-        node.getToken = async function (scope) {
-            if (!scope) throw createError('Azure token scope is missing', 'TOKEN_SCOPE_MISSING');
-
-            const tokenResponse = await node.getCredential().getToken(scope);
-            if (!tokenResponse || !tokenResponse.token) {
-                throw createError(
-                    'Azure authentication did not return an access token',
-                    'TOKEN_MISSING',
-                );
-            }
-
-            return tokenResponse.token;
-        };
-
-        node.getApiKey = function () {
-            if (node.authType !== 'apiKey') {
-                throw createError(
-                    `API key authentication is required, but Azure Config uses '${node.authType}'`,
-                    'API_KEY_AUTH_REQUIRED',
-                );
-            }
-
-            const apiKey = node.credentials && node.credentials.apiKey;
-            if (!apiKey) throw createError('Azure API key is missing', 'API_KEY_MISSING');
-            return apiKey;
-        };
 
         node.getClient = function () {
             if (fileServiceClient) return fileServiceClient;
+            if (!node.authNode) {
+                throw createError(
+                    'Missing Azure authentication configuration',
+                    'AZURE_CONFIG_MISSING',
+                );
+            }
 
             const clientOptions = {
                 allowTrailingDot: true,
                 allowSourceTrailingDot: true,
             };
 
-            if (node.authType === 'connectionString') {
-                const connectionString = node.credentials && node.credentials.connectionString;
-                if (!connectionString) {
-                    throw createError(
-                        'Storage connection string is missing',
-                        'CONNECTION_STRING_MISSING',
-                    );
-                }
-
+            if (node.authNode.authType === 'connectionString') {
                 fileServiceClient = ShareServiceClient.fromConnectionString(
-                    connectionString,
+                    node.authNode.getConnectionString(),
                     clientOptions,
                 );
                 return fileServiceClient;
@@ -143,22 +94,19 @@ module.exports = function (RED) {
 
             const serviceUrl = normalizeServiceUrl(node.serviceUrl);
 
-            switch (node.authType) {
+            switch (node.authNode.authType) {
                 case 'entra':
                     clientOptions.fileRequestIntent = 'backup';
                     fileServiceClient = new ShareServiceClient(
                         serviceUrl,
-                        node.getCredential(),
+                        node.authNode.getCredential(),
                         clientOptions,
                     );
                     break;
 
                 case 'accountKey': {
-                    const accountName = String(
-                        node.accountName || accountNameFromUrl(serviceUrl),
-                    ).trim();
-                    const accountKey = node.credentials && node.credentials.accountKey;
-
+                    const accountName =
+                        node.authNode.getAccountName() || accountNameFromUrl(serviceUrl);
                     if (!accountName) {
                         throw createError(
                             'Storage account name is missing',
@@ -166,27 +114,21 @@ module.exports = function (RED) {
                         );
                     }
 
-                    if (!accountKey) {
-                        throw createError('Storage account key is missing', 'ACCOUNT_KEY_MISSING');
-                    }
-
                     fileServiceClient = new ShareServiceClient(
                         serviceUrl,
-                        new StorageSharedKeyCredential(accountName, accountKey),
+                        new StorageSharedKeyCredential(accountName, node.authNode.getAccountKey()),
                         clientOptions,
                     );
                     break;
                 }
 
-                case 'sas': {
-                    const sasToken = node.credentials && node.credentials.sasToken;
+                case 'sas':
                     fileServiceClient = new ShareServiceClient(
-                        appendSasToken(serviceUrl, sasToken),
+                        appendSasToken(serviceUrl, node.authNode.getSasToken()),
                         undefined,
                         clientOptions,
                     );
                     break;
-                }
 
                 case 'apiKey':
                     throw createError(
@@ -196,7 +138,7 @@ module.exports = function (RED) {
 
                 default:
                     throw createError(
-                        `Unsupported authentication type: ${node.authType}`,
+                        `Unsupported authentication type: ${node.authNode.authType}`,
                         'INVALID_AUTH_TYPE',
                     );
             }
@@ -205,17 +147,9 @@ module.exports = function (RED) {
         };
 
         node.on('close', function () {
-            credential = null;
             fileServiceClient = null;
         });
     }
 
-    RED.nodes.registerType('azure-config', AzureConfigNode, {
-        credentials: {
-            apiKey: { type: 'password' },
-            accountKey: { type: 'password' },
-            connectionString: { type: 'password' },
-            sasToken: { type: 'password' },
-        },
-    });
+    RED.nodes.registerType('azure-file-config', AzureFilesConfigNode);
 };

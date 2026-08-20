@@ -230,5 +230,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('document-intelligence', AzureDocumentIntelligenceNode);
+    RED.nodes.registerType('azure-document-intelligence', AzureDocumentIntelligenceNode);
 };

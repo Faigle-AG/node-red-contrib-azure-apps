@@ -42,7 +42,7 @@
   },
   {
     "id": "azdi1002",
-    "type": "document-intelligence",
+    "type": "azure-document-intelligence",
     "name": "Analyze public document",
     "config": "azdi1000",
     "dynamic": false,
@@ -84,13 +84,5 @@
     "x": 870,
     "y": 160,
     "wires": []
-  },
-  {
-    "id": "azdi1000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

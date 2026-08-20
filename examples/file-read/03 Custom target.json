@@ -21,7 +21,6 @@
     "id": "azr3002",
     "type": "azure-file-read",
     "name": "Store under msg.result",
-    "config": "azr3000",
     "shareName": "documents",
     "shareNameType": "str",
     "target": "result",
@@ -55,13 +54,5 @@
     "x": 670,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azr3000",
-    "type": "azure-config",
-    "name": "EDIT: Azure Storage",
-    "authType": "entra",
-    "serviceUrl": "yourstorageaccount",
-    "accountName": ""
   }
 ]

@@ -25,7 +25,7 @@
   },
   {
     "id": "azf4002",
-    "type": "foundry-llm",
+    "type": "azure-document-intelligence",
     "name": "Full Foundry response",
     "config": "azf4000",
     "endpoint": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
@@ -68,13 +68,5 @@
     "x": 650,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azf4000",
-    "type": "azure-config",
-    "name": "EDIT: Azure API Key",
-    "authType": "apiKey",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

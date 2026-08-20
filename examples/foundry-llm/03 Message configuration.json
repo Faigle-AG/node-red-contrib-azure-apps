@@ -40,7 +40,7 @@
   },
   {
     "id": "azf3002",
-    "type": "foundry-llm",
+    "type": "azure-document-intelligence",
     "name": "Config from msg",
     "config": "azf3000",
     "endpoint": "foundryEndpoint",
@@ -83,13 +83,5 @@
     "x": 640,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azf3000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]
