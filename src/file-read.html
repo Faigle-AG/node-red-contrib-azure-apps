@@ -5,7 +5,7 @@
         paletteLabel: 'file-read',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
+            config: { type: 'azure-file-config', required: true },
             shareName: {
                 value: '',
                 validate: function (v) {
@@ -104,7 +104,7 @@
         <div class="form-row config-node-row">
             <label for="node-input-config">
                 <i class="fa fa-cogs"></i>
-                <span>Azure Config</span>
+                <span>Azure Files Config</span>
             </label>
             <input type="text" id="node-input-config" />
         </div>
@@ -181,7 +181,7 @@ Reads a file from an Azure Storage file share, checks whether it exists, and/or 
 
 ### Properties
 
-- **Azure Config**: shared `azure-config` authentication configuration.
+- **Azure Files Config**: shared Azure Files service configuration.
 - **Share Name**: Azure file-share name. This is always resolved from the configured typed property, including in dynamic mode.
 - **Load from msg.file**: when enabled, the node reads `msg.file.action` and `msg.file.path` instead of the static File Options.
 - **Actions**: one or more of Read, Check Exists, and Get Stat.

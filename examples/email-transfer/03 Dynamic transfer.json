@@ -25,7 +25,7 @@
   },
   {
     "id": "azet3002",
-    "type": "email-transfer",
+    "type": "azure-email-transfer",
     "name": "Dynamic email transfer",
     "config": "azet3000",
     "userId": "user@example.com",
@@ -58,13 +58,5 @@
     "x": 760,
     "y": 340,
     "wires": []
-  },
-  {
-    "id": "azet3000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

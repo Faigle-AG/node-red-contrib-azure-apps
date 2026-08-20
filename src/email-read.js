@@ -67,17 +67,24 @@ module.exports = function (RED) {
         async function (req, res) {
             try {
                 const configNode = RED.nodes.getNode(String(req.query.config || '').trim());
-                const userId = String(req.query.userId || '').trim();
 
                 if (!configNode) {
                     return res.status(400).json({
-                        message: 'A deployed Azure Config is required',
+                        message: 'A deployed Azure Email Config is required',
                     });
                 }
 
+                if ((configNode.userIdType || 'str') !== 'str') {
+                    return res.status(400).json({
+                        message:
+                            'Folder loading requires a static User ID / Email in Azure Email Config',
+                    });
+                }
+
+                const userId = String(configNode.userId || '').trim();
                 if (!userId) {
                     return res.status(400).json({
-                        message: 'User ID / Email is required',
+                        message: 'User ID / Email is required in Azure Email Config',
                     });
                 }
 
@@ -102,8 +109,6 @@ module.exports = function (RED) {
         this.name = config.name;
         this.configNode = RED.nodes.getNode(config.config);
         this.dynamic = config.dynamic;
-        this.userId = config.userId;
-        this.userIdType = config.userIdType || 'str';
         this.folderId = config.folderId || 'inbox';
         this.folderName = config.folderName || 'Inbox';
         this.limit = config.limit || 10;
@@ -116,7 +121,7 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
-                if (!node.configNode) throw new Error('Missing Azure configuration');
+                if (!node.configNode) throw new Error('Missing Azure Email configuration');
 
                 const currentFolderId =
                     node.dynamic && msg.email && msg.email.folderId !== undefined
@@ -139,8 +144,8 @@ module.exports = function (RED) {
                         : node.downloadAttachments;
 
                 const currentUserId = await node.getTypedProperty(
-                    node.userId,
-                    node.userIdType,
+                    node.configNode.userId,
+                    node.configNode.userIdType || 'str',
                     msg,
                 );
 
@@ -209,5 +214,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('email-read', AzureEmailReadNode);
+    RED.nodes.registerType('azure-email-read', AzureEmailReadNode);
 };

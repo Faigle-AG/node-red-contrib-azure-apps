@@ -25,7 +25,7 @@
   },
   {
     "id": "azdi4002",
-    "type": "document-intelligence",
+    "type": "azure-document-intelligence",
     "name": "Analyze Base64 to msg.result",
     "config": "azdi4000",
     "dynamic": false,
@@ -67,13 +67,5 @@
     "x": 700,
     "y": 560,
     "wires": []
-  },
-  {
-    "id": "azdi4000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

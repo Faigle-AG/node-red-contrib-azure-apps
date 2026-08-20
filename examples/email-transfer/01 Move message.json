@@ -25,7 +25,7 @@
   },
   {
     "id": "azet1002",
-    "type": "email-transfer",
+    "type": "azure-email-transfer",
     "name": "Move to Archive",
     "config": "azet1000",
     "userId": "user@example.com",
@@ -58,13 +58,5 @@
     "x": 600,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azet1000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

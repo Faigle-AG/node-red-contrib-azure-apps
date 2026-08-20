@@ -19,7 +19,7 @@
   },
   {
     "id": "azew1002",
-    "type": "email-write",
+    "type": "azure-email-write",
     "name": "Send hello",
     "config": "azew1000",
     "userId": "sender@example.com",
@@ -56,13 +56,5 @@
     "x": 590,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azew1000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

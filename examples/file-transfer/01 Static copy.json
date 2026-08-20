@@ -82,13 +82,5 @@
     "x": 920,
     "y": 180,
     "wires": []
-  },
-  {
-    "id": "azt1000",
-    "type": "azure-config",
-    "name": "Azure Storage",
-    "authType": "entra",
-    "serviceUrl": "yourstorageaccount",
-    "accountName": ""
   }
 ]

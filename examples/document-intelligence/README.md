@@ -1,6 +1,6 @@
 # Azure Document Intelligence examples
 
-Examples for the `document-intelligence` node using the shared `azure-config`.
+Examples for the `azure-document-intelligence` node using the shared `azure-auth-config`.
 
 ## Before running
 

@@ -1,0 +1,142 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-auth-config', {
+        category: 'config',
+        defaults: {
+            name: { value: '' },
+            authType: { value: 'entra', required: true },
+            accountName: {
+                value: '',
+                validate: function (v) {
+                    var authType = $('#node-config-input-authType').length
+                        ? $('#node-config-input-authType').val()
+                        : this.authType;
+
+                    if (authType !== 'accountKey') return true;
+                    return !!v && v.trim() !== '';
+                },
+            },
+        },
+        credentials: {
+            apiKey: { type: 'password' },
+            accountKey: { type: 'password' },
+            connectionString: { type: 'password' },
+            sasToken: { type: 'password' },
+        },
+        label: function () {
+            return this.name || this.accountName || 'Azure Config';
+        },
+        oneditprepare: function () {
+            function updateAuthenticationRows() {
+                var authType = $('#node-config-input-authType').val();
+
+                $('#row-api-key').toggle(authType === 'apiKey');
+                $('#row-account-name').toggle(authType === 'accountKey');
+                $('#row-account-key').toggle(authType === 'accountKey');
+                $('#row-connection-string').toggle(authType === 'connectionString');
+                $('#row-sas-token').toggle(authType === 'sas');
+                $('#row-entra-help').toggle(authType === 'entra');
+            }
+
+            $('#node-config-input-authType').on('change', updateAuthenticationRows);
+            updateAuthenticationRows();
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-auth-config">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-config-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-config-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Authentication</legend>
+
+            <div class="form-row">
+                <label for="node-config-input-authType">
+                    <i class="fa fa-key"></i>
+                    Authentication
+                </label>
+                <select id="node-config-input-authType">
+                    <option value="entra">Microsoft Entra ID</option>
+                    <option value="apiKey">API key</option>
+                    <option value="accountKey">Storage account key</option>
+                    <option value="connectionString">Storage connection string</option>
+                    <option value="sas">Storage SAS token</option>
+                </select>
+            </div>
+
+            <div class="form-row" id="row-api-key">
+                <label for="node-config-input-apiKey">
+                    <i class="fa fa-lock"></i>
+                    API Key
+                </label>
+                <input type="password" id="node-config-input-apiKey" />
+            </div>
+
+            <div class="form-row" id="row-account-name">
+                <label for="node-config-input-accountName">
+                    <i class="fa fa-building"></i>
+                    Account Name
+                </label>
+                <input type="text" id="node-config-input-accountName" />
+            </div>
+
+            <div class="form-row" id="row-account-key">
+                <label for="node-config-input-accountKey">
+                    <i class="fa fa-lock"></i>
+                    Account Key
+                </label>
+                <input type="password" id="node-config-input-accountKey" />
+            </div>
+
+            <div class="form-row" id="row-connection-string">
+                <label for="node-config-input-connectionString">
+                    <i class="fa fa-link"></i>
+                    Conn String
+                </label>
+                <input type="password" id="node-config-input-connectionString" />
+            </div>
+
+            <div class="form-row" id="row-sas-token">
+                <label for="node-config-input-sasToken">
+                    <i class="fa fa-ticket"></i>
+                    SAS Token
+                </label>
+                <input
+                    type="password"
+                    id="node-config-input-sasToken"
+                    placeholder="sv=...&ss=f&..."
+                />
+            </div>
+
+            <div class="form-row form-help-row" id="row-entra-help">
+                <label></label>
+                <div class="form-help">
+                    Uses DefaultAzureCredential. The consuming node requests the token scope
+                    required by its Azure service.
+                </div>
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-auth-config">
+Shared authentication configuration for Azure nodes.
+
+### Authentication
+
+- **Microsoft Entra ID** uses `DefaultAzureCredential`. Each consuming node requests the scope required by its Azure service.
+- **API key** stores a generic Azure service API key in Node-RED credentials.
+- **Storage account key**, **Storage connection string**, and **Storage SAS token** are intended for Azure File nodes.
+
+</script>
+<!-- @formatter:on -->

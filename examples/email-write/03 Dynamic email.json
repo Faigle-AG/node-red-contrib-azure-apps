@@ -25,7 +25,7 @@
   },
   {
     "id": "azew3002",
-    "type": "email-write",
+    "type": "azure-email-write",
     "name": "Dynamic email write",
     "config": "azew3000",
     "userId": "sender@example.com",
@@ -62,13 +62,5 @@
     "x": 630,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azew3000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

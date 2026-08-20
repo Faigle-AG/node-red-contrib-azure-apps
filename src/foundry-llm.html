@@ -1,10 +1,10 @@
 <script type="text/javascript">
-    RED.nodes.registerType('foundry-llm', {
+    RED.nodes.registerType('azure-foundry-llm', {
         category: 'azure',
         color: '#0072C6',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
+            config: { type: 'azure-azure-config', required: true },
             endpoint: {
                 value: '',
                 required: true,
@@ -117,15 +117,15 @@
         outputs: 1,
         icon: 'font-awesome/fa-comments-o',
         label: function () {
-            return this.name || (this.model ? 'Foundry: ' + this.model : 'foundry llm');
+            return this.name || (this.model ? 'Foundry: ' + this.model : 'foundry - llm');
         },
-        paletteLabel: 'foundry llm',
+        paletteLabel: 'foundry - llm',
     });
 </script>
 
 <link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
-<script type="text/html" data-template-name="foundry-llm">
+<script type="text/html" data-template-name="azure-foundry-llm">
     <div class="faigle-node-editor">
         <div class="form-row">
             <label for="node-input-name">
@@ -280,7 +280,7 @@
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
-<script type="text/markdown" data-help-name="foundry-llm">
+<script type="text/markdown" data-help-name="azure-foundry-llm">
 Calls a deployed LLM through the Microsoft Foundry Responses API using the official OpenAI JavaScript client and Microsoft Azure Identity.
 
 ### Authentication

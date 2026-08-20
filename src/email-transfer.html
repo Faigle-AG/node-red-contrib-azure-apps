@@ -1,20 +1,11 @@
 <script type="text/javascript">
-    RED.nodes.registerType('email-transfer', {
+    RED.nodes.registerType('azure-email-transfer', {
         category: 'azure',
         color: '#0072C6',
+        paletteLabel: 'email-transfer',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
-            userId: {
-                value: '',
-                required: true,
-                validate: function (v) {
-                    if (!v || v.trim() === '') return false;
-                    var validator = RED.validators.typedInput('userIdType');
-                    return validator.call(this, v);
-                },
-            },
-            userIdType: { value: 'str' },
+            config: { type: 'azure-email-config', required: true },
             dynamic: { value: false },
             messageId: {
                 value: 'email.messageId',
@@ -44,11 +35,6 @@
             var currentDestinationId = this.destinationId || 'archive';
             var currentDestinationName = this.destinationName || 'Archive';
 
-            $('#node-input-userId').typedInput({
-                default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
-                typeField: $('#node-input-userIdType'),
-            });
             $('#node-input-messageId').typedInput({
                 default: 'msg',
                 types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
@@ -71,8 +57,6 @@
 
             function loadFolders(showWarning) {
                 var configId = $('#node-input-config').val();
-                var userId = $('#node-input-userId').val();
-                var userIdType = $('#node-input-userIdType').val();
                 var button = $('#node-input-loadFolders');
                 var selectedDestinationId = folderSelect.val() || currentDestinationId;
                 var selectedDestinationName =
@@ -80,21 +64,14 @@
 
                 if (!configId || configId === '_ADD_') {
                     if (showWarning)
-                        RED.notify('Select and deploy an Azure Config first.', 'warning');
-                    return;
-                }
-
-                if (userIdType !== 'str' || !userId || userId.trim() === '') {
-                    if (showWarning) {
-                        RED.notify('Folder loading requires a static User ID / Email.', 'warning');
-                    }
+                        RED.notify('Select and deploy an Email Config first.', 'warning');
                     return;
                 }
 
                 button.prop('disabled', true);
                 folderSelect.prop('disabled', true);
 
-                $.getJSON('email-transfer/folders', { config: configId, userId: userId.trim() })
+                $.getJSON('email-transfer/folders', { config: configId })
                     .done(function (response) {
                         var folders = Array.isArray(response) ? response : response.folders || [];
 
@@ -157,7 +134,7 @@
 
 <link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
 
-<script type="text/html" data-template-name="email-transfer">
+<script type="text/html" data-template-name="azure-email-transfer">
     <div class="faigle-node-editor">
         <div class="form-row">
             <label for="node-input-name">
@@ -176,27 +153,14 @@
         </div>
 
         <fieldset class="node-red-fieldset">
-            <legend>Azure Configuration</legend>
+            <legend>Email Configuration</legend>
 
             <div class="form-row config-node-row">
                 <label for="node-input-config">
                     <i class="fa fa-cogs"></i>
-                    Azure Config
+                    Email Config
                 </label>
                 <input type="text" id="node-input-config" />
-            </div>
-
-            <div class="form-row">
-                <label for="node-input-userId">
-                    <i class="fa fa-user"></i>
-                    User ID / Email
-                </label>
-                <input
-                    type="text"
-                    id="node-input-userId"
-                    placeholder="user@domain.com or variable"
-                />
-                <input type="hidden" id="node-input-userIdType" />
             </div>
         </fieldset>
 
@@ -236,19 +200,16 @@
 
 <!-- @formatter:off -->
 <!-- prettier-ignore -->
-<script type="text/markdown" data-help-name="email-transfer">
+<script type="text/markdown" data-help-name="azure-email-transfer">
 Moves an email to a selected Microsoft Graph mail folder using the selected **Azure Config**.
 
 ### Properties
 
-- **Azure Config** _config_ \
-  Shared Azure authentication configuration. Microsoft Graph requires **Microsoft Entra ID**.
+- **Email Config** _config_ \
+  Shared mailbox and Azure authentication configuration.
 
 - **Load from msg.email** _boolean_ \
   If enabled, the node will ignore the UI properties and expect `msg.email.messageId` and `msg.email.destinationId` to be provided dynamically.
-
-- **User ID / Email** _string | env | msg | flow | global | jsonata_ \
-  The UserPrincipalName or Azure Object ID of the user whose mailbox contains the message.
 
 - **Message ID** _string | msg | flow | global | jsonata | env_ \
   The unique Microsoft Graph ID of the message to move.
@@ -256,7 +217,7 @@ Moves an email to a selected Microsoft Graph mail folder using the selected **Az
 - **Dest. Folder** _string_ \
   The Microsoft Graph mail folder ID to which the message will be moved. Use the refresh button to retrieve all root and nested folders for a static User ID / Email.
 
-Folder loading in the editor requires a deployed **Azure Config** and **User ID / Email** to use the static `str` type. Dynamic account values cannot be resolved until the node receives a message.
+Folder loading in the editor requires a deployed **Email Config** whose **User ID / Email** uses the static `str` type. Dynamic account values cannot be resolved until the node receives a message.
 
 ---
 

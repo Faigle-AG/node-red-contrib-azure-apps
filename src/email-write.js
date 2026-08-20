@@ -5,8 +5,6 @@ module.exports = function (RED) {
         RED.nodes.createNode(this, config);
         this.name = config.name;
         this.configNode = RED.nodes.getNode(config.config);
-        this.userId = config.userId;
-        this.userIdType = config.userIdType || 'str';
         this.dynamic = config.dynamic;
         this.to = config.to;
         this.toType = config.toType || 'msg';
@@ -22,9 +20,13 @@ module.exports = function (RED) {
 
         node.on('input', async function (msg, send, done) {
             try {
-                if (!node.configNode) throw new Error('Missing Azure configuration');
+                if (!node.configNode) throw new Error('Missing Azure Email configuration');
 
-                const userIdRaw = await node.getTypedProperty(node.userId, node.userIdType, msg);
+                const userIdRaw = await node.getTypedProperty(
+                    node.configNode.userId,
+                    node.configNode.userIdType || 'str',
+                    msg,
+                );
 
                 const currentUserId = String(userIdRaw || '').trim();
                 if (!currentUserId) {
@@ -168,5 +170,5 @@ module.exports = function (RED) {
         });
     }
 
-    RED.nodes.registerType('email-write', AzureEmailWriteNode);
+    RED.nodes.registerType('azure-email-write', AzureEmailWriteNode);
 };

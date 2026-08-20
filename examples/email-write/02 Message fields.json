@@ -35,7 +35,7 @@
   },
   {
     "id": "azew2002",
-    "type": "email-write",
+    "type": "azure-email-write",
     "name": "Send from message fields",
     "config": "azew2000",
     "userId": "sender@example.com",
@@ -72,13 +72,5 @@
     "x": 660,
     "y": 120,
     "wires": []
-  },
-  {
-    "id": "azew2000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

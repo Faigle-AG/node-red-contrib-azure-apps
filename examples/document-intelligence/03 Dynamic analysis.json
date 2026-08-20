@@ -25,7 +25,7 @@
   },
   {
     "id": "azdi3002",
-    "type": "document-intelligence",
+    "type": "azure-document-intelligence",
     "name": "Dynamic document analysis",
     "config": "azdi3000",
     "dynamic": true,
@@ -67,13 +67,5 @@
     "x": 730,
     "y": 440,
     "wires": []
-  },
-  {
-    "id": "azdi3000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

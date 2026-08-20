@@ -19,7 +19,7 @@
   },
   {
     "id": "azet2002",
-    "type": "email-read",
+    "type": "azure-email-read",
     "name": "Read one Inbox message",
     "config": "azet2000",
     "dynamic": false,
@@ -41,7 +41,7 @@
   },
   {
     "id": "azet2003",
-    "type": "email-transfer",
+    "type": "azure-email-transfer",
     "name": "Move first result to Archive",
     "config": "azet2000",
     "userId": "user@example.com",
@@ -74,13 +74,5 @@
     "x": 1010,
     "y": 260,
     "wires": []
-  },
-  {
-    "id": "azet2000",
-    "type": "azure-config",
-    "name": "Azure Entra",
-    "authType": "entra",
-    "serviceUrl": "",
-    "accountName": ""
   }
 ]

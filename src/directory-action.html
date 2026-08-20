@@ -5,7 +5,7 @@
         paletteLabel: 'directory-action',
         defaults: {
             name: { value: '' },
-            config: { type: 'azure-config', required: true },
+            config: { type: 'azure-file-config', required: true },
             shareName: {
                 value: '',
                 validate: function (v) {
@@ -110,7 +110,7 @@
         <div class="form-row config-node-row">
             <label for="node-input-config">
                 <i class="fa fa-cogs"></i>
-                <span>Azure Config</span>
+                <span>Azure Files Config</span>
             </label>
             <input type="text" id="node-input-config" />
         </div>
@@ -197,7 +197,7 @@ Creates, deletes, or lists directories in an Azure Storage file share.
 
 ### Properties
 
-- **Azure Config**: shared `azure-config` authentication configuration.
+- **Azure Files Config**: shared Azure Files service configuration.
 - **Share Name**: Azure file-share name; always resolved from the configured typed property.
 - **Load from msg.file**: reads `msg.file.action`, `msg.file.path`, and optional `msg.file.recursive`.
 - **Action**: Create, Delete, or List Contents.
