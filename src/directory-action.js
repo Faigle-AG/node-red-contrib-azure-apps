@@ -179,7 +179,19 @@ module.exports = function (RED) {
                 } else {
                     const contents = [];
                     for await (const item of directoryClient.listFilesAndDirectories()) {
-                        contents.push(item.name);
+                        const itemPath = directoryPath
+                            ? `${directoryPath}/${item.name}`
+                            : item.name;
+                        const parsedItem = path.posix.parse(itemPath);
+
+                        contents.push({
+                            filetype: item.kind,
+                            path: itemPath,
+                            dir: parsedItem.dir,
+                            name: parsedItem.name,
+                            base: parsedItem.base,
+                            ext: parsedItem.ext,
+                        });
                     }
 
                     const result = { ...msg.file, ...file, contents };

@@ -217,6 +217,12 @@ module.exports = function (RED) {
 
                 if (runStat) {
                     if (fileExists) {
+                        if (
+                            properties.fileAttributes &&
+                            properties.fileAttributes.includes('Directory')
+                        )
+                            file.filetype = 'directory';
+
                         file.stats = {
                             size: properties.contentLength,
                             mtime: properties.lastModified,
