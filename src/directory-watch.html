@@ -1,0 +1,280 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-directory-watch', {
+        category: 'azure',
+        color: '#0072C6',
+        paletteLabel: 'directory-watch',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-file-config', required: true },
+            shareName: {
+                value: '',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('shareNameType').call(this, v);
+                },
+            },
+            shareNameType: { value: 'str' },
+            source: {
+                value: '',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return true;
+                    return RED.validators.typedInput('sourceType').call(this, v);
+                },
+            },
+            sourceType: { value: 'str' },
+            target: {
+                value: 'file',
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('targetType').call(this, v);
+                },
+            },
+            targetType: { value: 'msg' },
+            depth: { value: 0 },
+            pollInterval: { value: 5000 },
+            watchAdd: { value: true },
+            watchChange: { value: false },
+            watchDelete: { value: false },
+            filterFiles: { value: true },
+            filterDirs: { value: false },
+            awaitWriteFinish: { value: true },
+            stabilityThreshold: { value: 2000 },
+            ignoreInitial: { value: false },
+            ignoredFiles: {
+                value: '',
+                validate: RED.validators.typedInput('ignoredFilesType'),
+            },
+            ignoredFilesType: { value: 're' },
+        },
+
+        inputs: 0,
+        outputs: 1,
+
+        icon: 'font-awesome/fa-eye',
+        label: function () {
+            return this.name || this.source || 'directory-watch';
+        },
+
+        oneditprepare: function () {
+            $('#node-input-shareName').typedInput({
+                default: 'str',
+                types: ['flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-shareNameType'),
+            });
+
+            $('#node-input-source').typedInput({
+                default: 'str',
+                types: ['flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-sourceType'),
+            });
+
+            $('#node-input-target').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-targetType'),
+            });
+
+            $('#node-input-ignoredFiles').typedInput({
+                default: this.ignoredFilesType || 're',
+                types: ['re'],
+                typeField: $('#node-input-ignoredFilesType'),
+            });
+
+            $('#node-input-awaitWriteFinish')
+                .on('change', function () {
+                    $('#row-stabilityThreshold').toggle($(this).is(':checked'));
+                })
+                .trigger('change');
+        },
+
+        onsave: function () {
+            this.ignoredFilesType = $('#node-input-ignoredFilesType').val();
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-directory-watch">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                <span>Name</span>
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <div class="form-row config-node-row">
+            <label for="node-input-config">
+                <i class="fa fa-cogs"></i>
+                <span>Azure Files Config</span>
+            </label>
+            <input type="text" id="node-input-config" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-shareName">
+                <i class="fa fa-hdd-o"></i>
+                <span>Share Name</span>
+            </label>
+            <input type="text" id="node-input-shareName" />
+            <input type="hidden" id="node-input-shareNameType" />
+        </div>
+
+        <div class="form-row">
+            <label for="node-input-source">
+                <i class="fa fa-folder-open"></i>
+                Source Path
+            </label>
+            <input type="text" id="node-input-source" placeholder="Blank watches the share root" />
+            <input type="hidden" id="node-input-sourceType" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Watch Options</legend>
+
+            <div class="form-row">
+                <label>
+                    <i class="fa fa-bolt"></i>
+                    Events
+                </label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="node-input-watchAdd" />
+                        Add
+                    </label>
+                    <label>
+                        <input type="checkbox" id="node-input-watchChange" />
+                        Change
+                    </label>
+                    <label>
+                        <input type="checkbox" id="node-input-watchDelete" />
+                        Delete
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label>
+                    <i class="fa fa-filter"></i>
+                    Types
+                </label>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="node-input-filterFiles" />
+                        <i class="fa fa-file"></i>
+                        Files
+                    </label>
+                    <label>
+                        <input type="checkbox" id="node-input-filterDirs" />
+                        <i class="fa fa-folder"></i>
+                        Directories
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-ignoredFiles">
+                    <i class="fa fa-file-excel-o"></i>
+                    Ignore pattern
+                </label>
+                <input
+                    type="text"
+                    id="node-input-ignoredFiles"
+                    placeholder="Regex for excluded names"
+                />
+                <input type="hidden" id="node-input-ignoredFilesType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-depth">
+                    <i class="fa fa-sitemap"></i>
+                    Depth
+                </label>
+                <input type="number" id="node-input-depth" min="0" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-pollInterval">
+                    <i class="fa fa-refresh"></i>
+                    Poll interval
+                </label>
+                <input type="number" id="node-input-pollInterval" min="250" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-awaitWriteFinish" />
+                <label for="node-input-awaitWriteFinish">
+                    <i class="fa fa-clock-o"></i>
+                    Await write finish
+                </label>
+            </div>
+
+            <div class="form-row" id="row-stabilityThreshold">
+                <label for="node-input-stabilityThreshold">
+                    <i class="fa fa-hourglass-half"></i>
+                    Threshold
+                </label>
+                <input type="number" id="node-input-stabilityThreshold" min="0" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-ignoreInitial" />
+                <label for="node-input-ignoreInitial">
+                    <i class="fa fa-history"></i>
+                    On start ignore files in folder
+                </label>
+            </div>
+        </fieldset>
+
+        <div class="form-row">
+            <label for="node-input-target">
+                <i class="fa fa-arrow-right"></i>
+                Output To
+            </label>
+            <input type="text" id="node-input-target" />
+            <input type="hidden" id="node-input-targetType" />
+        </div>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-directory-watch">
+Watches a directory in an Azure Storage file share and emits added, changed, and deleted files or directories.
+
+Azure Files does not expose native filesystem watch events, so this node polls the configured directory and compares snapshots.
+
+### Properties
+
+- **Azure Files Config**: shared Azure Files service configuration.
+- **Share Name**: Azure file-share name.
+- **Source Path**: directory path inside the share. Leave blank to watch the share root.
+- **Output To**: property where the complete watch event object is stored. Defaults to `msg.file`.
+- **Events**: emit Add, Change, or Delete events. Change applies to files.
+- **Types**: emit events for Files, Directories, or both.
+- **Ignore pattern**: optional regex matched against each file or directory name.
+- **Depth**: subdirectory depth to scan (`0` scans only direct children of Source Path).
+- **Poll interval**: milliseconds between completed scans. Minimum `250` ms; default `5000` ms.
+- **Await write finish**: delays file Add/Change until its Azure properties remain unchanged for the stability threshold.
+- **Threshold**: required stable time in milliseconds. Effective timing is bounded by the poll interval.
+- **On start ignore files in folder**: uses the first scan only as the baseline instead of emitting Add events for existing items.
+
+### Outputs
+
+- **configured output property** _object_ — defaults to `msg.file`.
+
+  - **action**: `add`, `change`, or `delete`.
+  - **filetype**: `file` or `directory`.
+  - **source**: configured Azure directory path inside the share.
+  - **path**: complete normalized path inside the share.
+  - **dir**: parent directory path.
+  - **base**: file or directory name including extension.
+  - **name**: file or directory name without extension.
+  - **ext**: extension including the dot.
+  - **stats**: Azure file/directory properties returned by `getProperties()`; `null` for deletes.
+
+The node polls by listing Azure Files directories recursively up to **Depth** and uses Azure properties such as ETag, last-modified time, and content length to detect file changes.
+</script>
+<!-- @formatter:on -->
