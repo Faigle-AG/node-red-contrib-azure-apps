@@ -1,6 +1,6 @@
 {
   "name": "@faigle/node-red-contrib-azure-apps",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"
@@ -21,7 +21,8 @@
       "file-write": "src/file-write.js",
       "file-transfer": "src/file-transfer.js",
       "directory-action": "src/directory-action.js",
-      "directory-transfer": "src/directory-transfer.js"
+      "directory-transfer": "src/directory-transfer.js",
+      "directory-watch": "src/directory-watch.js"
     }
   },
   "devDependencies": {
