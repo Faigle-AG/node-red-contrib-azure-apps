@@ -13,9 +13,11 @@
                     var authNode = authId && authId !== '_ADD_' ? RED.nodes.node(authId) : null;
 
                     if (authNode && authNode.authType === 'connectionString') return true;
-                    return !!v && v.trim() !== '';
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('serviceUrlType').call(this, v);
                 },
             },
+            serviceUrlType: { value: 'str' },
         },
         label: function () {
             return this.name || this.serviceUrl || 'Azure Files Config';
@@ -30,6 +32,11 @@
             $('#node-config-input-auth').on('change', function () {
                 updateServiceUrlRow();
                 $('#node-config-input-serviceUrl').trigger('change');
+            });
+            $('#node-config-input-serviceUrl').typedInput({
+                default: 'str',
+                types: ['str', 'env'],
+                typeField: $('#node-config-input-serviceUrlType'),
             });
             updateServiceUrlRow();
         },
@@ -69,6 +76,7 @@
                     id="node-config-input-serviceUrl"
                     placeholder="https://account.file.core.windows.net or account name"
                 />
+                <input type="hidden" id="node-config-input-serviceUrlType" />
             </div>
         </fieldset>
     </div>
