@@ -10,6 +10,7 @@ module.exports = function (RED) {
         this.name = config.name;
         this.configNode = RED.nodes.getNode(config.config);
         this.endpoint = config.endpoint;
+        this.endpointType = config.endpointType || 'str';
         this.dynamic = config.dynamic;
         this.modelId = config.modelId;
         this.modelIdType = config.modelIdType || 'str';
@@ -32,6 +33,15 @@ module.exports = function (RED) {
         node.on('input', async function (msg, send, done) {
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
+
+                let endpointRaw = await node.getTypedProperty(
+                    node.endpoint,
+                    node.endpointType,
+                    msg,
+                );
+
+                if (typeof endpointRaw === 'string') endpointRaw = endpointRaw.trim();
+                if (!endpointRaw) throw new Error('Endpoint URL is missing');
 
                 let modelRaw = node.dynamic
                     ? msg.document && msg.document.modelId
@@ -105,7 +115,7 @@ module.exports = function (RED) {
                     throw new Error('Invalid or unrecognized document input format');
                 }
 
-                const baseUrl = String(node.endpoint || '')
+                const baseUrl = String(endpointRaw || '')
                     .trim()
                     .replace(/\/+$/, '')
                     .replace(/\/(formrecognizer|documentintelligence)$/i, '');

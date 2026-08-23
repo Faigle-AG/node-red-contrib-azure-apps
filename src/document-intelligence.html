@@ -7,7 +7,15 @@
             name: { value: '' },
             config: { type: 'azure-auth-config', required: true },
             dynamic: { value: false },
-            endpoint: { value: '', required: true },
+            endpoint: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('endpointType').call(this, v);
+                },
+            },
+            endpointType: { value: 'str' },
             modelId: {
                 value: 'prebuilt-document',
                 validate: function (v) {
@@ -56,6 +64,11 @@
             return this.name || 'document intelligence';
         },
         oneditprepare: function () {
+            $('#node-input-endpoint').typedInput({
+                default: 'str',
+                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                typeField: $('#node-input-endpointType'),
+            });
             $('#node-input-modelId').typedInput({
                 default: 'str',
                 types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
@@ -131,6 +144,7 @@
                     id="node-input-endpoint"
                     placeholder="https://<resource>.cognitiveservices.azure.com/"
                 />
+                <input type="hidden" id="node-input-endpointType" />
             </div>
         </fieldset>
 
