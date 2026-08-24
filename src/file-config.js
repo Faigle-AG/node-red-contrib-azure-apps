@@ -66,6 +66,7 @@ module.exports = function (RED) {
         this.name = config.name;
         this.authNode = RED.nodes.getNode(config.auth);
         this.serviceUrl = config.serviceUrl;
+        this.serviceUrlType = config.serviceUrlType || 'str';
 
         const node = this;
         let fileServiceClient = null;
@@ -92,7 +93,13 @@ module.exports = function (RED) {
                 return fileServiceClient;
             }
 
-            const serviceUrl = normalizeServiceUrl(node.serviceUrl);
+            const serviceUrlRaw = RED.util.evaluateNodeProperty(
+                node.serviceUrl,
+                node.serviceUrlType,
+                node,
+                {},
+            );
+            const serviceUrl = normalizeServiceUrl(serviceUrlRaw);
 
             switch (node.authNode.authType) {
                 case 'entra':
