@@ -40,7 +40,7 @@
   },
   {
     "id": "azf3002",
-    "type": "azure-document-intelligence",
+    "type": "azure-foundry-llm",
     "name": "Config from msg",
     "config": "azf3000",
     "endpoint": "foundryEndpoint",

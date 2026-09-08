@@ -25,7 +25,7 @@
   },
   {
     "id": "azf4002",
-    "type": "azure-document-intelligence",
+    "type": "azure-foundry-llm",
     "name": "Full Foundry response",
     "config": "azf4000",
     "endpoint": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
