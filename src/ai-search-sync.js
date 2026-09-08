@@ -353,16 +353,17 @@ module.exports = function (RED) {
 
                 node.status.failed(message);
 
+                let herror = err;
                 if (err && err.name === 'AbortError') {
                     const timeoutError = new Error('Azure AI Search indexing request timed out');
                     timeoutError.name = 'AzureAiSearchTimeoutError';
                     timeoutError.code = 'REQUEST_TIMEOUT';
                     timeoutError.cause = err;
-                    err = timeoutError;
+                    herror = timeoutError;
                 }
 
-                if (done) done(err);
-                else node.error(err, msg);
+                if (done) done(herror);
+                else node.error(herror, msg);
             }
         });
     }
