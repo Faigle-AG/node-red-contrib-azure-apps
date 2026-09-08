@@ -1,8 +1,8 @@
 # @faigle/node-red-contrib-azure-apps
 
-A collection of Node-RED nodes for interacting with Microsoft Azure services, including Microsoft Graph email operations, Azure Document Intelligence, and Azure AI Foundry language models.
+A collection of Node-RED nodes for interacting with Microsoft Azure services, including Microsoft Graph email operations, Azure Document Intelligence, Azure AI Foundry language models, and Azure AI Search.
 
-The Azure nodes use `@azure/identity` and `DefaultAzureCredential`, enabling the same configuration to run locally with environment variables or Azure CLI credentials and in Azure with managed identity or workload identity. The Foundry LLM node also supports API-key authentication.
+The Azure nodes use `@azure/identity` and `DefaultAzureCredential`, enabling the same configuration to run locally with environment variables or Azure CLI credentials and in Azure with managed identity or workload identity. The Foundry LLM and Azure AI Search nodes also support API-key authentication.
 
 ## Requirements
 
@@ -61,6 +61,27 @@ https://ai.azure.com/.default
 ```
 
 API-key authentication can be selected directly in the node editor and does not use `DefaultAzureCredential`.
+
+### 5. Configure Azure AI Search RBAC
+
+For Microsoft Entra ID authentication, assign roles on the **Azure AI Search service** according to the operations used by Node-RED:
+
+- **Search Index Data Reader** — query/search documents.
+- **Search Index Data Contributor** — upload, merge, merge-or-upload, and delete documents.
+- **Search Service Contributor** — create, update, read, and delete index definitions.
+
+The Azure AI Search nodes request access tokens for:
+
+```text
+https://search.azure.com/.default
+```
+
+For API-key authentication:
+
+- Query operations can use a query key or admin key.
+- Document synchronization and index-management operations require an admin key.
+
+The shared `azure-auth-config` node can be reused for Azure AI Search. No Search-specific authentication configuration is required.
 
 ---
 
@@ -236,7 +257,7 @@ msg.email = {
 
 `apiResponse` contains the Microsoft Graph message object returned by the move operation.
 
-### 5. azure-document-intelligence
+### 5. azure-foundry-llm
 
 Calls a deployed language model through the Azure AI Foundry **Responses API**.
 
@@ -341,6 +362,184 @@ AZURE_CLIENT_ID="your-application-client-id"
 AZURE_CLIENT_SECRET="your-client-secret-value"
 ```
 
+### 6. azure-ai-search-index
+
+Creates, updates, reads, or deletes Azure AI Search index definitions.
+
+#### Configuration
+
+- **Azure Config:** Shared `azure-auth-config` node using Microsoft Entra ID or an API key.
+- **Endpoint:** Azure AI Search service endpoint, for example `https://<search-service>.search.windows.net`.
+- **Index Name:** Name of the index, for example `customers`.
+- **Operation:** Create/update, get definition, or delete.
+- **Definition:** The Azure AI Search index schema. For create/update operations this must contain a non-empty `fields` array with exactly one field marked as `key: true`.
+- **Output To:** A `msg`, `flow`, or `global` property.
+- **Timeout:** Request timeout in milliseconds.
+
+Example index definition:
+
+```json
+{
+    "name": "customers",
+    "fields": [
+        {
+            "name": "id",
+            "type": "Edm.String",
+            "key": true,
+            "filterable": true
+        },
+        {
+            "name": "first_name",
+            "type": "Edm.String",
+            "searchable": true,
+            "analyzer": "en.microsoft"
+        },
+        {
+            "name": "last_name",
+            "type": "Edm.String",
+            "searchable": true,
+            "analyzer": "en.microsoft"
+        }
+    ]
+}
+```
+
+The document-upload API does not create missing indexes automatically. Create the index first with this node or another Azure management mechanism.
+
+### 7. azure-ai-search-sync
+
+Uploads and synchronizes documents with an existing Azure AI Search index.
+
+#### Supported actions
+
+- `upload` — create a document or replace the existing document with the same key.
+- `merge` — update only the supplied fields of an existing document.
+- `mergeOrUpload` — update an existing document or create it if it does not exist. This is the recommended default for synchronization.
+- `delete` — delete documents by key.
+
+#### Configuration
+
+- **Azure Config:** Shared `azure-auth-config` node using Microsoft Entra ID or an admin API key.
+- **Endpoint:** Azure AI Search service endpoint.
+- **Index Name:** Existing target index.
+- **Documents:** A single document, an array of documents, or an object containing a `value` array.
+- **Action:** Index action applied to documents that do not already contain `@search.action`.
+- **Batch Size:** Maximum documents per request. Azure AI Search accepts at most 1,000 documents in a single indexing batch.
+- **Fail on Document Error:** Treat an individual document failure in the Azure batch response as a Node-RED error.
+- **Output Mode:** Summary or complete indexing result.
+- **Timeout:** Request timeout in milliseconds.
+
+Example message:
+
+```javascript
+msg.customers = {
+    value: [
+        {
+            id: 'K0001',
+            customer_number: 'K-100001',
+            first_name: 'Anna',
+            last_name: 'Keller',
+            insurance_number: 'INS-100001',
+            policy_id: 'POL-100001',
+            customer_status: 'active',
+        },
+    ],
+};
+
+return msg;
+```
+
+With **Action** set to `mergeOrUpload`, the node adds the required indexing action before sending the request.
+
+Delete example:
+
+```javascript
+msg.documentsToDelete = [{ id: 'K0001' }];
+
+return msg;
+```
+
+Set **Action** to `delete`.
+
+### 8. azure-ai-search-query
+
+Queries documents in an existing Azure AI Search index.
+
+#### Configuration
+
+- **Azure Config:** Shared `azure-auth-config` node using Microsoft Entra ID or an API key.
+- **Endpoint:** Azure AI Search service endpoint.
+- **Index Name:** Index to search.
+- **Query:** Search text. The value can be configured as a typed Node-RED input.
+- **Query Syntax:** Simple or full query syntax, depending on the node configuration.
+- **Search Mode:** Controls whether any or all search terms must match.
+- **Search Fields:** Optional comma-separated list of searchable fields.
+- **Select:** Optional comma-separated list of fields returned in each document.
+- **Filter:** Optional OData filter expression.
+- **Top / Skip:** Result paging controls.
+- **Count:** Include the total matching document count.
+- **Semantic Configuration:** Optional semantic-search configuration name.
+- **Additional Parameters:** Optional JSON object merged into the Azure Search request for advanced parameters.
+- **Output Mode:** Matching documents only or the complete Azure Search response.
+- **Output To:** A `msg`, `flow`, or `global` property.
+
+Simple message-driven query:
+
+```javascript
+msg.searchText = 'Anna Keller';
+return msg;
+```
+
+Example node settings:
+
+```text
+Query:         msg.searchText
+Search Fields: first_name,last_name,customer_number,insurance_number,policy_id,notes
+Top:           10
+Output To:     msg.searchResults
+```
+
+Filtered query example:
+
+```text
+Query:  *
+Filter: customer_status eq 'active' and risk_class eq 'low'
+Select: id,customer_number,first_name,last_name,insurance_type,customer_status,risk_class
+Count:  enabled
+```
+
+Advanced parameters can also be supplied dynamically:
+
+```javascript
+msg.searchOptions = {
+    filter: "insurance_type eq 'Household contents insurance'",
+    select: 'id,customer_number,first_name,last_name,policy_id,insurance_type',
+    count: true,
+    top: 5,
+};
+
+return msg;
+```
+
+Configure **Additional Parameters** as `msg.searchOptions`.
+
+#### Typical flow
+
+A complete provisioning and data flow is:
+
+```text
+AI Search - Index
+    create/update index definition
+        ↓
+AI Search - Sync
+    mergeOrUpload documents
+        ↓
+AI Search - Query
+    search the indexed documents
+```
+
+The index schema and documents must use the same field names and compatible Azure Search data types.
+
 ---
 
 ## Troubleshooting
@@ -364,3 +563,10 @@ AZURE_CLIENT_SECRET="your-client-secret-value"
 - **Foundry ConnectTimeoutError:** Increase the node timeout, keep retries enabled, and verify DNS, proxy, firewall, private endpoint, and outbound network connectivity from the Node-RED host or container.
 - **Foundry 429 or 5xx:** The SDK retries these responses automatically. Reduce concurrency or increase **Max Retries** when throttling persists.
 - **Foundry model rejects temperature:** Clear the **Temperature** field for reasoning models or deployments that do not support it.
+
+- **Azure AI Search 403 when managing indexes:** For Microsoft Entra ID, assign **Search Service Contributor** to the identity used by `DefaultAzureCredential`. For API-key authentication, use an admin key rather than a query key.
+- **Azure AI Search 403 when synchronizing documents:** For Microsoft Entra ID, assign **Search Index Data Contributor**. For API-key authentication, use an admin key.
+- **Azure AI Search 403 when querying:** For Microsoft Entra ID, assign **Search Index Data Reader** or a role with broader Search data-plane permissions.
+- **Azure AI Search index not found:** The Sync and Query nodes require an existing index. Create it first with `azure-ai-search-index`.
+- **Azure AI Search Sync succeeds but no documents appear:** Inspect the Sync node output and verify the per-document results. Query the index directly with `search: "*"` and `count: true`; Azure Portal index statistics can lag behind actual indexing.
+- **Azure AI Search request timeout:** Increase the node timeout and verify DNS, proxy, firewall, private endpoint, and outbound connectivity from the Node-RED runtime.
