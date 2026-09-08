@@ -1,0 +1,311 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-ai-search-sync', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-auth-config', required: true },
+            endpoint: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('endpointType').call(this, v);
+                },
+            },
+            endpointType: { value: 'str' },
+            indexName: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('indexNameType').call(this, v);
+                },
+            },
+            indexNameType: { value: 'str' },
+            documents: {
+                value: 'payload',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('documentsType').call(this, v);
+                },
+            },
+            documentsType: { value: 'msg' },
+            action: { value: 'mergeOrUpload', required: true },
+            batchSize: {
+                value: 500,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 1 && Number(v) <= 1000;
+                },
+            },
+            timeoutMs: {
+                value: 30000,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 1000;
+                },
+            },
+            failOnDocumentError: { value: true },
+            output: {
+                value: 'payload',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('outputType').call(this, v);
+                },
+            },
+            outputType: { value: 'msg' },
+            outputMode: { value: 'summary', required: true },
+            enableLogging: { value: false },
+        },
+        oneditprepare: function () {
+            $('#node-input-endpoint').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-endpointType'),
+            });
+            $('#node-input-indexName').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-indexNameType'),
+            });
+            $('#node-input-documents').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'json', 'jsonata', 'env'],
+                typeField: $('#node-input-documentsType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-cloud-upload',
+        label: function () {
+            return (
+                this.name ||
+                (this.indexName ? 'AI Search Sync: ' + this.indexName : 'ai search sync')
+            );
+        },
+        paletteLabel: 'ai search sync',
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-ai-search-sync">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure AI Search</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-input-config">
+                    <i class="fa fa-cogs"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-input-config" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-endpoint">
+                    <i class="fa fa-globe"></i>
+                    Endpoint
+                </label>
+                <input
+                    type="text"
+                    id="node-input-endpoint"
+                    placeholder="https://my-search-service.search.windows.net"
+                />
+                <input type="hidden" id="node-input-endpointType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-indexName">
+                    <i class="fa fa-database"></i>
+                    Index
+                </label>
+                <input type="text" id="node-input-indexName" placeholder="index" />
+                <input type="hidden" id="node-input-indexNameType" />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Synchronization</legend>
+
+            <div class="form-row">
+                <label for="node-input-documents">
+                    <i class="fa fa-file-code-o"></i>
+                    Documents
+                </label>
+                <input type="text" id="node-input-documents" />
+                <input type="hidden" id="node-input-documentsType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-action">
+                    <i class="fa fa-refresh"></i>
+                    Action
+                </label>
+                <select id="node-input-action">
+                    <option value="mergeOrUpload">Merge or Upload (sync/upsert)</option>
+                    <option value="upload">Upload (replace document)</option>
+                    <option value="merge">Merge existing document</option>
+                    <option value="delete">Delete document</option>
+                    <option value="document">From @search.action in document</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-batchSize">
+                    <i class="fa fa-files-o"></i>
+                    Batch Size
+                </label>
+                <input type="number" id="node-input-batchSize" min="1" max="1000" step="1" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-failOnDocumentError" />
+                <label for="node-input-failOnDocumentError">
+                    Fail node if Azure rejects any document
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Advanced</legend>
+
+            <div class="form-row">
+                <label for="node-input-timeoutMs">
+                    <i class="fa fa-clock-o"></i>
+                    Timeout (ms)
+                </label>
+                <input type="number" id="node-input-timeoutMs" min="1000" step="1000" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-enableLogging" />
+                <label for="node-input-enableLogging">Enable request metadata logging</label>
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Output</legend>
+
+            <div class="form-row">
+                <label for="node-input-outputMode">
+                    <i class="fa fa-file-text-o"></i>
+                    Value
+                </label>
+                <select id="node-input-outputMode">
+                    <option value="summary">Synchronization summary</option>
+                    <option value="results">Per-document results</option>
+                    <option value="responses">Complete batch responses</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-output">
+                    <i class="fa fa-sign-out"></i>
+                    Output To
+                </label>
+                <input type="text" id="node-input-output" />
+                <input type="hidden" id="node-input-outputType" />
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-ai-search-sync">
+Uploads and synchronizes documents with an existing Azure AI Search index using the Documents - Index REST API (`api-version=2026-04-01`).
+
+### Authentication
+
+Authentication is supplied by the selected **Azure Config**. No changes to the shared auth-config node are required.
+
+- **Microsoft Entra ID** requests a token for `https://search.azure.com/.default`.
+- **API key** uses the generic API key stored in Azure Config and sends it in the `api-key` header. Use an admin key for document writes.
+
+For Entra ID, assign the Node-RED identity the **Search Index Data Contributor** role on the Azure AI Search service.
+
+### Input
+
+**Documents** accepts any of these forms:
+
+1. A single document object.
+2. An array of document objects.
+3. An Azure indexing payload with a `value` array.
+4. A JSON string or Buffer containing one of the forms above.
+
+Example:
+
+```json
+{
+  "value": [
+    {
+      "id": "K0001",
+      "custom-id": "K-100001",
+      "Name": "Anna",
+      "Lastname": "Keller"
+    }
+  ]
+}
+```
+
+### Actions
+
+- **Merge or Upload** is the recommended synchronization/upsert mode. Existing documents are merged; missing documents are created.
+- **Upload** creates or replaces the complete document.
+- **Merge** updates only supplied fields and fails if the document does not exist.
+- **Delete** deletes documents. Azure only needs the index key field for each delete action.
+- **From @search.action** preserves the `@search.action` value supplied by each document. Allowed values are `upload`, `merge`, `mergeOrUpload`, and `delete`.
+
+When a fixed action is selected, the node sets or overrides `@search.action` on every supplied document.
+
+### Batching
+
+The node automatically splits requests to respect Azure AI Search push limits. **Batch Size** controls the maximum document count per request and must be between 1 and 1000. The node additionally splits before a request reaches the 16 MB indexing payload limit.
+
+### Partial failures
+
+Azure can accept a batch request while rejecting individual document actions. The node inspects each returned result.
+
+If **Fail node if Azure rejects any document** is enabled, any per-document failure calls `done(err)` so a Node-RED Catch node can handle it. The details remain available on `msg.azureSearchSync`.
+
+### Output
+
+`msg.azureSearchSync` always contains the synchronization summary after Azure has processed all batches:
+
+```json
+{
+  "action": "mergeOrUpload",
+  "indexName": "customer",
+  "apiVersion": "2026-04-01",
+  "total": 8,
+  "succeeded": 8,
+  "failed": 0,
+  "batches": 1,
+  "results": []
+}
+```
+
+The configured output can contain the summary, per-document results, or complete batch responses.
+
+### Important
+
+This node performs **push synchronization/upsert**. It does not automatically delete documents from Azure that are absent from the current input. Full source-of-truth reconciliation requires an explicit list of documents/keys to delete.
+</script>
+<!-- @formatter:on -->

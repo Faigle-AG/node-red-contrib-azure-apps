@@ -1,0 +1,259 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-ai-search-index', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-auth-config', required: true },
+            endpoint: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('endpointType').call(this, v);
+                },
+            },
+            endpointType: { value: 'str' },
+            indexName: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('indexNameType').call(this, v);
+                },
+            },
+            indexNameType: { value: 'str' },
+            operation: { value: 'createOrUpdate', required: true },
+            definition: {
+                value: 'payload',
+                validate: function (v) {
+                    var operation = $('#node-input-operation').length
+                        ? $('#node-input-operation').val()
+                        : this.operation;
+                    if (operation !== 'createOrUpdate') return true;
+                    if (!v || String(v).trim() === '') return false;
+                    return RED.validators.typedInput('definitionType').call(this, v);
+                },
+            },
+            definitionType: { value: 'msg' },
+            allowIndexDowntime: { value: false },
+            timeoutMs: {
+                value: 30000,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 1000;
+                },
+            },
+            output: { value: 'payload', required: true },
+            outputType: { value: 'msg' },
+            enableLogging: { value: false },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-database',
+        paletteLabel: 'AI Search - Index',
+        label: function () {
+            return this.name || (this.indexName ? 'Index: ' + this.indexName : 'AI Search - Index');
+        },
+        oneditprepare: function () {
+            $('#node-input-endpoint').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-endpointType'),
+            });
+            $('#node-input-indexName').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-indexNameType'),
+            });
+            $('#node-input-definition').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'json', 'str', 'env', 'jsonata'],
+                typeField: $('#node-input-definitionType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+
+            function updateOperationRows() {
+                var createOrUpdate = $('#node-input-operation').val() === 'createOrUpdate';
+                $('#row-index-definition').toggle(createOrUpdate);
+                $('#row-allow-downtime').toggle(createOrUpdate);
+                $('#node-input-definition').trigger('change');
+            }
+
+            $('#node-input-operation').on('change', updateOperationRows);
+            updateOperationRows();
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-ai-search-index">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure AI Search</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-input-config">
+                    <i class="fa fa-cogs"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-input-config" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-endpoint">
+                    <i class="fa fa-globe"></i>
+                    Endpoint
+                </label>
+                <input
+                    type="text"
+                    id="node-input-endpoint"
+                    placeholder="https://my-search-service.search.windows.net"
+                />
+                <input type="hidden" id="node-input-endpointType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-indexName">
+                    <i class="fa fa-database"></i>
+                    Index
+                </label>
+                <input type="text" id="node-input-indexName" placeholder="index" />
+                <input type="hidden" id="node-input-indexNameType" />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Index Operation</legend>
+
+            <div class="form-row">
+                <label for="node-input-operation">
+                    <i class="fa fa-tasks"></i>
+                    Operation
+                </label>
+                <select id="node-input-operation">
+                    <option value="createOrUpdate">Create or Update</option>
+                    <option value="get">Get Definition</option>
+                    <option value="delete">Delete Index</option>
+                </select>
+            </div>
+
+            <div class="form-row" id="row-index-definition">
+                <label for="node-input-definition">
+                    <i class="fa fa-file-code-o"></i>
+                    Definition
+                </label>
+                <input type="text" id="node-input-definition" />
+                <input type="hidden" id="node-input-definitionType" />
+            </div>
+
+            <div class="form-row flex-checkbox-row" id="row-allow-downtime">
+                <input type="checkbox" id="node-input-allowIndexDowntime" />
+                <label for="node-input-allowIndexDowntime">
+                    Allow index downtime for schema changes
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Advanced</legend>
+
+            <div class="form-row">
+                <label for="node-input-timeoutMs">
+                    <i class="fa fa-clock-o"></i>
+                    Timeout (ms)
+                </label>
+                <input type="number" id="node-input-timeoutMs" min="1000" step="1000" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-enableLogging" />
+                <label for="node-input-enableLogging">Enable request metadata logging</label>
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Output</legend>
+
+            <div class="form-row">
+                <label for="node-input-output">
+                    <i class="fa fa-sign-out"></i>
+                    Output To
+                </label>
+                <input type="text" id="node-input-output" />
+                <input type="hidden" id="node-input-outputType" />
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-ai-search-index">
+Creates, updates, retrieves, or deletes an Azure AI Search index definition using the Search Service REST API (`api-version=2026-04-01`).
+
+### Authentication
+
+Authentication is supplied by the selected **Azure Config**. The shared auth-config does not need changes.
+
+- **Microsoft Entra ID** requests `https://search.azure.com/.default`.
+- **API key** sends the generic API key from Azure Config in the `api-key` header. Index management requires an **admin key**; query keys are read-only.
+
+For Entra ID, assign the runtime identity **Search Service Contributor**. This role can create, modify, and delete search objects such as indexes. `Search Index Data Contributor` alone is not sufficient to modify index definitions.
+
+### Operations
+
+- **Create or Update** sends `PUT /indexes('{indexName}')`. The definition must contain `fields` and exactly one field with `key: true`. If `name` is omitted, the configured Index value is inserted automatically.
+- **Get Definition** retrieves the current index definition.
+- **Delete Index** permanently deletes the index and all documents it contains.
+
+### Definition
+
+The definition can be supplied from `msg`, flow/global context, JSON, environment variables, or JSONata.
+
+Example for `msg.payload`:
+
+```json
+{
+  "name": "customers",
+  "fields": [
+    {
+      "name": "id",
+      "type": "Edm.String",
+      "key": true,
+      "filterable": true
+    },
+    {
+      "name": "lastname",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": true,
+      "sortable": true,
+      "analyzer": "de.microsoft"
+    }
+  ]
+}
+```
+
+### Allow index downtime
+
+Only applies to **Create or Update**. Azure can require temporary downtime for certain schema changes, including additions to analyzers/tokenizers/token filters/character filters. Leave this disabled unless the intended schema update requires it.
+
+### Output
+
+Create/update and get operations write the returned index definition to the configured output property. Delete writes operation metadata. `msg.azureSearchIndex` always contains request metadata such as operation, index name, HTTP status, request ID, and ETag when available.
+</script>
+<!-- @formatter:on -->

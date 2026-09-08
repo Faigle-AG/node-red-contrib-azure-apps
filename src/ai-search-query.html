@@ -1,0 +1,376 @@
+<script type="text/javascript">
+    RED.nodes.registerType('azure-ai-search-query', {
+        category: 'azure',
+        color: '#0072C6',
+        defaults: {
+            name: { value: '' },
+            config: { type: 'azure-auth-config', required: true },
+            endpoint: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('endpointType').call(this, v);
+                },
+            },
+            endpointType: { value: 'str' },
+            indexName: {
+                value: '',
+                required: true,
+                validate: function (v) {
+                    if (!v || v.trim() === '') return false;
+                    return RED.validators.typedInput('indexNameType').call(this, v);
+                },
+            },
+            indexNameType: { value: 'str' },
+            query: { value: 'payload' },
+            queryType: { value: 'msg' },
+            querySyntax: { value: 'simple' },
+            searchMode: { value: 'any' },
+            searchFields: { value: '' },
+            select: { value: '' },
+            filter: { value: '' },
+            top: {
+                value: 10,
+                validate: function (v) {
+                    return v === '' || (Number.isInteger(Number(v)) && Number(v) >= 1);
+                },
+            },
+            skip: {
+                value: '',
+                validate: function (v) {
+                    return v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0);
+                },
+            },
+            count: { value: false },
+            semanticConfiguration: { value: '' },
+            additionalParameters: { value: '{}' },
+            additionalParametersType: { value: 'json' },
+            output: { value: 'payload', required: true },
+            outputType: { value: 'msg' },
+            outputMode: { value: 'documents', required: true },
+            timeoutMs: {
+                value: 30000,
+                required: true,
+                validate: function (v) {
+                    return Number.isInteger(Number(v)) && Number(v) >= 1000;
+                },
+            },
+            enableLogging: { value: false },
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: 'font-awesome/fa-search',
+        paletteLabel: 'ai search - query',
+        label: function () {
+            return (
+                this.name || (this.indexName ? 'Search: ' + this.indexName : 'ai search - query')
+            );
+        },
+        oneditprepare: function () {
+            $('#node-input-endpoint').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-endpointType'),
+            });
+            $('#node-input-indexName').typedInput({
+                default: 'str',
+                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                typeField: $('#node-input-indexNameType'),
+            });
+            $('#node-input-query').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                typeField: $('#node-input-queryType'),
+            });
+            $('#node-input-additionalParameters').typedInput({
+                default: 'json',
+                types: ['json', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                typeField: $('#node-input-additionalParametersType'),
+            });
+            $('#node-input-output').typedInput({
+                default: 'msg',
+                types: ['msg', 'flow', 'global'],
+                typeField: $('#node-input-outputType'),
+            });
+        },
+    });
+</script>
+
+<link rel="stylesheet" href="resources/@faigle/node-red-runtime-utils/editor.css" />
+
+<script type="text/html" data-template-name="azure-ai-search-query">
+    <div class="faigle-node-editor">
+        <div class="form-row">
+            <label for="node-input-name">
+                <i class="fa fa-tag"></i>
+                Name
+            </label>
+            <input type="text" id="node-input-name" placeholder="Name" />
+        </div>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Azure AI Search</legend>
+
+            <div class="form-row config-node-row">
+                <label for="node-input-config">
+                    <i class="fa fa-cogs"></i>
+                    Azure Config
+                </label>
+                <input type="text" id="node-input-config" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-endpoint">
+                    <i class="fa fa-globe"></i>
+                    Endpoint
+                </label>
+                <input
+                    type="text"
+                    id="node-input-endpoint"
+                    placeholder="https://my-search-service.search.windows.net"
+                />
+                <input type="hidden" id="node-input-endpointType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-indexName">
+                    <i class="fa fa-database"></i>
+                    Index
+                </label>
+                <input type="text" id="node-input-indexName" placeholder="my-index" />
+                <input type="hidden" id="node-input-indexNameType" />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Query</legend>
+
+            <div class="form-row">
+                <label for="node-input-query">
+                    <i class="fa fa-search"></i>
+                    Search Text
+                </label>
+                <input type="text" id="node-input-query" />
+                <input type="hidden" id="node-input-queryType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-querySyntax">
+                    <i class="fa fa-code"></i>
+                    Query Type
+                </label>
+                <select id="node-input-querySyntax">
+                    <option value="simple">Simple</option>
+                    <option value="full">Full Lucene</option>
+                    <option value="semantic">Semantic</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-searchMode">
+                    <i class="fa fa-filter"></i>
+                    Search Mode
+                </label>
+                <select id="node-input-searchMode">
+                    <option value="any">Any term</option>
+                    <option value="all">All terms</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-searchFields">
+                    <i class="fa fa-columns"></i>
+                    Search Fields
+                </label>
+                <input type="text" id="node-input-searchFields" placeholder="title,content" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-select">
+                    <i class="fa fa-list"></i>
+                    Select
+                </label>
+                <input type="text" id="node-input-select" placeholder="id,title,content" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-filter">
+                    <i class="fa fa-filter"></i>
+                    Filter
+                </label>
+                <input type="text" id="node-input-filter" placeholder="category eq 'manual'" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-top">
+                    <i class="fa fa-sort-numeric-asc"></i>
+                    Top
+                </label>
+                <input type="number" id="node-input-top" min="1" step="1" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-skip">
+                    <i class="fa fa-forward"></i>
+                    Skip
+                </label>
+                <input type="number" id="node-input-skip" min="0" step="1" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-count" />
+                <label for="node-input-count">Return total count</label>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-semanticConfiguration">
+                    <i class="fa fa-sitemap"></i>
+                    Semantic Config
+                </label>
+                <input
+                    type="text"
+                    id="node-input-semanticConfiguration"
+                    placeholder="Optional semantic configuration name"
+                />
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Advanced</legend>
+
+            <div class="form-row">
+                <label for="node-input-additionalParameters">
+                    <i class="fa fa-code"></i>
+                    Parameters
+                </label>
+                <input type="text" id="node-input-additionalParameters" />
+                <input type="hidden" id="node-input-additionalParametersType" />
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-timeoutMs">
+                    <i class="fa fa-clock-o"></i>
+                    Timeout (ms)
+                </label>
+                <input type="number" id="node-input-timeoutMs" min="1000" step="1000" />
+            </div>
+
+            <div class="form-row flex-checkbox-row">
+                <input type="checkbox" id="node-input-enableLogging" />
+                <label for="node-input-enableLogging">Enable request metadata logging</label>
+            </div>
+        </fieldset>
+
+        <fieldset class="node-red-fieldset">
+            <legend>Output</legend>
+
+            <div class="form-row">
+                <label for="node-input-outputMode">
+                    <i class="fa fa-file-text-o"></i>
+                    Value
+                </label>
+                <select id="node-input-outputMode">
+                    <option value="documents">Documents only</option>
+                    <option value="response">Complete response object</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="node-input-output">
+                    <i class="fa fa-sign-out"></i>
+                    Output To
+                </label>
+                <input type="text" id="node-input-output" />
+                <input type="hidden" id="node-input-outputType" />
+            </div>
+        </fieldset>
+    </div>
+</script>
+
+<!-- @formatter:off -->
+<!-- prettier-ignore -->
+<script type="text/markdown" data-help-name="azure-ai-search-query">
+Searches documents in an Azure AI Search index using the Search Documents REST API (`api-version=2026-04-01`).
+
+### Authentication
+
+Authentication is supplied by the selected **Azure Config**.
+
+- **Microsoft Entra ID** requests a token for `https://search.azure.com/.default`.
+- **API key** uses the generic API key stored in Azure Config and sends it in the `api-key` request header.
+
+For query-only Entra access, assign the Node-RED identity the **Search Index Data Reader** role on the Azure AI Search service.
+
+### Properties
+
+- **Azure Config** _config_ \
+  Existing shared Azure authentication configuration. No changes are required.
+
+- **Endpoint** _string | env | msg | flow | global | jsonata_ \
+  Search service endpoint, for example `https://my-search-service.search.windows.net`.
+
+- **Index** _string | env | msg | flow | global | jsonata_ \
+  Search index name or supported index alias.
+
+- **Search Text** _typed value_ \
+  Query text. The default is `msg.payload`. If it resolves empty and no vector query is supplied, the node sends `search: "*"`.
+
+- **Query Type** _simple | full | semantic_ \
+  Azure AI Search query parser mode.
+
+- **Search Mode** _any | all_ \
+  Controls whether any or all search terms must match.
+
+- **Search Fields**, **Select**, **Filter** \
+  Optional Azure AI Search request parameters.
+
+- **Top**, **Skip**, **Return total count** \
+  Result paging/count options.
+
+- **Semantic Config** \
+  Optional semantic configuration name, normally used together with Query Type = `semantic`.
+
+- **Parameters** _JSON | msg | flow | global | jsonata | env_ \
+  Additional Search Documents POST body properties. These values are applied after the editor fields and therefore can override them. Use this for advanced options such as `vectorQueries`, `facets`, `answers`, `captions`, `orderby`, `scoringProfile`, or `semanticQuery`.
+
+  Example vector query:
+
+  ```json
+  {
+      "vectorQueries": [
+          {
+              "kind": "text",
+              "text": "how do clouds form",
+              "fields": "contentVector",
+              "k": 5
+          }
+      ]
+  }
+  ```
+
+- **Value** _documents only | complete response object_ \
+  Chooses what is written to the configured output property.
+
+- **Output To** _msg | flow | global_ \
+  Destination for the selected output value.
+
+### Output
+
+The incoming message is forwarded. Metadata is written to:
+
+```js
+msg.azureSearch = {
+    requestId,
+    indexName,
+    apiVersion,
+    count,
+    coverage,
+    answers,
+    documentsReturned
+};
+```
+
+With **Documents only**, the configured output receives the service response `value` array. With **Complete response object**, it receives the full JSON response.
+</script>
+<!-- @formatter:on -->
