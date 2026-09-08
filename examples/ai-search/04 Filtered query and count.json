@@ -1,0 +1,76 @@
+[
+  {
+    "id": "ais0401",
+    "type": "inject",
+    "name": "Active low-risk customers",
+    "props": [
+      {
+        "p": "searchText",
+        "v": "*",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ais0402"
+      ]
+    ]
+  },
+  {
+    "id": "ais0402",
+    "type": "azure-ai-search-query",
+    "name": "AI Search - Filtered query",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "query": "searchText",
+    "queryType": "msg",
+    "querySyntax": "simple",
+    "searchMode": "any",
+    "searchFields": "",
+    "select": "id,customer_number,first_name,last_name,insurance_type,customer_status,risk_class",
+    "filter": "customer_status eq 'active' and risk_class eq 'low'",
+    "top": 10,
+    "skip": "",
+    "count": true,
+    "semanticConfiguration": "",
+    "additionalParameters": "{}",
+    "additionalParametersType": "json",
+    "output": "searchResponse",
+    "outputType": "msg",
+    "outputMode": "response",
+    "timeoutMs": 30000,
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "ais0403"
+      ]
+    ]
+  },
+  {
+    "id": "ais0403",
+    "type": "debug",
+    "name": "Full search response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "searchResponse",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  }
+]

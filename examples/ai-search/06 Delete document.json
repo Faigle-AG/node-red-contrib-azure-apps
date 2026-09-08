@@ -1,0 +1,68 @@
+[
+  {
+    "id": "ais0601",
+    "type": "inject",
+    "name": "Delete customer K0003",
+    "props": [
+      {
+        "p": "documentsToDelete",
+        "v": "[{\"id\": \"K0003\"}]",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ais0602"
+      ]
+    ]
+  },
+  {
+    "id": "ais0602",
+    "type": "azure-ai-search-sync",
+    "name": "AI Search - Delete customer",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "documents": "documentsToDelete",
+    "documentsType": "msg",
+    "action": "delete",
+    "batchSize": 500,
+    "timeoutMs": 30000,
+    "failOnDocumentError": true,
+    "output": "deleteResult",
+    "outputType": "msg",
+    "outputMode": "summary",
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "ais0603"
+      ]
+    ]
+  },
+  {
+    "id": "ais0603",
+    "type": "debug",
+    "name": "Delete result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "deleteResult",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  }
+]

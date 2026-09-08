@@ -1,0 +1,138 @@
+[
+  {
+    "id": "ais0701",
+    "type": "inject",
+    "name": "Create, sync and query",
+    "props": [
+      {
+        "p": "indexDefinition",
+        "v": "{\"name\":\"customers\",\"description\":\"Synthetic customer test data for Azure AI Search examples\",\"fields\":[{\"name\":\"id\",\"type\":\"Edm.String\",\"key\":true,\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"customer_number\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"first_name\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"sortable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"last_name\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"sortable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"date_of_birth\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"street\",\"type\":\"Edm.String\",\"searchable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"postal_code\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"city\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"sortable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"country\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"email\",\"type\":\"Edm.String\",\"filterable\":true,\"retrievable\":true},{\"name\":\"phone\",\"type\":\"Edm.String\",\"filterable\":true,\"retrievable\":true},{\"name\":\"insurance_number\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"policy_id\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"insurance_type\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"plan\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"contract_start\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"contract_end\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"monthly_premium\",\"type\":\"Edm.Double\",\"filterable\":true,\"sortable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"currency\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"payment_interval\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"bank_name\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"masked_iban\",\"type\":\"Edm.String\",\"filterable\":true,\"retrievable\":true},{\"name\":\"payment_method\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"advisor\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"customer_status\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"risk_class\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"notes\",\"type\":\"Edm.String\",\"searchable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"}]}",
+        "vt": "json"
+      },
+      {
+        "p": "customers",
+        "v": "{\"value\":[{\"@search.action\":\"upload\",\"id\":\"K0001\",\"customer_number\":\"K-100001\",\"first_name\":\"Anna\",\"last_name\":\"Keller\",\"date_of_birth\":\"1987-03-14\",\"street\":\"Musterstrasse 12\",\"postal_code\":\"8001\",\"city\":\"Zuerich\",\"country\":\"Switzerland\",\"email\":\"anna.keller@example.test\",\"phone\":\"+41 79 000 00 01\",\"insurance_number\":\"VERS-CH-100001\",\"policy_id\":\"POL-HAUS-2026-001\",\"insurance_type\":\"Household contents insurance\",\"plan\":\"Comfort\",\"contract_start\":\"2024-01-01\",\"contract_end\":\"2027-12-31\",\"monthly_premium\":42.5,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Sample Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 1\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"active\",\"risk_class\":\"low\",\"notes\":\"Customer prefers digital correspondence. No open claims.\"},{\"@search.action\":\"upload\",\"id\":\"K0002\",\"customer_number\":\"K-100002\",\"first_name\":\"Lukas\",\"last_name\":\"Meier\",\"date_of_birth\":\"1979-11-02\",\"street\":\"Beispielweg 8\",\"postal_code\":\"3001\",\"city\":\"Bern\",\"country\":\"Switzerland\",\"email\":\"lukas.meier@example.test\",\"phone\":\"+41 79 000 00 02\",\"insurance_number\":\"VERS-CH-100002\",\"policy_id\":\"POL-AUTO-2026-014\",\"insurance_type\":\"Motor vehicle insurance\",\"plan\":\"Premium\",\"contract_start\":\"2025-06-01\",\"contract_end\":\"2028-05-31\",\"monthly_premium\":118.9,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Example Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 2\",\"payment_method\":\"Invoice\",\"advisor\":\"Sandra Baumann\",\"customer_status\":\"active\",\"risk_class\":\"medium\",\"notes\":\"The insured object is a passenger car. The most recent claim has been closed.\"},{\"@search.action\":\"upload\",\"id\":\"K0003\",\"customer_number\":\"K-100003\",\"first_name\":\"Sophie\",\"last_name\":\"Fischer\",\"date_of_birth\":\"1992-07-21\",\"street\":\"Testgasse 4\",\"postal_code\":\"4051\",\"city\":\"Basel\",\"country\":\"Switzerland\",\"email\":\"sophie.fischer@example.test\",\"phone\":\"+41 79 000 00 03\",\"insurance_number\":\"VERS-CH-100003\",\"policy_id\":\"POL-RECHT-2025-122\",\"insurance_type\":\"Legal expenses insurance\",\"plan\":\"Private Plus\",\"contract_start\":\"2023-09-15\",\"contract_end\":\"2026-09-14\",\"monthly_premium\":29.0,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Test Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 3\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"renewal_pending\",\"risk_class\":\"low\",\"notes\":\"Contract renewal has not yet been confirmed.\"}]}",
+        "vt": "json"
+      },
+      {
+        "p": "searchText",
+        "v": "Household contents insurance",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "ais0702"
+      ]
+    ]
+  },
+  {
+    "id": "ais0702",
+    "type": "azure-ai-search-index",
+    "name": "1. Create/update index",
+    "config": "ais0700",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "operation": "createOrUpdate",
+    "definition": "indexDefinition",
+    "definitionType": "msg",
+    "allowIndexDowntime": false,
+    "timeoutMs": 30000,
+    "output": "indexResult",
+    "outputType": "msg",
+    "enableLogging": false,
+    "x": 420,
+    "y": 120,
+    "wires": [
+      [
+        "ais0703"
+      ]
+    ]
+  },
+  {
+    "id": "ais0703",
+    "type": "azure-ai-search-sync",
+    "name": "2. Sync customers",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "documents": "customers",
+    "documentsType": "msg",
+    "action": "mergeOrUpload",
+    "batchSize": 500,
+    "timeoutMs": 30000,
+    "failOnDocumentError": true,
+    "output": "syncResult",
+    "outputType": "msg",
+    "outputMode": "summary",
+    "enableLogging": false,
+    "x": 650,
+    "y": 120,
+    "wires": [
+      [
+        "ais0704"
+      ]
+    ]
+  },
+  {
+    "id": "ais0704",
+    "type": "azure-ai-search-query",
+    "name": "3. Query customers",
+    "config": "ais0700",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "query": "searchText",
+    "queryType": "msg",
+    "querySyntax": "simple",
+    "searchMode": "any",
+    "searchFields": "first_name,last_name,insurance_type,notes",
+    "select": "",
+    "filter": "",
+    "top": 10,
+    "skip": "",
+    "count": false,
+    "semanticConfiguration": "",
+    "additionalParameters": "{}",
+    "additionalParametersType": "json",
+    "output": "searchResults",
+    "outputType": "msg",
+    "outputMode": "documents",
+    "timeoutMs": 30000,
+    "enableLogging": false,
+    "x": 880,
+    "y": 120,
+    "wires": [
+      [
+        "ais0705"
+      ]
+    ]
+  },
+  {
+    "id": "ais0705",
+    "type": "debug",
+    "name": "End-to-end result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1100,
+    "y": 120,
+    "wires": []
+  }
+]
