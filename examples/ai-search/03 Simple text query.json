@@ -1,0 +1,76 @@
+[
+  {
+    "id": "ais0301",
+    "type": "inject",
+    "name": "Search Anna Keller",
+    "props": [
+      {
+        "p": "searchText",
+        "v": "Anna Keller",
+        "vt": "str"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ais0302"
+      ]
+    ]
+  },
+  {
+    "id": "ais0302",
+    "type": "azure-ai-search-query",
+    "name": "AI Search - Query customers",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "query": "searchText",
+    "queryType": "msg",
+    "querySyntax": "simple",
+    "searchMode": "any",
+    "searchFields": "first_name,last_name,customer_number,insurance_number,policy_id,notes",
+    "select": "",
+    "filter": "",
+    "top": 10,
+    "skip": "",
+    "count": false,
+    "semanticConfiguration": "",
+    "additionalParameters": "{}",
+    "additionalParametersType": "json",
+    "output": "searchResults",
+    "outputType": "msg",
+    "outputMode": "documents",
+    "timeoutMs": 30000,
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "ais0303"
+      ]
+    ]
+  },
+  {
+    "id": "ais0303",
+    "type": "debug",
+    "name": "Search results",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "searchResults",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  }
+]

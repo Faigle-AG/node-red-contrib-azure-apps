@@ -1,0 +1,68 @@
+[
+  {
+    "id": "ais0201",
+    "type": "inject",
+    "name": "Load sample v",
+    "props": [
+      {
+        "p": "test",
+        "v": "{\"value\":[{\"@search.action\":\"upload\",\"id\":\"K0001\",\"customer_number\":\"K-100001\",\"first_name\":\"Anna\",\"last_name\":\"Keller\",\"date_of_birth\":\"1987-03-14\",\"street\":\"Musterstrasse 12\",\"postal_code\":\"8001\",\"city\":\"Zuerich\",\"country\":\"Switzerland\",\"email\":\"anna.keller@example.test\",\"phone\":\"+41 79 000 00 01\",\"insurance_number\":\"VERS-CH-100001\",\"policy_id\":\"POL-HAUS-2026-001\",\"insurance_type\":\"Household contents insurance\",\"plan\":\"Comfort\",\"contract_start\":\"2024-01-01\",\"contract_end\":\"2027-12-31\",\"monthly_premium\":42.5,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Sample Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 1\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"active\",\"risk_class\":\"low\",\"notes\":\"Customer prefers digital correspondence. No open claims.\"},{\"@search.action\":\"upload\",\"id\":\"K0002\",\"customer_number\":\"K-100002\",\"first_name\":\"Lukas\",\"last_name\":\"Meier\",\"date_of_birth\":\"1979-11-02\",\"street\":\"Beispielweg 8\",\"postal_code\":\"3001\",\"city\":\"Bern\",\"country\":\"Switzerland\",\"email\":\"lukas.meier@example.test\",\"phone\":\"+41 79 000 00 02\",\"insurance_number\":\"VERS-CH-100002\",\"policy_id\":\"POL-AUTO-2026-014\",\"insurance_type\":\"Motor vehicle insurance\",\"plan\":\"Premium\",\"contract_start\":\"2025-06-01\",\"contract_end\":\"2028-05-31\",\"monthly_premium\":118.9,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Example Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 2\",\"payment_method\":\"Invoice\",\"advisor\":\"Sandra Baumann\",\"customer_status\":\"active\",\"risk_class\":\"medium\",\"notes\":\"The insured object is a passenger car. The most recent claim has been closed.\"},{\"@search.action\":\"upload\",\"id\":\"K0003\",\"customer_number\":\"K-100003\",\"first_name\":\"Sophie\",\"last_name\":\"Fischer\",\"date_of_birth\":\"1992-07-21\",\"street\":\"Testgasse 4\",\"postal_code\":\"4051\",\"city\":\"Basel\",\"country\":\"Switzerland\",\"email\":\"sophie.fischer@example.test\",\"phone\":\"+41 79 000 00 03\",\"insurance_number\":\"VERS-CH-100003\",\"policy_id\":\"POL-RECHT-2025-122\",\"insurance_type\":\"Legal expenses insurance\",\"plan\":\"Private Plus\",\"contract_start\":\"2023-09-15\",\"contract_end\":\"2026-09-14\",\"monthly_premium\":29.0,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Test Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 3\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"renewal_pending\",\"risk_class\":\"low\",\"notes\":\"Contract renewal has not yet been confirmed.\"}]}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ais0202"
+      ]
+    ]
+  },
+  {
+    "id": "ais0202",
+    "type": "azure-ai-search-sync",
+    "name": "AI Search - Sync customers",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "documents": "customers",
+    "documentsType": "msg",
+    "action": "mergeOrUpload",
+    "batchSize": 500,
+    "timeoutMs": 30000,
+    "failOnDocumentError": true,
+    "output": "syncResult",
+    "outputType": "msg",
+    "outputMode": "summary",
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "ais0203"
+      ]
+    ]
+  },
+  {
+    "id": "ais0203",
+    "type": "debug",
+    "name": "Sync result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "syncResult",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  }
+]

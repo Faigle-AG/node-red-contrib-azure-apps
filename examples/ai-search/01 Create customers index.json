@@ -1,0 +1,67 @@
+[
+  {
+    "id": "ais0101",
+    "type": "inject",
+    "name": "Create customers index",
+    "props": [
+      {
+        "p": "indexDefinition",
+        "v": "{\"name\":\"test\",\"description\":\"Synthetic customer test data for Azure AI Search examples\",\"fields\":[{\"name\":\"id\",\"type\":\"Edm.String\",\"key\":true,\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"customer_number\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"first_name\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"sortable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"last_name\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"sortable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"date_of_birth\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"street\",\"type\":\"Edm.String\",\"searchable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"postal_code\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"city\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"sortable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"country\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"email\",\"type\":\"Edm.String\",\"filterable\":true,\"retrievable\":true},{\"name\":\"phone\",\"type\":\"Edm.String\",\"filterable\":true,\"retrievable\":true},{\"name\":\"insurance_number\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"policy_id\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"insurance_type\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"plan\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"contract_start\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"contract_end\",\"type\":\"Edm.String\",\"filterable\":true,\"sortable\":true,\"retrievable\":true},{\"name\":\"monthly_premium\",\"type\":\"Edm.Double\",\"filterable\":true,\"sortable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"currency\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"payment_interval\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"bank_name\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"masked_iban\",\"type\":\"Edm.String\",\"filterable\":true,\"retrievable\":true},{\"name\":\"payment_method\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"advisor\",\"type\":\"Edm.String\",\"searchable\":true,\"filterable\":true,\"facetable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"},{\"name\":\"customer_status\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"risk_class\",\"type\":\"Edm.String\",\"filterable\":true,\"facetable\":true,\"retrievable\":true},{\"name\":\"notes\",\"type\":\"Edm.String\",\"searchable\":true,\"retrievable\":true,\"analyzer\":\"en.microsoft\"}]}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ais0102"
+      ]
+    ]
+  },
+  {
+    "id": "ais0102",
+    "type": "azure-ai-search-index",
+    "name": "AI Search - Create index",
+    "config": "",
+    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+    "endpointType": "str",
+    "indexName": "test",
+    "indexNameType": "str",
+    "operation": "createOrUpdate",
+    "definition": "indexDefinition",
+    "definitionType": "msg",
+    "allowIndexDowntime": false,
+    "timeoutMs": 30000,
+    "output": "indexResult",
+    "outputType": "msg",
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "ais0103"
+      ]
+    ]
+  },
+  {
+    "id": "ais0103",
+    "type": "debug",
+    "name": "Index result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "indexResult",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  }
+]

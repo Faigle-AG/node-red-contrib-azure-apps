@@ -1,0 +1,91 @@
+[
+  {
+    "id": "ais0501",
+    "type": "inject",
+    "name": "Set query configuration",
+    "props": [
+      {
+        "p": "searchEndpoint",
+        "v": "https://YOUR-SEARCH-SERVICE.search.windows.net",
+        "vt": "str"
+      },
+      {
+        "p": "searchIndex",
+        "v": "test",
+        "vt": "str"
+      },
+      {
+        "p": "searchText",
+        "v": "Keller",
+        "vt": "str"
+      },
+      {
+        "p": "searchOptions",
+        "v": "{\"filter\":\"insurance_type eq 'Household contents insurance'\",\"select\":\"id,customer_number,first_name,last_name,policy_id,insurance_type\",\"count\":true,\"top\":5}",
+        "vt": "json"
+      }
+    ],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "ais0502"
+      ]
+    ]
+  },
+  {
+    "id": "ais0502",
+    "type": "azure-ai-search-query",
+    "name": "AI Search - Query from message",
+    "endpoint": "searchEndpoint",
+    "endpointType": "msg",
+    "indexName": "searchIndex",
+    "indexNameType": "msg",
+    "query": "searchText",
+    "queryType": "msg",
+    "querySyntax": "simple",
+    "searchMode": "any",
+    "searchFields": "",
+    "select": "",
+    "filter": "",
+    "top": 10,
+    "skip": "",
+    "count": false,
+    "semanticConfiguration": "",
+    "additionalParameters": "searchOptions",
+    "additionalParametersType": "msg",
+    "output": "searchResponse",
+    "outputType": "msg",
+    "outputMode": "response",
+    "timeoutMs": 30000,
+    "enableLogging": false,
+    "x": 430,
+    "y": 120,
+    "wires": [
+      [
+        "ais0503"
+      ]
+    ]
+  },
+  {
+    "id": "ais0503",
+    "type": "debug",
+    "name": "Dynamic query response",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "searchResponse",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 700,
+    "y": 120,
+    "wires": []
+  }
+]
