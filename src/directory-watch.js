@@ -182,37 +182,48 @@ module.exports = function (RED) {
 
                 const itemPath = directoryPath ? `${directoryPath}/${item.name}` : item.name;
 
-                if (item.kind === 'directory') {
-                    const childClient = directoryClient.getDirectoryClient(item.name);
-                    const properties = await childClient.getProperties();
-                    const file = createFileData(
-                        node.resolvedSource,
-                        itemPath,
-                        'directory',
-                        properties,
-                    );
-                    snapshot.set(itemPath, {
-                        ...file,
-                        signature: createSignature(properties),
-                    });
-
-                    if (level < node.depth) {
-                        await scanDirectory(
-                            childClient,
+                try {
+                    if (item.kind === 'directory') {
+                        const childClient = directoryClient.getDirectoryClient(item.name);
+                        const properties = await childClient.getProperties();
+                        const file = createFileData(
+                            node.resolvedSource,
                             itemPath,
-                            level + 1,
-                            snapshot,
-                            ignoreRegex,
+                            'directory',
+                            properties,
                         );
+                        snapshot.set(itemPath, {
+                            ...file,
+                            signature: createSignature(properties),
+                        });
+
+                        if (level < node.depth) {
+                            await scanDirectory(
+                                childClient,
+                                itemPath,
+                                level + 1,
+                                snapshot,
+                                ignoreRegex,
+                            );
+                        }
+                    } else {
+                        const fileClient = directoryClient.getFileClient(item.name);
+                        const properties = await fileClient.getProperties();
+                        const file = createFileData(
+                            node.resolvedSource,
+                            itemPath,
+                            'file',
+                            properties,
+                        );
+                        snapshot.set(itemPath, {
+                            ...file,
+                            signature: createSignature(properties),
+                        });
                     }
-                } else {
-                    const fileClient = directoryClient.getFileClient(item.name);
-                    const properties = await fileClient.getProperties();
-                    const file = createFileData(node.resolvedSource, itemPath, 'file', properties);
-                    snapshot.set(itemPath, {
-                        ...file,
-                        signature: createSignature(properties),
-                    });
+                } catch (err) {
+                    if (err.statusCode !== 404 && err.code !== 'ResourceNotFound') {
+                        throw err;
+                    }
                 }
             }
         }
