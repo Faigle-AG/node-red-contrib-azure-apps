@@ -1,4 +1,31 @@
 <script type="text/javascript">
+    function azureSearchQueryTypedValidator(field, literalType, validateLiteral) {
+        return function (v) {
+            var typeField = $('#node-input-' + field + 'Type');
+            var type =
+                (typeField.length ? typeField.val() : '') || this[field + 'Type'] || literalType;
+            if (type === literalType) return validateLiteral ? validateLiteral(v) : true;
+            if (typeof v !== 'string' || !v.trim()) return false;
+            return RED.validators.typedInput(field + 'Type').call(this, v) === true;
+        };
+    }
+
+    function azureSearchQueryIntegerValidator(min, optional) {
+        return function (v) {
+            if (typeof v === 'string') v = v.trim();
+            if (v === '' || v === null || v === undefined) return optional;
+            return (
+                (typeof v === 'string' || typeof v === 'number') &&
+                Number.isSafeInteger(Number(v)) &&
+                Number(v) >= min
+            );
+        };
+    }
+
+    function azureSearchQueryBooleanValidator(v) {
+        return v === true || v === false || v === 'true' || v === 'false';
+    }
+
     RED.nodes.registerType('azure-ai-search-query', {
         category: 'azure',
         color: '#0072C6',
@@ -25,38 +52,92 @@
             indexNameType: { value: 'str' },
             query: { value: 'payload' },
             queryType: { value: 'msg' },
-            querySyntax: { value: 'simple' },
-            searchMode: { value: 'any' },
-            searchFields: { value: '' },
-            select: { value: '' },
-            filter: { value: '' },
+            querySyntax: {
+                value: 'simple',
+                validate: azureSearchQueryTypedValidator('querySyntax', 'str', function (v) {
+                    return ['simple', 'full', 'semantic'].indexOf(v) !== -1;
+                }),
+            },
+            querySyntaxType: { value: 'str' },
+            searchMode: {
+                value: 'any',
+                validate: azureSearchQueryTypedValidator('searchMode', 'str', function (v) {
+                    return ['any', 'all'].indexOf(v) !== -1;
+                }),
+            },
+            searchModeType: { value: 'str' },
+            searchFields: {
+                value: '',
+                validate: azureSearchQueryTypedValidator('searchFields', 'str'),
+            },
+            searchFieldsType: { value: 'str' },
+            select: { value: '', validate: azureSearchQueryTypedValidator('select', 'str') },
+            selectType: { value: 'str' },
+            filter: { value: '', validate: azureSearchQueryTypedValidator('filter', 'str') },
+            filterType: { value: 'str' },
             top: {
                 value: 10,
-                validate: function (v) {
-                    return v === '' || (Number.isInteger(Number(v)) && Number(v) >= 1);
-                },
+                validate: azureSearchQueryTypedValidator(
+                    'top',
+                    'num',
+                    azureSearchQueryIntegerValidator(1, true),
+                ),
             },
+            topType: { value: 'num' },
             skip: {
                 value: '',
-                validate: function (v) {
-                    return v === '' || (Number.isInteger(Number(v)) && Number(v) >= 0);
-                },
+                validate: azureSearchQueryTypedValidator(
+                    'skip',
+                    'num',
+                    azureSearchQueryIntegerValidator(0, true),
+                ),
             },
-            count: { value: false },
-            semanticConfiguration: { value: '' },
+            skipType: { value: 'num' },
+            count: {
+                value: false,
+                validate: azureSearchQueryTypedValidator(
+                    'count',
+                    'bool',
+                    azureSearchQueryBooleanValidator,
+                ),
+            },
+            countType: { value: 'bool' },
+            semanticConfiguration: {
+                value: '',
+                validate: azureSearchQueryTypedValidator('semanticConfiguration', 'str'),
+            },
+            semanticConfigurationType: { value: 'str' },
             additionalParameters: { value: '{}' },
             additionalParametersType: { value: 'json' },
             output: { value: 'payload', required: true },
             outputType: { value: 'msg' },
-            outputMode: { value: 'documents', required: true },
+            outputMode: {
+                value: 'documents',
+                required: true,
+                validate: azureSearchQueryTypedValidator('outputMode', 'str', function (v) {
+                    return ['documents', 'response'].indexOf(v) !== -1;
+                }),
+            },
+            outputModeType: { value: 'str' },
             timeoutMs: {
                 value: 30000,
                 required: true,
-                validate: function (v) {
-                    return Number.isInteger(Number(v)) && Number(v) >= 1000;
-                },
+                validate: azureSearchQueryTypedValidator(
+                    'timeoutMs',
+                    'num',
+                    azureSearchQueryIntegerValidator(1000, false),
+                ),
             },
-            enableLogging: { value: false },
+            timeoutMsType: { value: 'num' },
+            enableLogging: {
+                value: false,
+                validate: azureSearchQueryTypedValidator(
+                    'enableLogging',
+                    'bool',
+                    azureSearchQueryBooleanValidator,
+                ),
+            },
+            enableLoggingType: { value: 'bool' },
         },
         inputs: 1,
         outputs: 1,
@@ -82,6 +163,83 @@
                 default: 'msg',
                 types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-queryType'),
+            });
+            ['searchFields', 'select', 'filter', 'semanticConfiguration'].forEach(function (field) {
+                $('#node-input-' + field).typedInput({
+                    default: 'str',
+                    types: ['str', 'msg', 'flow', 'global', 'env', 'jsonata'],
+                    typeField: $('#node-input-' + field + 'Type'),
+                });
+            });
+            [
+                {
+                    field: 'querySyntax',
+                    options: [
+                        { value: 'simple', label: 'Simple' },
+                        { value: 'full', label: 'Full Lucene' },
+                        { value: 'semantic', label: 'Semantic' },
+                    ],
+                },
+                {
+                    field: 'searchMode',
+                    options: [
+                        { value: 'any', label: 'Any term' },
+                        { value: 'all', label: 'All terms' },
+                    ],
+                },
+                {
+                    field: 'outputMode',
+                    options: [
+                        { value: 'documents', label: 'Documents only' },
+                        { value: 'response', label: 'Complete response object' },
+                    ],
+                },
+            ].forEach(function (setting) {
+                $('#node-input-' + setting.field).typedInput({
+                    default: 'str',
+                    types: [
+                        { value: 'str', label: 'value', options: setting.options },
+                        'msg',
+                        'flow',
+                        'global',
+                        'env',
+                        'jsonata',
+                    ],
+                    typeField: $('#node-input-' + setting.field + 'Type'),
+                });
+            });
+            [
+                { field: 'top', min: 1, optional: true },
+                { field: 'skip', min: 0, optional: true },
+                { field: 'timeoutMs', min: 1000, optional: false },
+            ].forEach(function (setting) {
+                $('#node-input-' + setting.field).typedInput({
+                    default: 'num',
+                    types: [
+                        {
+                            value: 'num',
+                            label: 'number',
+                            icon: 'fa fa-hashtag',
+                            validate: azureSearchQueryIntegerValidator(
+                                setting.min,
+                                setting.optional,
+                            ),
+                        },
+                        'msg',
+                        'flow',
+                        'global',
+                        'env',
+                        'jsonata',
+                    ],
+                    typeField: $('#node-input-' + setting.field + 'Type'),
+                });
+            });
+            ['count', 'enableLogging'].forEach(function (field) {
+                $('#node-input-' + field).typedInput({
+                    default: 'bool',
+                    types: ['bool', 'msg', 'flow', 'global', 'env', 'jsonata'],
+                    typeField: $('#node-input-' + field + 'Type'),
+                });
             });
             $('#node-input-additionalParameters').typedInput({
                 default: 'json',
@@ -160,11 +318,8 @@
                     <i class="fa fa-code"></i>
                     Query Type
                 </label>
-                <select id="node-input-querySyntax">
-                    <option value="simple">Simple</option>
-                    <option value="full">Full Lucene</option>
-                    <option value="semantic">Semantic</option>
-                </select>
+                <input type="text" id="node-input-querySyntax" />
+                <input type="hidden" id="node-input-querySyntaxType" />
             </div>
 
             <div class="form-row">
@@ -172,10 +327,8 @@
                     <i class="fa fa-filter"></i>
                     Search Mode
                 </label>
-                <select id="node-input-searchMode">
-                    <option value="any">Any term</option>
-                    <option value="all">All terms</option>
-                </select>
+                <input type="text" id="node-input-searchMode" />
+                <input type="hidden" id="node-input-searchModeType" />
             </div>
 
             <div class="form-row">
@@ -184,6 +337,7 @@
                     Search Fields
                 </label>
                 <input type="text" id="node-input-searchFields" placeholder="title,content" />
+                <input type="hidden" id="node-input-searchFieldsType" />
             </div>
 
             <div class="form-row">
@@ -192,6 +346,7 @@
                     Select
                 </label>
                 <input type="text" id="node-input-select" placeholder="id,title,content" />
+                <input type="hidden" id="node-input-selectType" />
             </div>
 
             <div class="form-row">
@@ -200,6 +355,7 @@
                     Filter
                 </label>
                 <input type="text" id="node-input-filter" placeholder="category eq 'manual'" />
+                <input type="hidden" id="node-input-filterType" />
             </div>
 
             <div class="form-row">
@@ -207,7 +363,8 @@
                     <i class="fa fa-sort-numeric-asc"></i>
                     Top
                 </label>
-                <input type="number" id="node-input-top" min="1" step="1" />
+                <input type="text" id="node-input-top" />
+                <input type="hidden" id="node-input-topType" />
             </div>
 
             <div class="form-row">
@@ -215,12 +372,17 @@
                     <i class="fa fa-forward"></i>
                     Skip
                 </label>
-                <input type="number" id="node-input-skip" min="0" step="1" />
+                <input type="text" id="node-input-skip" />
+                <input type="hidden" id="node-input-skipType" />
             </div>
 
-            <div class="form-row flex-checkbox-row">
-                <input type="checkbox" id="node-input-count" />
-                <label for="node-input-count">Return total count</label>
+            <div class="form-row">
+                <label for="node-input-count">
+                    <i class="fa fa-list-ol"></i>
+                    Total Count
+                </label>
+                <input type="text" id="node-input-count" />
+                <input type="hidden" id="node-input-countType" />
             </div>
 
             <div class="form-row">
@@ -233,6 +395,7 @@
                     id="node-input-semanticConfiguration"
                     placeholder="Optional semantic configuration name"
                 />
+                <input type="hidden" id="node-input-semanticConfigurationType" />
             </div>
         </fieldset>
 
@@ -253,12 +416,17 @@
                     <i class="fa fa-clock-o"></i>
                     Timeout (ms)
                 </label>
-                <input type="number" id="node-input-timeoutMs" min="1000" step="1000" />
+                <input type="text" id="node-input-timeoutMs" />
+                <input type="hidden" id="node-input-timeoutMsType" />
             </div>
 
-            <div class="form-row flex-checkbox-row">
-                <input type="checkbox" id="node-input-enableLogging" />
-                <label for="node-input-enableLogging">Enable request metadata logging</label>
+            <div class="form-row">
+                <label for="node-input-enableLogging">
+                    <i class="fa fa-info-circle"></i>
+                    Logging
+                </label>
+                <input type="text" id="node-input-enableLogging" />
+                <input type="hidden" id="node-input-enableLoggingType" />
             </div>
         </fieldset>
 
@@ -270,10 +438,8 @@
                     <i class="fa fa-file-text-o"></i>
                     Value
                 </label>
-                <select id="node-input-outputMode">
-                    <option value="documents">Documents only</option>
-                    <option value="response">Complete response object</option>
-                </select>
+                <input type="text" id="node-input-outputMode" />
+                <input type="hidden" id="node-input-outputModeType" />
             </div>
 
             <div class="form-row">
@@ -316,20 +482,36 @@ For query-only Entra access, assign the Node-RED identity the **Search Index Dat
 - **Search Text** _typed value_ \
   Query text. The default is `msg.payload`. If it resolves empty and no vector query is supplied, the node sends `search: "*"`.
 
-- **Query Type** _simple | full | semantic_ \
-  Azure AI Search query parser mode.
+- **Query Type** _choice | msg | flow | global | env | jsonata_ \
+  Azure AI Search query parser mode: `simple`, `full`, or `semantic`. The literal input keeps the existing choices.
 
-- **Search Mode** _any | all_ \
-  Controls whether any or all search terms must match.
+- **Search Mode** _choice | msg | flow | global | env | jsonata_ \
+  `any` or `all`. Controls whether any or all search terms must match.
 
-- **Search Fields**, **Select**, **Filter** \
-  Optional Azure AI Search request parameters.
+- **Search Fields**, **Select** _string | msg | flow | global | env | jsonata_ \
+  Optional comma-separated field-name strings (not arrays). An explicit empty string or `null` omits the parameter. A configured dynamic source that resolves to `undefined` fails the node.
 
-- **Top**, **Skip**, **Return total count** \
-  Result paging/count options.
+- **Filter** _string | msg | flow | global | env | jsonata_ \
+  OData filter expression, resolved for each incoming message. Select `msg` and enter `aiSearchFilter` to read `msg.aiSearchFilter`. For example: `contractNumberSearch eq '1234567890'`.
 
-- **Semantic Config** \
-  Optional semantic configuration name, normally used together with Query Type = `semantic`.
+  An empty **string** leaves filtering disabled, as before. A dynamic source must resolve to a non-empty string; missing, empty, or non-string values fail the node before a request is sent. Use the string `false` to intentionally match no documents.
+
+  Existing flows without `filterType` continue to use a literal string. **Parameters** can still override `filter` after this field is resolved and validated.
+
+- **Top**, **Skip** _number | msg | flow | global | env | jsonata_ \
+  Integer paging values: Top >= 1, Skip >= 0. Numbers or numeric strings are accepted. Empty strings or `null` omit these optional parameters; unresolved dynamic properties fail the node.
+
+- **Total Count** _boolean | msg | flow | global | env | jsonata_ \
+  Formerly the Return total count checkbox. Accepts boolean `true`/`false`, or the strings `"true"`/`"false"`. The string `"false"` is not treated as true.
+
+- **Semantic Config** _string | msg | flow | global | env | jsonata_ \
+  Optional semantic configuration name, normally used with Query Type = `semantic`. An empty string or `null` omits it; unresolved dynamic properties fail the node.
+
+- **Timeout (ms)** _number | msg | flow | global | env | jsonata_ \
+  Required integer >= 1000, default 30000. Resolved for each message.
+
+- **Logging** _boolean | msg | flow | global | env | jsonata_ \
+  Enables request metadata logging for the current message; default false.
 
 - **Parameters** _JSON | msg | flow | global | jsonata | env_ \
   Additional Search Documents POST body properties. These values are applied after the editor fields and therefore can override them. Use this for advanced options such as `vectorQueries`, `facets`, `answers`, `captions`, `orderby`, `scoringProfile`, or `semanticQuery`.
@@ -349,11 +531,19 @@ For query-only Entra access, assign the Node-RED identity the **Search Index Dat
   }
   ```
 
-- **Value** _documents only | complete response object_ \
-  Chooses what is written to the configured output property.
+- **Value** _choice | msg | flow | global | env | jsonata_ \
+  `documents` (Documents only) or `response` (Complete response object). Chooses what is written to the configured output property.
 
 - **Output To** _msg | flow | global_ \
   Destination for the selected output value.
+
+### Compatibility and dynamic values
+
+Existing flows without the new type properties keep their literal values. Endpoint, Index, Search Text, Parameters, and Output To retain their existing typed-input support. Authentication and the Name label are unchanged.
+
+Select the `msg` type and enter a path such as `aiSearch.select`, without the `msg.` prefix. Dynamic values are resolved using the existing property helper for every message; no resolved values are stored on the node. Invalid types, enum values, or missing dynamic sources fail before the HTTP request. Filter remains fail-closed, including for `null` and empty strings.
+
+Parameters still override request-body fields after those fields have been resolved and validated. They cannot override the local Timeout, Logging, or output mode. Leave Parameters at `{}` unless an override is intended.
 
 ### Output
 

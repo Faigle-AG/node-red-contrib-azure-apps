@@ -47,14 +47,58 @@ module.exports = function (RED) {
     }
 
     function toOptionalInteger(value, label, min) {
+        if (typeof value === 'string') value = value.trim();
         if (value === undefined || value === null || value === '') return undefined;
 
         const number = Number(value);
-        if (!Number.isInteger(number) || number < min) {
+        if (
+            (typeof value !== 'string' && typeof value !== 'number') ||
+            !Number.isSafeInteger(number) ||
+            number < min
+        ) {
             throw new Error(`${label} must be an integer greater than or equal to ${min}`);
         }
 
         return number;
+    }
+
+    async function resolveQueryOption(node, property, msg, label) {
+        const type = node[`${property}Type`];
+        const configured = node[property];
+        // Keep literal blanks intact; evaluating an empty 'num' can turn it into 0.
+        if (type === 'str' || type === 'num' || type === 'bool') return configured;
+        if (typeof configured !== 'string' || !configured.trim()) {
+            throw new Error(`${label}: dynamic source is missing`);
+        }
+        const value = await node.getTypedProperty(configured, type, msg);
+        if (value === undefined) {
+            throw new Error(`${label}: dynamic source resolved to undefined`);
+        }
+        return value;
+    }
+
+    function toOptionalString(value, label) {
+        if (value === undefined || value === null) return undefined;
+        if (typeof value !== 'string') throw new Error(`${label} must resolve to a string`);
+        return value.trim() || undefined;
+    }
+
+    function toChoice(value, label, choices) {
+        const choice = toOptionalString(value, label);
+        if (!choices.includes(choice)) {
+            throw new Error(`${label} must be one of: ${choices.join(', ')}`);
+        }
+        return choice;
+    }
+
+    function toBoolean(value, label) {
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+            const text = value.trim().toLowerCase();
+            if (text === 'true') return true;
+            if (text === 'false') return false;
+        }
+        throw new Error(`${label} must resolve to true or false`);
     }
 
     async function readResponseBody(response) {
@@ -95,15 +139,24 @@ module.exports = function (RED) {
         this.indexNameType = config.indexNameType || 'str';
         this.query = config.query || 'payload';
         this.queryType = config.queryType || 'msg';
-        this.searchMode = config.searchMode || 'any';
-        this.querySyntax = config.querySyntax || 'simple';
-        this.searchFields = config.searchFields || '';
-        this.select = config.select || '';
+        this.searchMode = config.searchMode === undefined ? 'any' : config.searchMode;
+        this.searchModeType = config.searchModeType || 'str';
+        this.querySyntax = config.querySyntax === undefined ? 'simple' : config.querySyntax;
+        this.querySyntaxType = config.querySyntaxType || 'str';
+        this.searchFields = config.searchFields;
+        this.searchFieldsType = config.searchFieldsType || 'str';
+        this.select = config.select;
+        this.selectType = config.selectType || 'str';
         this.filter = config.filter || '';
+        this.filterType = config.filterType || 'str';
         this.top = config.top;
+        this.topType = config.topType || 'num';
         this.skip = config.skip;
-        this.count = config.count === true;
-        this.semanticConfiguration = config.semanticConfiguration || '';
+        this.skipType = config.skipType || 'num';
+        this.count = config.count === undefined ? false : config.count;
+        this.countType = config.countType || 'bool';
+        this.semanticConfiguration = config.semanticConfiguration;
+        this.semanticConfigurationType = config.semanticConfigurationType || 'str';
         this.additionalParameters = config.additionalParameters || '{}';
         this.additionalParametersType = config.additionalParametersType || 'json';
         this.output =
@@ -111,9 +164,13 @@ module.exports = function (RED) {
                 ? config.output.trim()
                 : 'payload';
         this.outputType = config.outputType || 'msg';
-        this.outputMode = config.outputMode || 'documents';
-        this.timeoutMs = config.timeoutMs === '' ? 30000 : config.timeoutMs;
-        this.enableLogging = config.enableLogging === true;
+        this.outputMode = config.outputMode === undefined ? 'documents' : config.outputMode;
+        this.outputModeType = config.outputModeType || 'str';
+        this.timeoutMs =
+            config.timeoutMs === '' || config.timeoutMs === undefined ? 30000 : config.timeoutMs;
+        this.timeoutMsType = config.timeoutMsType || 'num';
+        this.enableLogging = config.enableLogging === undefined ? false : config.enableLogging;
+        this.enableLoggingType = config.enableLoggingType || 'bool';
 
         const node = this;
         extendNode(node);
@@ -121,9 +178,19 @@ module.exports = function (RED) {
         node.on('input', async function (msg, send, done) {
             const controller = new AbortController();
             let timeout;
+            let enableLogging = false;
 
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
+
+                // Resolve into local variables, never shared node state, for concurrent messages.
+                const valueOf = (property, label) => resolveQueryOption(node, property, msg, label);
+                enableLogging = toBoolean(await valueOf('enableLogging', 'Logging'), 'Logging');
+                const outputMode = toChoice(
+                    await valueOf('outputMode', 'Output value'),
+                    'Output value',
+                    ['documents', 'response'],
+                );
 
                 node.status.processing('searching...');
 
@@ -163,24 +230,67 @@ module.exports = function (RED) {
                         : String(queryValue);
                 }
 
-                if (node.querySyntax) requestBody.queryType = node.querySyntax;
-                if (node.searchMode) requestBody.searchMode = node.searchMode;
-                if (node.searchFields && node.searchFields.trim()) {
-                    requestBody.searchFields = node.searchFields.trim();
+                requestBody.queryType = toChoice(
+                    await valueOf('querySyntax', 'Query Type'),
+                    'Query Type',
+                    ['simple', 'full', 'semantic'],
+                );
+                requestBody.searchMode = toChoice(
+                    await valueOf('searchMode', 'Search Mode'),
+                    'Search Mode',
+                    ['any', 'all'],
+                );
+                const searchFields = toOptionalString(
+                    await valueOf('searchFields', 'Search Fields'),
+                    'Search Fields',
+                );
+                const select = toOptionalString(await valueOf('select', 'Select'), 'Select');
+                if (searchFields) requestBody.searchFields = searchFields;
+                if (select) requestBody.select = select;
+                const filterValue =
+                    node.filterType === 'str'
+                        ? node.filter
+                        : await node.getTypedProperty(node.filter, node.filterType, msg);
+                if (
+                    filterValue !== undefined &&
+                    filterValue !== null &&
+                    typeof filterValue !== 'string'
+                ) {
+                    const err = new Error('Filter must resolve to an OData filter string');
+                    err.code = 'FILTER_INVALID';
+                    throw err;
                 }
-                if (node.select && node.select.trim()) requestBody.select = node.select.trim();
-                if (node.filter && node.filter.trim()) requestBody.filter = node.filter.trim();
+                const filter = (filterValue || '').trim();
+                if (filter) {
+                    requestBody.filter = filter;
+                } else if (node.filterType !== 'str') {
+                    // Do not silently turn a missing dynamic filter into an unfiltered search.
+                    const err = new Error(
+                        'Dynamic filter is missing or empty; use an empty string Filter to disable filtering',
+                    );
+                    err.code = 'FILTER_MISSING';
+                    throw err;
+                }
 
-                const top = toOptionalInteger(node.top, 'Top', 1);
-                const skip = toOptionalInteger(node.skip, 'Skip', 0);
-                const timeoutMs = toOptionalInteger(node.timeoutMs, 'Timeout', 1000);
+                const top = toOptionalInteger(await valueOf('top', 'Top'), 'Top', 1);
+                const skip = toOptionalInteger(await valueOf('skip', 'Skip'), 'Skip', 0);
+                const timeoutMs = toOptionalInteger(
+                    await valueOf('timeoutMs', 'Timeout'),
+                    'Timeout',
+                    1000,
+                );
+                if (timeoutMs === undefined) throw new Error('Timeout is required');
+                const count = toBoolean(await valueOf('count', 'Total Count'), 'Total Count');
+                const semanticConfiguration = toOptionalString(
+                    await valueOf('semanticConfiguration', 'Semantic Config'),
+                    'Semantic Config',
+                );
 
                 if (top !== undefined) requestBody.top = top;
                 if (skip !== undefined) requestBody.skip = skip;
-                if (node.count) requestBody.count = true;
-                if (node.semanticConfiguration && node.semanticConfiguration.trim()) {
-                    requestBody.semanticConfiguration = node.semanticConfiguration.trim();
-                }
+                if (count) requestBody.count = true;
+                if (semanticConfiguration)
+                    requestBody.semanticConfiguration = semanticConfiguration;
 
                 Object.assign(requestBody, additionalParameters);
 
@@ -218,7 +328,7 @@ module.exports = function (RED) {
                     timeout = setTimeout(() => controller.abort(), timeoutMs);
                 }
 
-                if (node.enableLogging) {
+                if (enableLogging) {
                     node.log(
                         `Searching Azure AI Search index '${indexName}' with api-version=${API_VERSION}`,
                     );
@@ -240,7 +350,7 @@ module.exports = function (RED) {
                 if (!response.ok) throw createHttpError(response, responseBody);
 
                 const documents = Array.isArray(responseBody.value) ? responseBody.value : [];
-                const outputValue = node.outputMode === 'response' ? responseBody : documents;
+                const outputValue = outputMode === 'response' ? responseBody : documents;
 
                 await node.setTypedProperty(node.output, node.outputType, msg, outputValue);
 
@@ -275,7 +385,7 @@ module.exports = function (RED) {
 
                 node.status.failed(statusText);
 
-                if (node.enableLogging && normalized.requestId) {
+                if (enableLogging && normalized.requestId) {
                     node.warn(`Azure AI Search request ID: ${normalized.requestId}`);
                 }
 
