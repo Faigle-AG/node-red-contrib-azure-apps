@@ -230,9 +230,8 @@ module.exports = function (RED) {
 
         async function createSnapshot() {
             const snapshot = new Map();
-            const ignoreRegex = node.ignoredFiles ? new RegExp(node.ignoredFiles) : null;
             const rootDirectory = getDirectoryClient(node.shareClient, node.resolvedSource);
-            await scanDirectory(rootDirectory, node.resolvedSource, 0, snapshot, ignoreRegex);
+            await scanDirectory(rootDirectory, node.resolvedSource, 0, snapshot, node.ignoreRegex);
             return snapshot;
         }
 
@@ -320,6 +319,9 @@ module.exports = function (RED) {
 
                 const sourceRaw = await node.getTypedProperty(node.source, node.sourceType, {});
                 node.resolvedSource = normalizeAzurePath(sourceRaw, 'Source path');
+
+                // Compiled once: an invalid pattern stops the watcher instead of failing every poll.
+                node.ignoreRegex = node.ignoredFiles ? new RegExp(node.ignoredFiles) : null;
 
                 const serviceClient = node.configNode.getClient();
                 node.shareClient = serviceClient.getShareClient(node.resolvedShareName);

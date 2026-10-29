@@ -4,27 +4,49 @@
 //   { msg, statuses }          when the wired output node receives a message;
 //   { err, errMsg, statuses }  when the node reports node.error(err, msg) / done(err).
 // `statuses` holds every node.status() payload seen up to the outcome.
+// With `options.settleMs`, it keeps listening that long after the outcome and adds
+// `extra: { outputs, errors }`, counting any further sends or errors for the input.
 function trigger(helper, nodeId, outputId, input, options = {}) {
     const node = helper.getNode(nodeId);
     const output = outputId ? helper.getNode(outputId) : null;
     const timeout = options.timeout || 1500;
     const statuses = [];
+    const extra = { outputs: 0, errors: 0 };
+    let result = null;
 
     return new Promise((resolve, reject) => {
-        const onStatus = (call) => statuses.push(call.args[0]);
-        const onError = (call) => finish(resolve, { err: call.args[0], errMsg: call.args[1] });
-        const onOutput = (msg) => finish(resolve, { msg });
-        const timer = setTimeout(
-            () => finish(reject, new Error(`No output or error within ${timeout}ms`)),
-            timeout,
-        );
+        const onStatus = (call) => {
+            if (!result) statuses.push(call.args[0]);
+        };
+        const onError = (call) => outcome({ err: call.args[0], errMsg: call.args[1] }, 'errors');
+        const onOutput = (msg) => outcome({ msg }, 'outputs');
+        const timer = setTimeout(() => {
+            detach();
+            reject(new Error(`No output or error within ${timeout}ms`));
+        }, timeout);
 
-        function finish(settle, value) {
+        function outcome(value, kind) {
+            if (result) {
+                extra[kind] += 1;
+                return;
+            }
             clearTimeout(timer);
+            result = { ...value, statuses };
+            if (!options.settleMs) {
+                detach();
+                resolve(result);
+                return;
+            }
+            setTimeout(() => {
+                detach();
+                resolve({ ...result, extra });
+            }, options.settleMs);
+        }
+
+        function detach() {
             node.removeListener('call:status', onStatus);
             node.removeListener('call:error', onError);
             if (output) output.removeListener('input', onOutput);
-            settle(value instanceof Error ? value : { ...value, statuses });
         }
 
         node.on('call:status', onStatus);

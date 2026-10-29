@@ -601,7 +601,7 @@ return msg;
 
 Input-driven share/path fields support `msg`, `flow`, `global`, `str`, `jsonata`, and `env`. File-write data additionally supports `json`. Output properties support `msg`, `flow`, and `global`. Watch source/share settings omit `msg` because watch starts without an input message.
 
-Write/append supports strings, Buffers, ArrayBuffer/views and JSON-serializable objects; other defined scalar values are converted to strings. Empty writes are valid. Missing dynamic data errors; dynamic `null` writes the text `null`. With default static `file.data`, `msg.file = {}` writes an empty file, but omitting `msg.file` entirely instead causes an uncoded TypeError without a storage mutation. Successful typed resolutions of undefined/null become an empty string. Keep authentication credentials in configuration nodes; do not copy them into example flows or diagnostics.
+Write/append supports strings, Buffers, ArrayBuffer/views and JSON-serializable objects; other defined scalar values are converted to strings. Empty writes are valid. Missing dynamic data errors; dynamic `null` writes the text `null`. With default static `file.data`, `msg.file = {}` writes an empty file, but omitting `msg.file` entirely instead causes a TypeError with code `DATA_MISSING` without a storage mutation. Successful typed resolutions of undefined/null become an empty string. Keep authentication credentials in configuration nodes; do not copy them into example flows or diagnostics.
 
 ### Paths and result routing
 
@@ -616,7 +616,7 @@ Common metadata contains `filetype`, `path`, `dir`, `base`, `name`, and `ext`.
 - **Directory create/delete:** merges metadata into `msg.file` and writes boolean `true` to the configured output on success; delete also adds `deleted`. Recursive missing-directory deletion can still fail while listing children.
 - **Directory list:** the configured output property receives a whole metadata object with `contents: Metadata[]`. Local directory list instead returns child-name strings. Default output is `msg.file.content`, for both editor and runtime. No additional metadata assignment to `msg.file` is performed independently of the selected result path.
 - **Directory copy/move:** merges transfer metadata into `msg.file`; copy adds `copied: {files, directories}`. Same-path directory transfer forwards the original message unchanged.
-- **Watch:** has no input. It writes a new event object to the configured target, default `msg.file`, with `action`, `filetype`, watched-root `source`, changed-entry `path`, path metadata and SDK `stats` (null for deletion). It polls snapshots rather than subscribing to a durable change stream; transient changes between polls may not be observed. Invalid ignored-file regex patterns currently produce a SyntaxError on every poll, so correct them in configuration rather than relying on the watcher to stop retrying.
+- **Watch:** has no input. It writes a new event object to the configured target, default `msg.file`, with `action`, `filetype`, watched-root `source`, changed-entry `path`, path metadata and SDK `stats` (null for deletion). It polls snapshots rather than subscribing to a durable change stream; transient changes between polls may not be observed. An invalid ignored-file regex is reported once as a SyntaxError during startup; polling does not start. Correct the pattern and redeploy.
 
 With **Output To: msg.payload**, a directory list result looks like:
 
@@ -654,7 +654,8 @@ Failures use Node-RED's error/Catch mechanism rather than a second output. Input
 | Missing/invalid path                                          | `SOURCE_PATH_MISSING`, `TARGET_PATH_MISSING`, `DESTINATION_PATH_MISSING`, `DIRECTORY_PATH_MISSING`, `PATH_MISSING` or `INVALID_PATH` |
 | Invalid mutation action                                       | `INVALID_ACTION`                                                                                                                     |
 | Missing dynamic write data                                    | `DATA_MISSING`                                                                                                                       |
-| Default static `file.data` with no `msg.file` object          | Uncoded TypeError; no storage mutation; status contains the error message                                                            |
+| Default static `file.data` with no `msg.file` object          | TypeError with `DATA_MISSING`; no storage mutation; status retains the original error message                                        |
+| Invalid watcher ignore pattern                                | One SyntaxError reported at startup; no polling starts                                                                               |
 | Directory destination inside source                           | `INVALID_DESTINATION`                                                                                                                |
 | Directory copy without recursive                              | `RECURSIVE_REQUIRED`                                                                                                                 |
 | Exists-only for missing file                                  | Success, `exists: false`                                                                                                             |

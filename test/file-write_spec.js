@@ -117,13 +117,14 @@ describe('azure-file-write node', function () {
         assert.equal(share.readFile('static.txt'), '');
     });
 
-    it('legacy: static data without msg.file fails with an uncoded TypeError', async function () {
+    it('static data without msg.file fails as DATA_MISSING, keeping the TypeError and status', async function () {
         await load({ action: 'write', target: 'static.txt' });
 
-        const result = await trigger(helper, 'n1', 'out', {});
+        const result = await trigger(helper, 'n1', 'out', {}, { settleMs: 50 });
 
-        assert.equal(result.err.code, undefined);
+        assert.equal(result.err.code, 'DATA_MISSING');
         assert.ok(result.err instanceof TypeError);
+        assert.deepEqual(result.extra, { outputs: 0, errors: 0 });
         assert.equal(lastStatusText(result), result.err.message);
         assert.deepEqual(share.mutations(), []);
     });

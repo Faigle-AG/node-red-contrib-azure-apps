@@ -142,14 +142,15 @@ describe('azure-directory-watch node', function () {
         assert.equal(errors[0].msg.code, 'SHARE_NAME_MISSING');
     });
 
-    it('legacy: an invalid ignoredFiles regex is reported on every poll, not at construction', async function () {
+    it('reports an invalid ignoredFiles regex once at startup and does not poll', async function () {
         await load({ ignoredFiles: '(' });
-        await delay(POLL_MS + 150);
+        await delay(POLL_MS * 2);
 
         assert.ok(helper.getNode('n1'));
         const errors = errorLogs('n1');
-        assert.ok(errors.length >= 2, `expected repeated errors, got ${errors.length}`);
-        assert.ok(errors.every((entry) => entry.msg instanceof SyntaxError));
+        assert.equal(errors.length, 1);
+        assert.ok(errors[0].msg instanceof SyntaxError);
+        assert.deepEqual(share.calls, []);
     });
 
     it('legacy: clamps pollInterval to 250ms and treats stabilityThreshold 0 as 2000ms', async function () {
