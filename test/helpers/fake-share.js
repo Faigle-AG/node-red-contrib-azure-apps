@@ -60,6 +60,13 @@ class FakeShare {
         return this;
     }
 
+    // Merge `properties` into what getProperties() returns for this file (e.g. fileLastWriteOn).
+    setFileProperties(filePath, properties) {
+        const entry = this.files.get(filePath);
+        entry.overrides = { ...entry.overrides, ...properties };
+        return this;
+    }
+
     readFile(filePath) {
         const entry = this.files.get(filePath);
         return entry ? entry.data.toString() : undefined;
@@ -282,6 +289,7 @@ class FakeFileClient {
             etag: entry.etag,
             lastModified: entry.lastModified,
             fileAttributes: 'Archive',
+            ...entry.overrides,
         };
     }
 

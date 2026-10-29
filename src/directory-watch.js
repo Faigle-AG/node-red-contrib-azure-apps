@@ -49,7 +49,7 @@ module.exports = function (RED) {
             propertyValue(properties && properties.etag),
             propertyValue(properties && properties.lastModified),
             propertyValue(properties && properties.contentLength),
-            propertyValue(properties && properties.fileLastWriteTime),
+            propertyValue(properties && properties.fileLastWriteOn),
         ].join('|');
     }
 

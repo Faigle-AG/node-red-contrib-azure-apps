@@ -323,6 +323,25 @@ describe('azure-directory-watch node', function () {
         assert.equal(listCalls(), 1);
     });
 
+    it('treats an advancing SMB last-write time (fileLastWriteOn) as an unfinished write', async function () {
+        await load({ ignoreInitial: true, awaitWriteFinish: true, stabilityThreshold: '600' });
+        await delay(100);
+        const fixed = { etag: 'fixed', lastModified: new Date(0), contentLength: 10 };
+        share.addFile('watch/upload.bin', '0123456789');
+        share.setFileProperties('watch/upload.bin', { ...fixed, fileLastWriteOn: new Date() });
+
+        const events = [];
+        helper.getNode('out').on('input', (msg) => events.push(msg.file.path));
+        for (let i = 0; i < 6; i++) {
+            await delay(200);
+            share.setFileProperties('watch/upload.bin', { fileLastWriteOn: new Date() });
+        }
+        assert.deepEqual(events, [], 'no add while the last-write time keeps moving');
+
+        await delay(600 + POLL_MS * 3);
+        assert.deepEqual(events, ['watch/upload.bin']);
+    });
+
     it('legacy: clamps pollInterval to 250ms and treats stabilityThreshold 0 as 2000ms', async function () {
         await load({ pollInterval: '100', stabilityThreshold: '0', awaitWriteFinish: true });
 
