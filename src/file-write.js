@@ -118,6 +118,20 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // A msg data path through a missing parent (e.g. file.data without msg.file) throws a
+        // TypeError; tag it DATA_MISSING and keep its message as the status text.
+        async function getStaticData(msg) {
+            try {
+                return await node.getTypedProperty(node.data, node.dataType, msg);
+            } catch (err) {
+                if (node.dataType === 'msg' && err instanceof TypeError && !err.code) {
+                    err.code = 'DATA_MISSING';
+                    Object.defineProperty(err, 'statusText', { value: err.message });
+                }
+                throw err;
+            }
+        }
+
         node.on('input', async function (msg, send, done) {
             try {
                 if (!node.configNode) {
@@ -158,7 +172,7 @@ module.exports = function (RED) {
                         'Target path',
                         { required: true, trimString: true, code: 'TARGET_PATH_MISSING' },
                     );
-                    dataRaw = await node.getTypedProperty(node.data, node.dataType, msg);
+                    dataRaw = await getStaticData(msg);
                     createDir = node.createDir;
                 }
 
@@ -206,7 +220,9 @@ module.exports = function (RED) {
                 send(msg);
                 if (done) done();
             } catch (err) {
-                node.status.failed(err.code || err.message || 'Configuration error');
+                node.status.failed(
+                    err.statusText || err.code || err.message || 'Configuration error',
+                );
                 if (done) done(err);
                 else node.error(err, msg);
             }

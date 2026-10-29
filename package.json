@@ -1,12 +1,18 @@
 {
   "name": "@faigle/node-red-contrib-azure-apps",
-  "version": "0.8.4",
+  "version": "0.8.5",
   "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"
   ],
   "private": false,
   "license": "MIT",
+  "files": [
+    "src",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
   "node-red": {
     "nodes": {
       "auth-config": "src/auth-config.js",

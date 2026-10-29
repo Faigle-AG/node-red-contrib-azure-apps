@@ -1,6 +1,6 @@
 # @faigle/node-red-contrib-azure-apps
 
-A collection of Node-RED nodes for interacting with Microsoft Azure services, including Microsoft Graph email operations, Azure Document Intelligence, Azure AI Foundry language models, and Azure AI Search.
+A collection of Node-RED nodes for interacting with Microsoft Azure services, including Azure Files storage, Microsoft Graph email operations, Azure Document Intelligence, Azure AI Foundry language models, and Azure AI Search.
 
 The Azure nodes use `@azure/identity` and `DefaultAzureCredential`, enabling the same configuration to run locally with environment variables or Azure CLI credentials and in Azure with managed identity or workload identity. The Foundry LLM and Azure AI Search nodes also support API-key authentication.
 
@@ -539,6 +539,135 @@ AI Search - Query
 ```
 
 The index schema and documents must use the same field names and compatible Azure Search data types.
+
+---
+
+## Storage Message Protocol (msg.file)
+
+The storage nodes in this package operate on **Azure Files shares** through `azure-file-config`. They are `azure-file-read`, `azure-file-write`, `azure-file-transfer`, `azure-directory-action`, `azure-directory-transfer`, and `azure-directory-watch`. This is not a Blob Storage or Table Storage interface.
+
+Configure an Azure Files configuration node and a share name. Authentication belongs in the configuration/authentication nodes, not in `msg.file`. The message vocabulary matches the local file/directory nodes, while the differences below preserve existing flows.
+
+### Requests and typed fields
+
+Enable **Load from msg.file** to supply the following operation fields dynamically. Share selection and configured output properties remain active even in dynamic mode. Without dynamic mode, use the configured typed inputs.
+
+| Node                     | Action                     | Required dynamic fields            | Optional fields                                                    |
+| ------------------------ | -------------------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| azure-file-read          | `read`, `exists`, `stat`   | `action`, `path`                   | Combine actions as an array                                        |
+| azure-file-write         | `write`, `append`          | `action`, `path`, `data`           | `createDir`                                                        |
+| azure-file-transfer      | `copy`, `move`             | `action`, `source`, `destination`  | `createDir`                                                        |
+| azure-file-transfer      | `delete`                   | `action`, `source`                 | Destination ignored                                                |
+| azure-directory-action   | `create`, `delete`, `list` | `action`; `path` for create/delete | Empty/omitted path lists share root; `recursive` for create/delete |
+| azure-directory-transfer | `copy`, `move`             | `action`, `source`, `destination`  | `recursive`                                                        |
+
+Use exact lowercase names for portability. Read also accepts action arrays such as `['read', 'exists', 'stat']` or literal-boolean objects such as `{read: true, stat: true}`. Azure normalizes action-string tokens; historical local string parsing differs, so arrays are preferable for combinations.
+
+Dynamic `createDir` and `recursive` are enabled only by literal `true`; omission does not inherit UI checkbox defaults. Directory list is not recursive. Directory copy requires recursive enabled; directory move can create destination parents when recursive is enabled.
+
+```js
+// azure-file-read, Load from msg.file enabled; Output To: msg.file
+msg.file = { action: ['read', 'exists', 'stat'], path: 'in/report.txt' };
+return msg;
+```
+
+```js
+// azure-file-write, Load from msg.file enabled
+msg.file = {
+    action: 'write',
+    path: 'out/report.txt',
+    data: 'Report content',
+    createDir: true,
+};
+return msg;
+```
+
+```js
+// azure-file-transfer, Load from msg.file enabled
+msg.file = {
+    action: 'copy',
+    source: 'in/report.txt',
+    destination: 'archive/report.txt',
+    createDir: true,
+};
+return msg;
+```
+
+```js
+// azure-directory-action, Load from msg.file enabled; Output To: msg.payload
+msg.file = { action: 'list', path: '' }; // Share root.
+return msg;
+```
+
+Input-driven share/path fields support `msg`, `flow`, `global`, `str`, `jsonata`, and `env`. File-write data additionally supports `json`. Output properties support `msg`, `flow`, and `global`. Watch source/share settings omit `msg` because watch starts without an input message.
+
+Write/append supports strings, Buffers, ArrayBuffer/views and JSON-serializable objects; other defined scalar values are converted to strings. Empty writes are valid. Missing dynamic data errors; dynamic `null` writes the text `null`. With default static `file.data`, `msg.file = {}` writes an empty file, but omitting `msg.file` entirely instead causes an uncoded TypeError without a storage mutation. Successful typed resolutions of undefined/null become an empty string. Keep authentication credentials in configuration nodes; do not copy them into example flows or diagnostics.
+
+### Paths and result routing
+
+Paths are relative to the selected share. Backslashes become forward slashes, surrounding whitespace and empty slash segments are removed, and `.`/`..` segments are rejected. Empty directory paths select the share root for list/watch only; root mutation and transfer require nonempty paths. Source and destination of a transfer use the **same configured share**. Cross-share, cross-account and local-to-Azure transfer are not provided by these requests.
+
+Common metadata contains `filetype`, `path`, `dir`, `base`, `name`, and `ext`.
+
+- **Read:** merges metadata and requested `data` (Buffer), `exists` (boolean), or `stats` into the configured output property, default `msg.file`. Stats are a plain object of Azure properties with `size`, `mtime` and `ctime` aliases when properties exist, not a native `fs.Stats` instance.
+- **Write/append:** merges path metadata into `msg.file` and preserves payload.
+- **File copy/move:** merges `action`, `source`, `destination` and destination metadata into `msg.file`. Same normalized path succeeds without storage I/O and returns metadata, unlike local file-transfer's unchanged-message no-op.
+- **File delete:** uses delete-if-exists and sets `msg.file.deleted` to true/false. `destination` is null; `path` describes the deleted/requested resource. Payload is preserved, unlike local file delete's `payload = true`.
+- **Directory create/delete:** merges metadata into `msg.file` and writes boolean `true` to the configured output on success; delete also adds `deleted`. Recursive missing-directory deletion can still fail while listing children.
+- **Directory list:** the configured output property receives a whole metadata object with `contents: Metadata[]`. Local directory list instead returns child-name strings. Default output is `msg.file.content`, for both editor and runtime. No additional metadata assignment to `msg.file` is performed independently of the selected result path.
+- **Directory copy/move:** merges transfer metadata into `msg.file`; copy adds `copied: {files, directories}`. Same-path directory transfer forwards the original message unchanged.
+- **Watch:** has no input. It writes a new event object to the configured target, default `msg.file`, with `action`, `filetype`, watched-root `source`, changed-entry `path`, path metadata and SDK `stats` (null for deletion). It polls snapshots rather than subscribing to a durable change stream; transient changes between polls may not be observed. Invalid ignored-file regex patterns currently produce a SyntaxError on every poll, so correct them in configuration rather than relying on the watcher to stop retrying.
+
+With **Output To: msg.payload**, a directory list result looks like:
+
+```js
+msg.payload = {
+    filetype: 'directory',
+    path: 'archive',
+    dir: '',
+    base: 'archive',
+    name: 'archive',
+    ext: '',
+    contents: [
+        {
+            filetype: 'file',
+            path: 'archive/report.txt',
+            dir: 'archive',
+            base: 'report.txt',
+            name: 'report',
+            ext: '.txt',
+        },
+    ],
+};
+```
+
+Merges preserve custom fields and can retain earlier results. Only requested/computed fields should be treated as fresh. Selecting a result property that overlaps `msg.file` can replace metadata; choose output routes deliberately.
+
+### Errors and operational boundaries
+
+Failures use Node-RED's error/Catch mechanism rather than a second output. Input failures retain the triggering message; watch/configuration errors have no input message. Catch exposes `msg.error.message` and `msg.error.code` when supplied. Existing status text remains separate. Provider errors may retain SDK codes rather than a universal filesystem error code.
+
+| Condition                                                     | Current result / codes                                                                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Missing configuration/share                                   | `AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`                                                                                         |
+| Missing dynamic request/action                                | `FILE_MISSING`, `ACTION_MISSING` or `INVALID_ACTION`, depending on node                                                              |
+| Missing/invalid path                                          | `SOURCE_PATH_MISSING`, `TARGET_PATH_MISSING`, `DESTINATION_PATH_MISSING`, `DIRECTORY_PATH_MISSING`, `PATH_MISSING` or `INVALID_PATH` |
+| Invalid mutation action                                       | `INVALID_ACTION`                                                                                                                     |
+| Missing dynamic write data                                    | `DATA_MISSING`                                                                                                                       |
+| Default static `file.data` with no `msg.file` object          | Uncoded TypeError; no storage mutation; status contains the error message                                                            |
+| Directory destination inside source                           | `INVALID_DESTINATION`                                                                                                                |
+| Directory copy without recursive                              | `RECURSIVE_REQUIRED`                                                                                                                 |
+| Exists-only for missing file                                  | Success, `exists: false`                                                                                                             |
+| Stat-only for missing file                                    | Success, `stats: null` (local stat throws instead)                                                                                   |
+| Read of missing file                                          | `FILE_NOT_FOUND`, also when read is combined with exists/stat                                                                        |
+| Delete missing file                                           | Success, `deleted: false`                                                                                                            |
+| Unrecognized read action                                      | May perform no actions and forward metadata; use documented tokens                                                                   |
+| Permission/authentication, throttling, network or SDK failure | Propagated error; do not assume it means not-found                                                                                   |
+| Output/context failure                                        | Error; remote storage mutations may already have completed                                                                           |
+
+The nodes are not a transaction service. Tree copies/deletes and chunked writes can partially complete. Azure append resizes the file and uploads ranges; concurrent appenders can race, and failure after resize can leave partial changes. Inspect results before retrying and coordinate writes to the same resource externally.
+
+Path validation is not authorization. Use least-privilege Azure permissions and restrict who can inject share/path values. Do not place SAS tokens, account keys, connection strings, complete SDK request objects or file content in status messages or shared logs. Existing SDK error objects may contain diagnostic details; redact before forwarding them outside the trusted flow. Do not infer credential redaction or remote operation rollback from a Catch event.
 
 ---
 
