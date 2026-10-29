@@ -5,8 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-// Topic colours from the shared palette for the Azure Files storage nodes:
-// File Storage (Soft Tan) and Directory Operations (Warm Amber).
+// Topic colours from the shared palette: File Storage (Soft Tan) and Directory Operations
+// (Warm Amber) for the Azure Files nodes, LLM & AI Models, cloud (Azure Blue) for Foundry.
 const EDITORS = [
     { file: 'file-read.html', type: 'azure-file-read', color: '#DEB887' },
     { file: 'file-write.html', type: 'azure-file-write', color: '#DEB887' },
@@ -14,6 +14,7 @@ const EDITORS = [
     { file: 'directory-action.html', type: 'azure-directory-action', color: '#E6B86A' },
     { file: 'directory-transfer.html', type: 'azure-directory-transfer', color: '#E6B86A' },
     { file: 'directory-watch.html', type: 'azure-directory-watch', color: '#E6B86A' },
+    { file: 'foundry-llm.html', type: 'azure-foundry-llm', color: '#90CAF9' },
 ];
 
 // Evaluates the editor's registration scripts against a minimal RED stub and returns
@@ -32,12 +33,12 @@ function loadDefinitions(html) {
     return registered;
 }
 
-describe('azure storage editors', function () {
+describe('azure editors', function () {
     for (const editor of EDITORS) {
         describe(editor.file, function () {
             const html = fs.readFileSync(path.join(__dirname, '../src', editor.file), 'utf8');
 
-            it(`registers ${editor.type} with its storage topic colour`, function () {
+            it(`registers ${editor.type} with its topic colour`, function () {
                 const definition = loadDefinitions(html).get(editor.type);
                 assert.ok(definition, `${editor.type} is registered`);
                 assert.equal(definition.color, editor.color);
