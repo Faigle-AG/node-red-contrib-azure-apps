@@ -266,7 +266,7 @@ The runtime uses:
 - the `openai` JavaScript SDK for `client.responses.create()`
 - `@azure/identity` for Microsoft Entra ID authentication
 - SDK-managed connection and HTTP retries
-- a configurable overall request timeout
+- a configurable timeout passed to the SDK (not a node-wide end-to-end deadline)
 
 #### Configuration
 
@@ -278,31 +278,35 @@ The runtime uses:
 - **Max Tokens:** Optional `max_output_tokens` value.
 - **Temperature:** Optional value from `0` to `2`. Leave it empty when the selected model does not accept temperature.
 - **Max Retries:** Number of SDK retries. The default is `4`.
-- **Timeout:** Overall request timeout in milliseconds. The default is `120000`.
+- **Timeout:** SDK request timeout in milliseconds. The editor default is `120000`; retries can make total elapsed time longer.
 - **Output Value:** Generated text or the complete Responses API object.
 - **Output To:** A `msg`, `flow`, or `global` property.
 - **Include Raw Response:** Adds the complete response to `msg.foundry.response`.
-- **Enable Logging:** Logs request metadata without logging authentication secrets.
+- **Enable Logging:** Logs model, input-size and retry/timeout metadata. Error messages and SDK causes are separate diagnostic paths; do not assume all error content is credential-redacted.
 
 #### Endpoint examples
 
-Resource endpoint:
+Prefer an explicit API base to avoid the legacy bare-host normalization behavior.
+
+Resource API base:
 
 ```text
-https://<resource-name>.services.ai.azure.com
+https://<resource-name>.services.ai.azure.com/openai/v1
 ```
 
-Project endpoint:
+Project API base:
 
 ```text
-https://<resource-name>.services.ai.azure.com/api/projects/<project-name>
+https://<resource-name>.services.ai.azure.com/api/projects/<project-name>/openai/v1
 ```
 
-The node normalizes either form to an `/openai/v1/` base URL.
+A base already ending in `/openai/v1` or `/openai/v1/responses` is accepted. A project path without the suffix has `/openai/v1/` appended. A bare host currently produces a double slash before `openai/v1`; specifying the full API base avoids that behavior. The endpoint must use HTTPS.
 
 #### Input handling
 
-Strings and Responses API input arrays are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence output, are serialized as JSON.
+Strings and Responses API input arrays are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence output, are serialized as JSON. Numbers and booleans are converted to text. Arrays are Responses input items, not automatically translated Chat Completions history.
+
+Input supports `msg`, `flow`, `global`, `str`, `jsonata`, and `env`; output supports only `msg`, `flow`, and `global`. Existing saved fields remain `input/inputType` and `output/outputType`. Empty strings/arrays are currently passed to the service; typed-property resolution can turn a missing/null value into an empty string, while a missing parent path can throw. Use a nonempty text prompt for a portable flow.
 
 Example configuration for a Document Intelligence result:
 
@@ -313,7 +317,9 @@ Output: msg.payload
 
 #### Output metadata
 
-The incoming message is preserved. The selected result is written to the configured output, and request metadata is added to:
+Generated-text mode writes extracted response text; complete-response mode writes the native Responses object. Text mode fails when no nonempty text is available. JSON-looking model text is not automatically parsed or validated, and tools are not automatically executed.
+
+The selected result is written to the configured output. Other input fields are preserved except `msg.foundry`, which is replaced with request metadata:
 
 ```javascript
 msg.foundry = {
@@ -323,6 +329,8 @@ msg.foundry = {
     status,
     usage,
     outputText,
+    maxRetries,
+    timeoutMs,
 };
 ```
 
@@ -334,6 +342,25 @@ msg.foundry.response;
 
 contains the complete Responses API result.
 
+Choose an output target outside `msg.foundry`, such as `msg.answer`. The current runtime does not reject overlapping targets; writing the metadata afterwards can overwrite the selected result. A context output still forwards the incoming message with `msg.foundry` metadata.
+
+#### Portable text flow
+
+```text
+Inject (text in msg.payload) → Azure Foundry LLM → Debug (msg.answer)
+Catch (scoped to Azure Foundry LLM) → error-handling flow
+```
+
+Select your Azure authentication config, an explicit HTTPS API base, and a deployed model. Set **Input** to `msg.payload`, **Output To** to `msg.answer`, and **Output Value** to generated text. Inject `Explain Node-RED in one sentence.` A normal result is a string at `msg.answer`, while the original prompt remains at `msg.payload` and metadata appears at `msg.foundry`.
+
+This text-in/text-out pattern is shared with Ollama and OpenAI V1 Compatible, but not their native schemas. Ollama sends a `prompt`; OpenAI sends Chat Completions `messages`; this node sends Responses `input` with separate `instructions`. There is no automatic provider-history conversion, streaming, conversation memory or tool execution.
+
+#### Errors and lifecycle
+
+Failures report through Node-RED Catch handling, not a success output. HTTP failures show `HTTP <status>` in node status; other errors use their code or message. Local validation errors may have the generic code `Error`, so inspect `msg.error.message` as well. SDK errors can carry raw causes/details; universal secret redaction is not guaranteed. Validate model output and redact sensitive diagnostics before forwarding or logging them.
+
+This node currently has no request-abort handler on close. Do not assume redeploying it cancels in-flight SDK calls or remote generation/billing. Concurrent messages are independent, and results can arrive out of order.
+
 #### Retry behavior
 
 The OpenAI SDK retries transient connection failures and retryable HTTP responses, including:
@@ -343,7 +370,7 @@ The OpenAI SDK retries transient connection failures and retryable HTTP response
 - `429 Too Many Requests`
 - `5xx` server errors
 
-Retries use exponential backoff. **Max Retries** controls the number of additional attempts. The timeout applies to each SDK request lifecycle.
+Retries use exponential backoff. **Max Retries** controls the number of additional attempts. Timeout handling belongs to the SDK and is not an overall deadline across retries, response processing, authentication and output writes; do not assume the node will finish within the configured timeout.
 
 #### Authentication examples
 
