@@ -1,6 +1,6 @@
 {
   "name": "@faigle/node-red-contrib-azure-apps",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "description": "Using Azure Graph API with DefaultAzureCredential to access Azure applications",
   "keywords": [
     "node-red"
@@ -57,7 +57,8 @@
     "format": "prettier --write \"**/*.{js,html,md}\"",
     "lint": "eslint \"**/*.{js,html}\"",
     "prepare": "npx --yes husky",
-    "test": "mocha \"test/**/*_spec.js\""
+    "test": "mocha \"test/**/*_spec.js\"",
+    "format:check": "prettier --check \"**/*.{js,html,md}\""
   },
   "lint-staged": {
     "*.{js,html,md}": "prettier --write",
