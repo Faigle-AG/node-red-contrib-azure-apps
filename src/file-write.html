@@ -222,5 +222,13 @@ msg.file = {
 ### Output
 
 The node preserves the input message and merges Azure file path metadata into `msg.file`.
+
+### Errors
+
+Failures go to Catch nodes as `msg.error`, with `msg.error.code` when available; nothing is sent on the output.
+
+- `AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `FILE_MISSING` (dynamic mode without `msg.file`), `INVALID_ACTION`, `TARGET_PATH_MISSING`, `INVALID_PATH`: invalid configuration or request.
+- `DATA_MISSING`: `msg.file.data` is undefined in dynamic mode, or the configured `msg` data path has a missing parent.
+- Azure SDK codes such as `ParentNotFound` when the folder is missing and directory creation is off.
 </script>
 <!-- @formatter:on -->

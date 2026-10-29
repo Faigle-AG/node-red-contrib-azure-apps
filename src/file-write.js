@@ -118,13 +118,42 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // True only when the msg data path provably stops at a missing (undefined/null) parent.
+        // Reads own data descriptors, so no getter runs again; inherited, accessor or computed
+        // parts are treated as uncertain and leave the original error uncoded.
+        function hasMissingParent(msg) {
+            try {
+                const parts = RED.util.normalisePropertyExpression(
+                    String(node.data).replace(/^msg\./, ''),
+                );
+                let current = msg;
+                for (const part of parts.slice(0, -1)) {
+                    if (typeof part !== 'string' && typeof part !== 'number') return false;
+                    const descriptor = Object.getOwnPropertyDescriptor(current, part);
+                    if (!descriptor) return !(part in current);
+                    if (!('value' in descriptor)) return false;
+                    current = descriptor.value;
+                    if (current === undefined || current === null) return true;
+                    if (typeof current !== 'object') return false;
+                }
+                return false;
+            } catch {
+                return false;
+            }
+        }
+
         // A msg data path through a missing parent (e.g. file.data without msg.file) throws a
         // TypeError; tag it DATA_MISSING and keep its message as the status text.
         async function getStaticData(msg) {
             try {
                 return await node.getTypedProperty(node.data, node.dataType, msg);
             } catch (err) {
-                if (node.dataType === 'msg' && err instanceof TypeError && !err.code) {
+                if (
+                    node.dataType === 'msg' &&
+                    err instanceof TypeError &&
+                    !err.code &&
+                    hasMissingParent(msg)
+                ) {
                     err.code = 'DATA_MISSING';
                     Object.defineProperty(err, 'statusText', { value: err.message });
                 }

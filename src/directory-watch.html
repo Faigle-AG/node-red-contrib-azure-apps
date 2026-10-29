@@ -276,5 +276,12 @@ Azure Files does not expose native filesystem watch events, so this node polls t
   - **stats**: Azure file/directory properties returned by `getProperties()`; `null` for deletes.
 
 The node polls by listing Azure Files directories recursively up to **Depth** and uses Azure properties such as ETag, last-modified time, and content length to detect file changes.
+
+### Errors
+
+The node has no input; errors are reported via `node.error` without a triggering message.
+
+- Startup problems (`AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `INVALID_PATH`, or an invalid ignore pattern) are reported once and the node does not poll.
+- Errors during a poll are reported for that poll; polling continues.
 </script>
 <!-- @formatter:on -->

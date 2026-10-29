@@ -200,5 +200,19 @@ Copies or moves a directory inside one Azure Storage file share.
 - **Recursive**: required for Copy. For Move / Rename it controls creation of missing destination parent directories.
 
 Directory copy walks the source hierarchy and copies files in bounded ranges. Move / Rename uses the Azure Files rename operation within the same share.
+
+### Errors
+
+Failures go to Catch nodes as `msg.error`, with `msg.error.code` when available; nothing is sent on the output.
+
+- `AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `FILE_MISSING`, `INVALID_ACTION`, `SOURCE_PATH_MISSING`, `DESTINATION_PATH_MISSING`, `PATH_MISSING`, `INVALID_PATH`: invalid configuration or request.
+- `INVALID_DESTINATION`: the destination is inside the source. `RECURSIVE_REQUIRED`: **copy** without **Recursive**.
+- Other Azure SDK error codes are passed through.
+
+When source and destination are the same, the message passes through unchanged.
+
+### Example
+
+With **Load from msg.file** enabled: `msg.file = { action: 'copy', source: 'in', destination: 'backup/in', recursive: true }`.
 </script>
 <!-- @formatter:on -->

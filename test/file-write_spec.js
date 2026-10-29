@@ -129,6 +129,34 @@ describe('azure-file-write node', function () {
         assert.deepEqual(share.mutations(), []);
     });
 
+    it('keeps unrelated TypeErrors from msg data getters uncoded', async function () {
+        await load({ action: 'write', target: 'getter.txt' });
+        const own = {};
+        Object.defineProperty(own, 'file', {
+            enumerable: true,
+            get() {
+                throw new TypeError('own getter failed');
+            },
+        });
+        const inherited = Object.create({
+            get file() {
+                throw new TypeError('inherited getter failed');
+            },
+        });
+
+        for (const [input, message] of [
+            [own, 'own getter failed'],
+            [inherited, 'inherited getter failed'],
+        ]) {
+            const result = await trigger(helper, 'n1', 'out', input);
+            assert.ok(result.err instanceof TypeError);
+            assert.equal(result.err.message, message);
+            assert.equal(result.err.code, undefined);
+            assert.equal(lastStatusText(result), message);
+        }
+        assert.deepEqual(share.mutations(), []);
+    });
+
     it('legacy: dynamic null data writes the text "null"', async function () {
         await load({ dynamic: true });
         await trigger(helper, 'n1', 'out', {

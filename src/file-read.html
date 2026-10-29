@@ -218,5 +218,13 @@ msg.file = {
 ```
 
 Fields are included according to the selected actions.
+
+### Errors
+
+Failures go to Catch nodes as `msg.error`, with `msg.error.code` when available; nothing is sent on the output.
+
+- `AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `ACTION_MISSING`, `SOURCE_PATH_MISSING`, `INVALID_PATH` (including `.` or `..` segments): invalid configuration or request.
+- `FILE_NOT_FOUND`: **Read** of a missing file. **Check Exists** returns `false`, and **Get Stat** alone returns `stats: null`, instead of failing.
+- Other Azure SDK error codes are passed through.
 </script>
 <!-- @formatter:on -->

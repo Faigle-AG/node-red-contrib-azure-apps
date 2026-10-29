@@ -205,6 +205,19 @@ Creates, deletes, or lists directories in an Azure Storage file share.
 - **Recursive**: creates missing parent directories for Create or recursively removes children for Delete.
 - **Output To**: Create/Delete writes `true`; List writes the complete directory metadata object including `contents`.
 
-List output uses the same simple contents contract as the local `directory-action`: an array of child names.
+List output differs from the local `directory-action`: `contents` is an array of metadata objects (`filetype`, `path`, `dir`, `base`, `name`, `ext`), not child names.
+
+### Errors
+
+Failures go to Catch nodes as `msg.error`, with `msg.error.code` when available; nothing is sent on the output.
+
+- `AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `FILE_MISSING`, `INVALID_ACTION`, `DIRECTORY_PATH_MISSING`, `INVALID_PATH`: invalid configuration or request.
+- Azure SDK codes, for example `ResourceNotFound` when listing a missing directory (also for a **Recursive** delete of one), `ParentNotFound` for a non-recursive nested create, or `DirectoryNotEmpty` for a non-recursive delete of a non-empty directory.
+
+A non-recursive delete of a missing directory succeeds with `msg.file.deleted = false`.
+
+### Example
+
+With **Load from msg.file** enabled: `msg.file = { action: 'list', path: 'archive' }`.
 </script>
 <!-- @formatter:on -->

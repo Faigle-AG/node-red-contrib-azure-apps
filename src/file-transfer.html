@@ -232,5 +232,18 @@ msg.file = {
 ### Output
 
 `msg.file` contains `filetype`, `action`, `source`, `destination`, `path`, and normalized path metadata.
+
+### Errors
+
+Failures go to Catch nodes as `msg.error`, with `msg.error.code` when available; nothing is sent on the output.
+
+- `AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `FILE_MISSING`, `INVALID_ACTION`, `SOURCE_PATH_MISSING`, `DESTINATION_PATH_MISSING`, `PATH_MISSING`, `INVALID_PATH`: invalid configuration or request.
+- Azure SDK codes such as `ResourceNotFound` for a missing copy/move source.
+
+**delete** of a missing file succeeds with `msg.file.deleted = false`. When source and destination are the same, no storage call is made.
+
+### Example
+
+With **Load from msg.file** enabled: `msg.file = { action: 'copy', source: 'in/report.txt', destination: 'archive/report.txt', createDir: true }`.
 </script>
 <!-- @formatter:on -->
