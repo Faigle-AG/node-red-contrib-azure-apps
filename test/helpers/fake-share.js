@@ -30,6 +30,9 @@ class FakeShare {
         this.files = new Map();
         this.calls = [];
         this.faults = [];
+        this.gates = [];
+        // Listings are delivered in pages of this size; each further page is a recorded request.
+        this.pageSize = Infinity;
         this.rootDirectoryClient = new FakeDirectoryClient(this, '');
     }
 
@@ -68,6 +71,17 @@ class FakeShare {
         return this;
     }
 
+    // Hold the next call of `method` on `itemPath` (or any path) until release(error?) is called.
+    // `reached` resolves when that call arrives.
+    gateOnce(method, itemPath) {
+        let release;
+        let notifyReached;
+        const released = new Promise((resolve) => (release = resolve));
+        const reached = new Promise((resolve) => (notifyReached = resolve));
+        this.gates.push({ method, itemPath, released, notifyReached });
+        return { reached, release: (error) => release(error) };
+    }
+
     mutations() {
         const mutating = [
             'create',
@@ -94,6 +108,19 @@ class FakeShare {
             const [fault] = this.faults.splice(index, 1);
             throw fault.error;
         }
+    }
+
+    async passGate(method, itemPath) {
+        const index = this.gates.findIndex(
+            (gate) =>
+                gate.method === method &&
+                (gate.itemPath === undefined || gate.itemPath === itemPath),
+        );
+        if (index === -1) return;
+        const [gate] = this.gates.splice(index, 1);
+        gate.notifyReached();
+        const error = await gate.released;
+        if (error) throw error;
     }
 
     requireParent(itemPath) {
@@ -195,6 +222,7 @@ class FakeDirectoryClient {
         const dirPath = this.path;
         return (async function* () {
             share.record('listFilesAndDirectories', dirPath);
+            await share.passGate('listFilesAndDirectories', dirPath);
             if (!share.dirs.has(dirPath)) throw restError(404, 'ResourceNotFound');
 
             const prefix = dirPath ? dirPath + '/' : '';
@@ -215,7 +243,13 @@ class FakeDirectoryClient {
                 })),
             ].sort((a, b) => a.name.localeCompare(b.name));
 
-            for (const item of items) yield item;
+            for (let index = 0; index < items.length; index++) {
+                if (index > 0 && index % share.pageSize === 0) {
+                    share.record('listFilesAndDirectories:page', dirPath);
+                    await share.passGate('listFilesAndDirectories:page', dirPath);
+                }
+                yield items[index];
+            }
         })();
     }
 }
@@ -239,6 +273,7 @@ class FakeFileClient {
 
     async getProperties() {
         this.share.record('getProperties', this.path);
+        await this.share.passGate('getProperties', this.path);
         const entry = this.entry();
         return {
             contentLength: entry.data.length,

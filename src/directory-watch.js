@@ -107,7 +107,7 @@ module.exports = function (RED) {
         }
 
         async function sendEvent(entry, eventType) {
-            if (!shouldEmit(entry.filetype, eventType)) return;
+            if (stopped || !shouldEmit(entry.filetype, eventType)) return;
 
             const msg = {};
             const file = {
@@ -116,6 +116,7 @@ module.exports = function (RED) {
             };
 
             await node.setTypedProperty(node.target, node.targetType, msg, file);
+            if (stopped) return;
             node.status.succeeded(`${eventType} ${entry.filetype} ${entry.base}`, {
                 next: () => node.status.waiting('Listening...'),
             });
@@ -178,6 +179,7 @@ module.exports = function (RED) {
 
         async function scanDirectory(directoryClient, directoryPath, level, snapshot, ignoreRegex) {
             for await (const item of directoryClient.listFilesAndDirectories()) {
+                if (stopped) return;
                 if (ignoreRegex && ignoreRegex.test(item.name)) continue;
 
                 const itemPath = directoryPath ? `${directoryPath}/${item.name}` : item.name;
@@ -186,6 +188,7 @@ module.exports = function (RED) {
                     if (item.kind === 'directory') {
                         const childClient = directoryClient.getDirectoryClient(item.name);
                         const properties = await childClient.getProperties();
+                        if (stopped) return;
                         const file = createFileData(
                             node.resolvedSource,
                             itemPath,
@@ -209,6 +212,7 @@ module.exports = function (RED) {
                     } else {
                         const fileClient = directoryClient.getFileClient(item.name);
                         const properties = await fileClient.getProperties();
+                        if (stopped) return;
                         const file = createFileData(
                             node.resolvedSource,
                             itemPath,
@@ -293,9 +297,12 @@ module.exports = function (RED) {
 
             try {
                 const snapshot = await createSnapshot();
+                if (stopped) return;
                 await processSnapshot(snapshot);
+                if (stopped) return;
                 node.status.waiting('Listening...');
             } catch (err) {
+                if (stopped) return;
                 node.status.failed(err.code || err.message || 'Watch error');
                 node.error(err);
             } finally {
@@ -316,8 +323,10 @@ module.exports = function (RED) {
                     'Share name',
                     { required: true, trimString: true, code: 'SHARE_NAME_MISSING' },
                 );
+                if (stopped) return;
 
                 const sourceRaw = await node.getTypedProperty(node.source, node.sourceType, {});
+                if (stopped) return;
                 node.resolvedSource = normalizeAzurePath(sourceRaw, 'Source path');
 
                 // Compiled once: an invalid pattern stops the watcher instead of failing every poll.
@@ -329,6 +338,7 @@ module.exports = function (RED) {
                 node.status.processing('Starting...');
                 await poll();
             } catch (err) {
+                if (stopped) return;
                 node.status.failed(err.code || err.message || 'Configuration error');
                 node.error(err);
             }
