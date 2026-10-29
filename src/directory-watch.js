@@ -229,6 +229,8 @@ module.exports = function (RED) {
                         throw err;
                     }
                 }
+                // Before the iterator fetches the next item or page.
+                if (stopped) return;
             }
         }
 
