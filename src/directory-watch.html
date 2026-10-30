@@ -256,9 +256,9 @@ Azure Files does not expose native filesystem watch events, so this node polls t
 - **Types**: emit events for Files, Directories, or both.
 - **Ignore pattern**: optional regex matched against each file or directory name.
 - **Depth**: subdirectory depth to scan (`0` scans only direct children of Source Path).
-- **Poll interval**: milliseconds between completed scans. Minimum `250` ms; default `5000` ms.
+- **Poll interval**: milliseconds to wait after a scan completes before the next scan starts. Minimum `250` ms; default `5000` ms. Values above `2147483647` ms overflow Node's timer and can poll after 1 ms (this limit does not apply to the threshold).
 - **Await write finish**: delays file Add/Change until its Azure properties remain unchanged for the stability threshold.
-- **Threshold**: required stable time in milliseconds. Effective timing is bounded by the poll interval.
+- **Threshold**: required stable time in milliseconds. Once a scan has seen a file, the node re-checks that file's properties when the threshold has passed since it was last seen changed, independent of the poll interval. A change restarts the wait. The first wait for a file starts when a scan first sees it, so a long scan still delays it. Outputs are written and sent one at a time, in the order the events were decided, so a slow output target also delays later events.
 - **On start ignore files in folder**: uses the first scan only as the baseline instead of emitting Add events for existing items.
 
 ### Outputs
@@ -275,13 +275,13 @@ Azure Files does not expose native filesystem watch events, so this node polls t
   - **ext**: extension including the dot.
   - **stats**: Azure file/directory properties returned by `getProperties()`; `null` for deletes.
 
-The node polls by listing Azure Files directories recursively up to **Depth** and uses Azure properties such as ETag, last-modified time, and content length to detect file changes.
+The node polls by listing Azure Files directories recursively up to **Depth** and uses Azure properties (ETag, last-modified time, content length and the file's last-write time) to detect file changes. Stability is judged from these properties, not from the file's bytes.
 
 ### Errors
 
 The node has no input; errors are reported via `node.error` without a triggering message.
 
 - Startup problems (`AZURE_CONFIG_MISSING`, `SHARE_NAME_MISSING`, `INVALID_PATH`, or an invalid ignore pattern) are reported once and the node does not poll.
-- Errors during a poll are reported for that poll; polling continues.
+- A failed poll, stability re-check or output write is reported once per outage; further failures are not reported again until a poll succeeds completely, including its output writes. While polls keep failing, the next poll and any due stability re-checks wait: the delay doubles from the poll interval up to 60 s, never shorter than the poll interval (within the timer range noted above). A failed re-check also delays the start of the next poll and of other re-checks by the current retry delay (one poll interval unless polls are failing); a scan that is already running is not interrupted. The status shows the latest error; a file event delivered meanwhile replaces it with the usual success status, and a poll that succeeds completely restores `Listening...`.
 </script>
 <!-- @formatter:on -->

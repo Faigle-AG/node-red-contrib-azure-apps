@@ -643,7 +643,7 @@ Common metadata contains `filetype`, `path`, `dir`, `base`, `name`, and `ext`.
 - **Directory create/delete:** merges metadata into `msg.file` and writes boolean `true` to the configured output on success; delete also adds `deleted`. Recursive missing-directory deletion can still fail while listing children.
 - **Directory list:** the configured output property receives a whole metadata object with `contents: Metadata[]`. Local directory list instead returns child-name strings. Default output is `msg.file.content`, for both editor and runtime. No additional metadata assignment to `msg.file` is performed independently of the selected result path.
 - **Directory copy/move:** merges transfer metadata into `msg.file`; copy adds `copied: {files, directories}`. Same-path directory transfer forwards the original message unchanged.
-- **Watch:** has no input. It writes a new event object to the configured target, default `msg.file`, with `action`, `filetype`, watched-root `source`, changed-entry `path`, path metadata and SDK `stats` (null for deletion). It polls snapshots rather than subscribing to a durable change stream; transient changes between polls may not be observed. An invalid ignored-file regex is reported once as a SyntaxError during startup; polling does not start. Correct the pattern and redeploy.
+- **Watch:** has no input. It writes a new event object to the configured target, default `msg.file`, with `action`, `filetype`, watched-root `source`, changed-entry `path`, path metadata and SDK `stats` (null for deletion). It combines discovery scans with pending-file property checks rather than subscribing to a durable change stream; transient changes between observations may not be observed. An invalid ignored-file regex is reported once as a SyntaxError during startup; polling does not start. Correct the pattern and redeploy.
 
 With **Output To: msg.payload**, a directory list result looks like:
 
@@ -669,6 +669,23 @@ msg.payload = {
 ```
 
 Merges preserve custom fields and can retain earlier results. Only requested/computed fields should be treated as fresh. Selecting a result property that overlaps `msg.file` can replace metadata; choose output routes deliberately.
+
+### Watch timing and failures
+
+`azure-directory-watch` uses discovery scans and separate property checks for pending file events. It is not a durable change stream: transient changes between observations may be missed.
+
+- **Poll interval** is the normal delay after a poll finishes before the next scan starts. It defaults to `5000` ms, with an effective minimum of `250` ms. Scanning and output-processing time add to discovery latency.
+- **Await write finish** holds file Add/Change events until their observed quiet period passes. The signature contains ETag, last-modified time, content length and the SDK's SMB `fileLastWriteOn` field. The quiet period is measured locally from the first observation or last observed signature change, not from the age of the server timestamp.
+- **Threshold** defaults to `2000` ms. At a pending file's quiet-period deadline, a fresh `getProperties()` request checks the signature independently of the next scan. A change restarts the wait. Initial enrollment happens after the discovery scan finishes, so a long scan, API latency or failure backoff can delay checking. Eligible events also wait for earlier output writes: typed writes and sends are serialized. The threshold is not an exact delivery deadline or proof that an upload is complete.
+- Pending file checks add Azure requests; idle files do not receive these extra checks. SDK retries can add further requests. Directory and Delete events are not held for file stability. **Ignore initial** uses the first complete poll as the baseline without initial Adds. For compatibility, a saved threshold of `0` still selects `2000` ms; turn off Await write finish to disable the stability wait.
+
+Runtime errors are coalesced through `node.error`/Catch: after the first report, further errors are not reported again until a complete poll succeeds, including the output writes it awaits. A poll already running when an error occurs can provide that recovery. A successful event can replace the error status before full-poll recovery; status is not a durable outage indicator.
+
+Consecutive failed polls retry after `P`, `2P`, `4P`, and so on, capped at 60 seconds unless the configured poll interval `P` is longer. A failed file-properties recheck also postpones the start of polls and other pending checks by the current retry delay. A scan already running is not interrupted. A completely successful poll resets the delay and error reporting. Startup configuration or regex failures still report once without starting polling.
+
+**Known polling limit:** poll intervals above `2147483647` ms overflow Node's poll timer and can cause polling after only `1` ms. This pre-existing limitation is not a limit on the separately segmented stability threshold. The backoff bounds above assume a poll interval within the timer's range.
+
+Output failures can lose events; this watcher does not provide durable replay or exactly-once delivery. On close it stops initiating new work, including queued output writes, and suppresses late sends, statuses and error reporting. A request or context write already started can still complete; close does not roll it back.
 
 ### Errors and operational boundaries
 

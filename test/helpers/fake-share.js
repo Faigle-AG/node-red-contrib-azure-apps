@@ -30,6 +30,7 @@ class FakeShare {
         this.files = new Map();
         this.calls = [];
         this.faults = [];
+        this.faultHits = [];
         this.gates = [];
         // Listings are delivered in pages of this size; each further page is a recorded request.
         this.pageSize = Infinity;
@@ -78,15 +79,16 @@ class FakeShare {
         return this;
     }
 
-    // Hold the next call of `method` on `itemPath` (or any path) until release(error?) is called.
-    // `reached` resolves when that call arrives.
+    // Hold the next call of `method` on `itemPath` (or any path) until release(outcome?) is called.
+    // An Error outcome fails the call; 'as-issued' makes getProperties answer with the properties
+    // the file had when the call arrived. `reached` resolves when that call arrives.
     gateOnce(method, itemPath) {
         let release;
         let notifyReached;
         const released = new Promise((resolve) => (release = resolve));
         const reached = new Promise((resolve) => (notifyReached = resolve));
         this.gates.push({ method, itemPath, released, notifyReached });
-        return { reached, release: (error) => release(error) };
+        return { reached, release: (outcome) => release(outcome) };
     }
 
     mutations() {
@@ -105,7 +107,7 @@ class FakeShare {
     // Internal ------------------------------------------------------------------------
 
     record(method, itemPath) {
-        this.calls.push({ method, path: itemPath });
+        this.calls.push({ method, path: itemPath, at: Date.now() });
         const index = this.faults.findIndex(
             (fault) =>
                 fault.method === method &&
@@ -113,6 +115,7 @@ class FakeShare {
         );
         if (index !== -1) {
             const [fault] = this.faults.splice(index, 1);
+            this.faultHits.push({ method, path: itemPath, at: Date.now() });
             throw fault.error;
         }
     }
@@ -126,8 +129,9 @@ class FakeShare {
         if (index === -1) return;
         const [gate] = this.gates.splice(index, 1);
         gate.notifyReached();
-        const error = await gate.released;
-        if (error) throw error;
+        const outcome = await gate.released;
+        if (outcome instanceof Error) throw outcome;
+        return outcome;
     }
 
     requireParent(itemPath) {
@@ -209,6 +213,12 @@ class FakeDirectoryClient {
 
     async getProperties() {
         this.share.record('getProperties', this.path);
+        const issued = this.share.dirs.has(this.path) ? this.properties() : null;
+        const outcome = await this.share.passGate('getProperties', this.path);
+        return outcome === 'as-issued' && issued ? issued : this.properties();
+    }
+
+    properties() {
         if (!this.share.dirs.has(this.path)) throw restError(404, 'ResourceNotFound');
         return {
             etag: `dir:${this.path}`,
@@ -280,7 +290,12 @@ class FakeFileClient {
 
     async getProperties() {
         this.share.record('getProperties', this.path);
-        await this.share.passGate('getProperties', this.path);
+        const issued = this.share.files.has(this.path) ? this.properties() : null;
+        const outcome = await this.share.passGate('getProperties', this.path);
+        return outcome === 'as-issued' && issued ? issued : this.properties();
+    }
+
+    properties() {
         const entry = this.entry();
         return {
             contentLength: entry.data.length,
