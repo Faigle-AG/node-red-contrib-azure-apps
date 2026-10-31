@@ -49,25 +49,91 @@ module.exports = function (RED) {
         return client;
     }
 
-    async function ensureDirectory(shareClient, directoryPath) {
+    // Creates each missing level of directoryPath. After close it stops between levels; `changed`
+    // records a level it actually created.
+    async function ensureDirectory(shareClient, directoryPath, progress) {
         let client = shareClient.rootDirectoryClient;
-        for (const segment of directoryPath.split('/')) {
-            client = client.getDirectoryClient(segment);
-            await client.createIfNotExists();
+        const segments = directoryPath.split('/');
+        for (let index = 0; index < segments.length; index += 1) {
+            if (index > 0) progress.boundary();
+            client = client.getDirectoryClient(segments[index]);
+            const response = await progress.mutate(() => client.createIfNotExists());
+            if (response.succeeded) progress.changed = true;
         }
         return client;
     }
 
-    async function deleteDirectoryRecursive(directoryClient) {
-        for await (const item of directoryClient.listFilesAndDirectories()) {
+    // A storage action's progress after close (Phase 2.8e): the action stops at the next boundary
+    // between independent steps. Once storage has changed, or may have changed (`changed`: a
+    // confirmed change, or a mutating call that failed with unknown effects), whatever ends the
+    // action after close is reported: the stop (NODE_CLOSING) or the storage call's own error.
+    // Before that, it completes quietly.
+    function createProgress(label, isClosing) {
+        const progress = {
+            changed: false,
+            boundary() {
+                if (isClosing()) {
+                    throw createError(
+                        `${label} stopped on close before it completed; changes already made were kept`,
+                        'NODE_CLOSING',
+                    );
+                }
+            },
+            // Runs one mutating SDK call. A call that fails may still have changed storage, so
+            // its failure counts as a change.
+            async mutate(call) {
+                try {
+                    return await call();
+                } catch (err) {
+                    progress.changed = true;
+                    throw err;
+                }
+            },
+        };
+        return progress;
+    }
+
+    // A listing page's items as the SDK's own item listing gives them: files, then directories.
+    function pageItems(page) {
+        return [
+            ...page.segment.fileItems.map((item) => ({ kind: 'file', ...item })),
+            ...page.segment.directoryItems.map((item) => ({ kind: 'directory', ...item })),
+        ];
+    }
+
+    // Lists a directory for a multi-step action page by page. After close it stops before the next
+    // item and before requesting another page; a page without a continuation token ends the
+    // listing.
+    async function* listForAction(directoryClient, progress) {
+        const pages = directoryClient.listFilesAndDirectories().byPage();
+        for (;;) {
+            const { value: page } = await pages.next();
+            for (const item of pageItems(page)) {
+                progress.boundary();
+                yield item;
+            }
+            if (!page.continuationToken) return;
+            progress.boundary();
+        }
+    }
+
+    async function deleteDirectoryRecursive(directoryClient, progress) {
+        for await (const item of listForAction(directoryClient, progress)) {
             if (item.kind === 'directory') {
                 const child = directoryClient.getDirectoryClient(item.name);
-                await deleteDirectoryRecursive(child);
+                await deleteDirectoryRecursive(child, progress);
             } else {
-                await directoryClient.getFileClient(item.name).deleteIfExists();
+                const response = await progress.mutate(() =>
+                    directoryClient.getFileClient(item.name).deleteIfExists(),
+                );
+                if (response.succeeded) progress.changed = true;
             }
         }
-        return directoryClient.deleteIfExists();
+        // The directory itself is deleted as a separate step.
+        progress.boundary();
+        const response = await progress.mutate(() => directoryClient.deleteIfExists());
+        if (response.succeeded) progress.changed = true;
+        return response;
     }
 
     function directoryMetadata(directoryPath) {
@@ -102,7 +168,32 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // After close, input still in progress starts no new storage action and completes without
+        // status, output or error, and close aborts the list action's page request in flight. A
+        // recursive create or delete already started stops only between directory levels, items
+        // or pages; close cancels no mutating call. Once the action has changed storage, it then
+        // fails with NODE_CLOSING, or with the storage call's own error if one fails after close.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort an Azure Files listing: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            const controller = new AbortController();
+            pending.add(controller);
+            let progress;
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
@@ -143,6 +234,8 @@ module.exports = function (RED) {
                     throw createError(`Unknown action: ${action || '<empty>'}`, 'INVALID_ACTION');
                 }
 
+                // The node may have closed while the share and path were read.
+                if (closing) return finishClosed();
                 const directoryPath = normalizeAzurePath(sourceRaw, {
                     required: action !== 'list',
                     label: 'Directory path',
@@ -158,53 +251,81 @@ module.exports = function (RED) {
                 };
 
                 node.status.processing(`${action}...`);
+                progress = createProgress(
+                    action === 'create' ? 'Recursive create' : 'Recursive delete',
+                    () => closing,
+                );
 
+                let outputData;
+                let statusText;
                 if (action === 'create') {
-                    if (recursive) await ensureDirectory(shareClient, directoryPath);
-                    else await directoryClient.create();
-
+                    if (recursive) await ensureDirectory(shareClient, directoryPath, progress);
+                    else await progress.mutate(() => directoryClient.create());
                     msg.file = { ...msg.file, ...file };
-                    await setOutputData(true);
-                    node.status.succeeded(`Created ${file.base}`);
+                    outputData = true;
+                    statusText = `Created ${file.base}`;
                 } else if (action === 'delete') {
                     const response = recursive
-                        ? await deleteDirectoryRecursive(directoryClient)
-                        : await directoryClient.deleteIfExists();
-
+                        ? await deleteDirectoryRecursive(directoryClient, progress)
+                        : await progress.mutate(() => directoryClient.deleteIfExists());
                     msg.file = { ...msg.file, ...file, deleted: response.succeeded === true };
-                    await setOutputData(true);
-                    node.status.succeeded(
-                        response.succeeded ? `Deleted ${file.base}` : `Not found ${file.base}`,
-                    );
+                    outputData = true;
+                    statusText = response.succeeded
+                        ? `Deleted ${file.base}`
+                        : `Not found ${file.base}`;
                 } else {
                     const contents = [];
-                    for await (const item of directoryClient.listFilesAndDirectories()) {
-                        const itemPath = directoryPath
-                            ? `${directoryPath}/${item.name}`
-                            : item.name;
-                        const parsedItem = path.posix.parse(itemPath);
-
-                        contents.push({
-                            filetype: item.kind,
-                            path: itemPath,
-                            dir: parsedItem.dir,
-                            name: parsedItem.name,
-                            base: parsedItem.base,
-                            ext: parsedItem.ext,
-                        });
+                    // Page by page, so that close stops before another page is requested; close
+                    // also aborts the page request in flight.
+                    const pages = directoryClient
+                        .listFilesAndDirectories({ abortSignal: controller.signal })
+                        .byPage();
+                    for (;;) {
+                        const { value: page } = await pages.next();
+                        for (const item of pageItems(page)) {
+                            const itemPath = directoryPath
+                                ? `${directoryPath}/${item.name}`
+                                : item.name;
+                            const parsedItem = path.posix.parse(itemPath);
+                            contents.push({
+                                filetype: item.kind,
+                                path: itemPath,
+                                dir: parsedItem.dir,
+                                name: parsedItem.name,
+                                base: parsedItem.base,
+                                ext: parsedItem.ext,
+                            });
+                        }
+                        if (!page.continuationToken) break;
+                        if (closing) return finishClosed();
                     }
-
-                    const result = { ...msg.file, ...file, contents };
-                    await setOutputData(result);
-                    node.status.succeeded(`Listed ${contents.length} items`);
+                    outputData = { ...msg.file, ...file, contents };
+                    statusText = `Listed ${contents.length} items`;
                 }
-
+                // The storage action is complete; an output failure after close stays quiet.
+                progress = null;
+                if (closing) return finishClosed();
+                await setOutputData(outputData);
+                if (closing) return finishClosed();
+                node.status.succeeded(statusText);
                 send(msg);
                 if (done) done();
             } catch (err) {
+                if (closing) {
+                    // An action that had changed storage reports why it is incomplete (the stop or
+                    // the storage call's own error); anything else completes quietly.
+                    if (progress && progress.changed) {
+                        if (done) done(err);
+                        else node.error(err, msg);
+                        return;
+                    }
+                    return finishClosed();
+                }
                 node.status.failed(err.code || err.message || 'Configuration error');
                 if (done) done(err);
                 else node.error(err, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }

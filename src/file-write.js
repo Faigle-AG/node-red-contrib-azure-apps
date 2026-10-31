@@ -54,15 +54,49 @@ module.exports = function (RED) {
         return client;
     }
 
-    async function ensureDirectory(shareClient, directoryPath) {
+    // Creates each missing level of directoryPath. After close it stops between levels; `changed`
+    // records a level it actually created.
+    async function ensureDirectory(shareClient, directoryPath, progress) {
         let client = shareClient.rootDirectoryClient;
         if (!directoryPath) return client;
-
-        for (const segment of directoryPath.split('/')) {
-            client = client.getDirectoryClient(segment);
-            await client.createIfNotExists();
+        const segments = directoryPath.split('/');
+        for (let index = 0; index < segments.length; index += 1) {
+            if (index > 0) progress.boundary();
+            client = client.getDirectoryClient(segments[index]);
+            const response = await progress.mutate(() => client.createIfNotExists());
+            if (response.succeeded) progress.changed = true;
         }
         return client;
+    }
+
+    // A storage action's progress after close (Phase 2.8e): the action stops at the next boundary
+    // between independent steps. Once storage has changed, or may have changed (`changed`: a
+    // confirmed change, or a mutating call that failed with unknown effects), whatever ends the
+    // action after close is reported: the stop (NODE_CLOSING) or the storage call's own error.
+    // Before that, it completes quietly.
+    function createProgress(label, isClosing) {
+        const progress = {
+            changed: false,
+            boundary() {
+                if (isClosing()) {
+                    throw createError(
+                        `${label} stopped on close before it completed; changes already made were kept`,
+                        'NODE_CLOSING',
+                    );
+                }
+            },
+            // Runs one mutating SDK call. A call that fails may still have changed storage, so
+            // its failure counts as a change.
+            async mutate(call) {
+                try {
+                    return await call();
+                } catch (err) {
+                    progress.changed = true;
+                    throw err;
+                }
+            },
+        };
+        return progress;
     }
 
     function normalizeWriteData(value) {
@@ -81,18 +115,23 @@ module.exports = function (RED) {
         return Buffer.from(String(value), 'utf8');
     }
 
-    async function appendBuffer(fileClient, buffer) {
+    // Once the file is resized, close does not stop its range uploads part-way (other failures
+    // still can).
+    async function appendBuffer(fileClient, buffer, progress) {
         const exists = await fileClient.exists();
+        progress.boundary();
         if (!exists) {
-            await fileClient.uploadData(buffer);
+            await progress.mutate(() => fileClient.uploadData(buffer));
             return;
         }
 
         const properties = await fileClient.getProperties();
+        progress.boundary();
         const originalSize = Number(properties.contentLength || 0);
         if (buffer.length === 0) return;
 
-        await fileClient.resize(originalSize + buffer.length);
+        await progress.mutate(() => fileClient.resize(originalSize + buffer.length));
+        progress.changed = true;
 
         for (let sourceOffset = 0; sourceOffset < buffer.length; sourceOffset += MAX_RANGE_SIZE) {
             const count = Math.min(MAX_RANGE_SIZE, buffer.length - sourceOffset);
@@ -161,7 +200,23 @@ module.exports = function (RED) {
             }
         }
 
+        // After close, input still in progress starts no new storage action and completes without
+        // status, output or error. An action already started stops only between independent steps
+        // (directory levels, the files and listing pages of a tree, or before a file's data steps);
+        // once a file's data steps begin, close does not stop them part-way. Close cancels no
+        // mutating call. Once the action has changed storage, it then fails with NODE_CLOSING, or
+        // with the storage call's own error if one fails after close.
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            let progress;
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
@@ -221,18 +276,23 @@ module.exports = function (RED) {
                 const filePath = splitFilePath(targetPath);
                 const parsed = path.posix.parse(targetPath);
                 const dataBuffer = normalizeWriteData(dataRaw);
+                // The node may have closed while the share, path and data were read.
+                if (closing) return finishClosed();
 
+                progress = createProgress(action === 'append' ? 'Append' : 'Write', () => closing);
                 const serviceClient = node.configNode.getClient();
                 const shareClient = serviceClient.getShareClient(shareName);
                 const directoryClient = createDir
-                    ? await ensureDirectory(shareClient, filePath.directoryPath)
+                    ? await ensureDirectory(shareClient, filePath.directoryPath, progress)
                     : getDirectoryClient(shareClient, filePath.directoryPath);
+                progress.boundary();
                 const fileClient = directoryClient.getFileClient(filePath.fileName);
 
                 node.status.processing(`${action}...`);
 
-                if (action === 'append') await appendBuffer(fileClient, dataBuffer);
-                else await fileClient.uploadData(dataBuffer);
+                if (action === 'append') await appendBuffer(fileClient, dataBuffer, progress);
+                else await progress.mutate(() => fileClient.uploadData(dataBuffer));
+                if (closing) return finishClosed();
 
                 const file = {
                     filetype: 'file',
@@ -249,6 +309,16 @@ module.exports = function (RED) {
                 send(msg);
                 if (done) done();
             } catch (err) {
+                if (closing) {
+                    // An action that had changed storage reports why it is incomplete (the stop or
+                    // the storage call's own error); anything else completes quietly.
+                    if (progress && progress.changed) {
+                        if (done) done(err);
+                        else node.error(err, msg);
+                        return;
+                    }
+                    return finishClosed();
+                }
                 node.status.failed(
                     err.statusText || err.code || err.message || 'Configuration error',
                 );

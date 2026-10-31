@@ -14,6 +14,12 @@ function restError(statusCode, code) {
     return err;
 }
 
+function abortError() {
+    const err = new Error('The operation was aborted.');
+    err.name = 'AbortError';
+    return err;
+}
+
 function joinPath(base, name) {
     return base ? `${base}/${name}` : name;
 }
@@ -32,8 +38,15 @@ class FakeShare {
         this.faults = [];
         this.faultHits = [];
         this.gates = [];
+        // The abortSignal each read call carried, as { method, path, signal }.
+        this.signals = [];
+        // Every read call started, as { method, path }, including those refused for an aborted
+        // signal (which are not in `calls`, as nothing was sent).
+        this.attempts = [];
         // Listings are delivered in pages of this size; each further page is a recorded request.
         this.pageSize = Infinity;
+        // byPage(): start with an empty page that still has a continuation token, as Azure may.
+        this.emptyFirstPage = false;
         this.rootDirectoryClient = new FakeDirectoryClient(this, '');
     }
 
@@ -80,6 +93,7 @@ class FakeShare {
     }
 
     // Hold the next call of `method` on `itemPath` (or any path) until release(outcome?) is called.
+    // Every client method can be held; the hold applies after the call is recorded.
     // An Error outcome fails the call; 'as-issued' makes getProperties answer with the properties
     // the file had when the call arrived. `reached` resolves when that call arrives.
     gateOnce(method, itemPath) {
@@ -120,7 +134,8 @@ class FakeShare {
         }
     }
 
-    async passGate(method, itemPath) {
+    // A held call fails with an AbortError when its abortSignal aborts, as the SDK's calls do.
+    async passGate(method, itemPath, abortSignal) {
         const index = this.gates.findIndex(
             (gate) =>
                 gate.method === method &&
@@ -129,9 +144,23 @@ class FakeShare {
         if (index === -1) return;
         const [gate] = this.gates.splice(index, 1);
         gate.notifyReached();
-        const outcome = await gate.released;
+        const aborted = new Promise((resolve) => {
+            if (abortSignal) abortSignal.addEventListener('abort', resolve, { once: true });
+        });
+        const outcome = await Promise.race([gate.released, aborted.then(() => abortError())]);
         if (outcome instanceof Error) throw outcome;
         return outcome;
+    }
+
+    // Records a read call's start. A call whose abortSignal is already aborted then fails at once
+    // and sends nothing, as the SDK's calls do, so it is not recorded in `calls`.
+    attempt(method, itemPath, abortSignal) {
+        this.attempts.push({ method, path: itemPath });
+        if (abortSignal && abortSignal.aborted) throw abortError();
+    }
+
+    recordSignal(method, itemPath, options) {
+        this.signals.push({ method, path: itemPath, signal: options && options.abortSignal });
     }
 
     requireParent(itemPath) {
@@ -180,11 +209,13 @@ class FakeDirectoryClient {
 
     async exists() {
         this.share.record('exists', this.path);
+        await this.share.passGate('exists', this.path);
         return this.share.dirs.has(this.path);
     }
 
     async create() {
         this.share.record('create', this.path);
+        await this.share.passGate('create', this.path);
         this.share.requireParent(this.path);
         if (this.share.dirs.has(this.path)) throw restError(409, 'ResourceAlreadyExists');
         this.share.dirs.add(this.path);
@@ -193,6 +224,7 @@ class FakeDirectoryClient {
 
     async createIfNotExists() {
         this.share.record('createIfNotExists', this.path);
+        await this.share.passGate('createIfNotExists', this.path);
         if (this.share.dirs.has(this.path)) return { succeeded: false };
         this.share.requireParent(this.path);
         this.share.dirs.add(this.path);
@@ -201,6 +233,7 @@ class FakeDirectoryClient {
 
     async deleteIfExists() {
         this.share.record('deleteIfExists', this.path);
+        await this.share.passGate('deleteIfExists', this.path);
         if (!this.share.dirs.has(this.path)) return { succeeded: false };
         const prefix = this.path + '/';
         const hasChildren =
@@ -229,45 +262,104 @@ class FakeDirectoryClient {
 
     async rename(destinationPath, options = {}) {
         this.share.record('rename', this.path);
+        await this.share.passGate('rename', this.path);
         if (!this.share.dirs.has(this.path)) throw restError(404, 'ResourceNotFound');
         this.share.moveTree(this.path, destinationPath, options.replaceIfExists === true);
         return { destinationDirectoryClient: new FakeDirectoryClient(this.share, destinationPath) };
     }
 
-    listFilesAndDirectories() {
+    // The directory's children, sorted by name, as { kind, name[, properties] }.
+    children() {
         const share = this.share;
         const dirPath = this.path;
-        return (async function* () {
+        const prefix = dirPath ? dirPath + '/' : '';
+        const isChild = (itemPath) =>
+            itemPath !== dirPath &&
+            itemPath.startsWith(prefix) &&
+            !itemPath.slice(prefix.length).includes('/');
+
+        return [
+            ...[...share.dirs].filter(isChild).map((itemPath) => ({
+                kind: 'directory',
+                name: itemPath.slice(prefix.length),
+            })),
+            ...[...share.files.keys()].filter(isChild).map((itemPath) => ({
+                kind: 'file',
+                name: itemPath.slice(prefix.length),
+                properties: { contentLength: share.files.get(itemPath).data.length },
+            })),
+        ].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    listFilesAndDirectories(options = {}) {
+        const share = this.share;
+        const dirPath = this.path;
+        const directory = this;
+        share.recordSignal('listFilesAndDirectories', dirPath, options);
+        const iterator = (async function* () {
+            share.attempt('listFilesAndDirectories', dirPath, options.abortSignal);
             share.record('listFilesAndDirectories', dirPath);
-            await share.passGate('listFilesAndDirectories', dirPath);
+            await share.passGate('listFilesAndDirectories', dirPath, options.abortSignal);
             if (!share.dirs.has(dirPath)) throw restError(404, 'ResourceNotFound');
 
-            const prefix = dirPath ? dirPath + '/' : '';
-            const isChild = (itemPath) =>
-                itemPath !== dirPath &&
-                itemPath.startsWith(prefix) &&
-                !itemPath.slice(prefix.length).includes('/');
-
-            const items = [
-                ...[...share.dirs].filter(isChild).map((itemPath) => ({
-                    kind: 'directory',
-                    name: itemPath.slice(prefix.length),
-                })),
-                ...[...share.files.keys()].filter(isChild).map((itemPath) => ({
-                    kind: 'file',
-                    name: itemPath.slice(prefix.length),
-                    properties: { contentLength: share.files.get(itemPath).data.length },
-                })),
-            ].sort((a, b) => a.name.localeCompare(b.name));
+            const items = directory.children();
 
             for (let index = 0; index < items.length; index++) {
                 if (index > 0 && index % share.pageSize === 0) {
+                    share.attempt('listFilesAndDirectories:page', dirPath, options.abortSignal);
                     share.record('listFilesAndDirectories:page', dirPath);
-                    await share.passGate('listFilesAndDirectories:page', dirPath);
+                    await share.passGate(
+                        'listFilesAndDirectories:page',
+                        dirPath,
+                        options.abortSignal,
+                    );
                 }
                 yield items[index];
             }
         })();
+
+        // Pages as the SDK's byPage() gives them: { segment: { fileItems, directoryItems },
+        // continuationToken }, the token empty on the last page. Each page is one request: the
+        // first recorded as 'listFilesAndDirectories', later ones as 'listFilesAndDirectories:page'.
+        iterator.byPage = () =>
+            (async function* () {
+                let pages;
+                for (let index = 0; ; index++) {
+                    const method =
+                        index === 0 ? 'listFilesAndDirectories' : 'listFilesAndDirectories:page';
+                    share.attempt(method, dirPath, options.abortSignal);
+                    share.record(method, dirPath);
+                    await share.passGate(method, dirPath, options.abortSignal);
+                    if (!pages) {
+                        if (!share.dirs.has(dirPath)) throw restError(404, 'ResourceNotFound');
+                        const items = directory.children();
+                        const size = Number.isFinite(share.pageSize)
+                            ? share.pageSize
+                            : items.length;
+                        pages = [];
+                        for (let start = 0; start < items.length; start += size) {
+                            pages.push(items.slice(start, start + size));
+                        }
+                        if (pages.length === 0) pages.push([]);
+                        if (share.emptyFirstPage) pages.unshift([]);
+                    }
+                    const page = pages[index];
+                    const last = index === pages.length - 1;
+                    const strip = ({ kind, ...item }) => (void kind, item);
+                    yield {
+                        segment: {
+                            fileItems: page.filter((item) => item.kind === 'file').map(strip),
+                            directoryItems: page
+                                .filter((item) => item.kind === 'directory')
+                                .map(strip),
+                        },
+                        continuationToken: last ? '' : `page-${index + 1}`,
+                    };
+                    if (last) return;
+                }
+            })();
+
+        return iterator;
     }
 }
 
@@ -283,15 +375,20 @@ class FakeFileClient {
         return entry;
     }
 
-    async exists() {
+    async exists(options = {}) {
+        this.share.attempt('exists', this.path, options.abortSignal);
         this.share.record('exists', this.path);
+        this.share.recordSignal('exists', this.path, options);
+        await this.share.passGate('exists', this.path, options.abortSignal);
         return this.share.files.has(this.path);
     }
 
-    async getProperties() {
+    async getProperties(options = {}) {
+        this.share.attempt('getProperties', this.path, options.abortSignal);
         this.share.record('getProperties', this.path);
         const issued = this.share.files.has(this.path) ? this.properties() : null;
-        const outcome = await this.share.passGate('getProperties', this.path);
+        this.share.recordSignal('getProperties', this.path, options);
+        const outcome = await this.share.passGate('getProperties', this.path, options.abortSignal);
         return outcome === 'as-issued' && issued ? issued : this.properties();
     }
 
@@ -308,8 +405,11 @@ class FakeFileClient {
         };
     }
 
-    async downloadToBuffer(offset = 0, count) {
+    async downloadToBuffer(offset = 0, count, options = {}) {
+        this.share.attempt('downloadToBuffer', this.path, options.abortSignal);
         this.share.record('downloadToBuffer', this.path);
+        this.share.recordSignal('downloadToBuffer', this.path, options);
+        await this.share.passGate('downloadToBuffer', this.path, options.abortSignal);
         const entry = this.entry();
         const end = count === undefined ? entry.data.length : offset + count;
         return Buffer.from(entry.data.subarray(offset, end));
@@ -317,6 +417,7 @@ class FakeFileClient {
 
     async uploadData(buffer) {
         this.share.record('uploadData', this.path);
+        await this.share.passGate('uploadData', this.path);
         this.share.requireParent(this.path);
         this.share.files.set(this.path, {
             data: Buffer.from(buffer),
@@ -328,6 +429,7 @@ class FakeFileClient {
 
     async create(size, options = {}) {
         this.share.record('create', this.path);
+        await this.share.passGate('create', this.path);
         this.share.requireParent(this.path);
         const headers = options.fileHttpHeaders || {};
         this.share.files.set(this.path, {
@@ -342,6 +444,7 @@ class FakeFileClient {
 
     async uploadRange(buffer, offset, count) {
         this.share.record('uploadRange', this.path);
+        await this.share.passGate('uploadRange', this.path);
         const entry = this.entry();
         if (offset + count > entry.data.length) throw restError(416, 'InvalidRange');
         Buffer.from(buffer).copy(entry.data, offset, 0, count);
@@ -351,6 +454,7 @@ class FakeFileClient {
 
     async resize(size) {
         this.share.record('resize', this.path);
+        await this.share.passGate('resize', this.path);
         const entry = this.entry();
         const resized = Buffer.alloc(size);
         entry.data.copy(resized, 0, 0, Math.min(size, entry.data.length));
@@ -361,11 +465,13 @@ class FakeFileClient {
 
     async deleteIfExists() {
         this.share.record('deleteIfExists', this.path);
+        await this.share.passGate('deleteIfExists', this.path);
         return { succeeded: this.share.files.delete(this.path) };
     }
 
     async rename(destinationPath, options = {}) {
         this.share.record('rename', this.path);
+        await this.share.passGate('rename', this.path);
         this.entry();
         this.share.moveTree(this.path, destinationPath, options.replaceIfExists === true);
         return { destinationFileClient: new FakeFileClient(this.share, destinationPath) };

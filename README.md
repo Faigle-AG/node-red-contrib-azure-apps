@@ -113,6 +113,14 @@ Restart your Node-RED server to apply the credentials. Alternatively, you can au
 
 ## Included Nodes
 
+### Request-node shutdown
+
+The email, Document Intelligence, Foundry and AI Search input nodes attempt to abort their pending HTTP or Foundry SDK requests when closed, including on redeploy. Closing clears their processing status. An input that settles after close completes quietly without a new message output, processing status or completion error; a failed abort attempt can produce a warning. Pending credential lookups and property/context operations are not cancelled, and a write already started is not undone.
+
+Document Intelligence stops starting new polls after close; AI Search sync stops starting further batches. This is shutdown handling, not a new timeout or analysis deadline. Existing timeout errors while a node is open remain errors. Client-side cancellation does not roll back work already accepted by Azure: for example, it cannot unsend accepted mail, undo indexing changes or guarantee that document analysis or model generation has stopped.
+
+These rules describe the input nodes, not the editor's folder-discovery admin requests. Azure Files input nodes and the directory watcher have their separate storage contracts below.
+
 ### 1. azure-document-intelligence
 
 Analyzes documents using Azure Document Intelligence REST API version `2024-11-30`.
@@ -359,7 +367,7 @@ This text-in/text-out pattern is shared with Ollama and OpenAI V1 Compatible, bu
 
 Failures report through Node-RED Catch handling, not a success output. HTTP failures show `HTTP <status>` in node status; other errors use their code or message. Local validation errors may have the generic code `Error`, so inspect `msg.error.message` as well. SDK errors can carry raw causes/details; universal secret redaction is not guaranteed. Validate model output and redact sensitive diagnostics before forwarding or logging them.
 
-This node currently has no request-abort handler on close. Do not assume redeploying it cancels in-flight SDK calls or remote generation/billing. Concurrent messages are independent, and results can arrive out of order.
+Closing this node attempts to abort its pending SDK requests and suppresses their late output and reporting. This is client-side cancellation, not a guarantee that remote generation or billing stops. Concurrent messages remain independent, and results can arrive out of order. See request-node shutdown above for the limits on pending context operations.
 
 #### Retry behavior
 
@@ -686,6 +694,20 @@ Consecutive failed polls retry after `P`, `2P`, `4P`, and so on, capped at 60 se
 **Known polling limit:** poll intervals above `2147483647` ms overflow Node's poll timer and can cause polling after only `1` ms. This pre-existing limitation is not a limit on the separately segmented stability threshold. The backoff bounds above assume a poll interval within the timer's range.
 
 Output failures can lose events; this watcher does not provide durable replay or exactly-once delivery. On close it stops initiating new work, including queued output writes, and suppresses late sends, statuses and error reporting. A request or context write already started can still complete; close does not roll it back.
+
+### Input-node shutdown
+
+Closing attempts to abort reads made by `azure-file-read` and listings made by the list action of `azure-directory-action`. Pending context operations are not cancelled, and already-started output writes are not undone. The watcher has the separate timing and failure contract above.
+
+Mutating workflows use a different boundary: close stops later independent units, such as another file in a tree copy or recursive delete, another directory level, or another listing page. In-flight mutating SDK calls are allowed to settle, rather than being cancelled. Recursive copy/delete listings also settle their current page without cancellation, but do not request another page after close. Once a file's create or resize step has started, that file's remaining data chunks are allowed to finish before stopping at the next independent-unit boundary.
+
+An already-completed action finishes quietly after close without a new output or status. When close deliberately stops an unfinished multi-unit action and an earlier storage change was confirmed, the input reports `NODE_CLOSING` through Node-RED's error/completion route, without a new processing status or success output. A boundary stop before any confirmed change, including after only no-op create/delete responses, completes quietly. Completing the final requested unit is not a partial stop.
+
+If a mutating SDK call fails after close, its original error is reported through that error/completion route, with its existing code rather than `NODE_CLOSING`. This applies even to the first mutating call: failure does not prove that Azure made no changes. A read-only SDK failure after close is reported only if an earlier storage change was confirmed; otherwise it completes quietly. An already-completed storage action remains quiet if a later typed-output write fails during shutdown. Errors while the node is open keep their existing reporting behavior.
+
+Allowing a file unit to finish is not an atomic-write or successful-completion guarantee. Request or process failures can still leave partial changes, and transport failures can leave the remote outcome uncertain. Changes already applied by Azure are not rolled back; error reporting is not a complete inventory of those changes. Inspect the remote state before retrying.
+
+The error summary below describes normal operation; these shutdown rules are its exceptions.
 
 ### Errors and operational boundaries
 

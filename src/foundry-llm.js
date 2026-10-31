@@ -142,7 +142,28 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // Close aborts every Foundry request in flight (apart from the SDK's own timeout); input
+        // still in progress then completes without status, output or error.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort an Azure Foundry request: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            const controller = new AbortController();
+            pending.add(controller);
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
 
@@ -158,6 +179,9 @@ module.exports = function (RED) {
                 const instructionsValue = node.instructions
                     ? await node.getTypedProperty(node.instructions, node.instructionsType, msg)
                     : undefined;
+                // The node may have closed while the endpoint, model and input were read; stop
+                // before requesting a token or sending.
+                if (closing) return finishClosed();
 
                 const baseURL = normalizeBaseUrl(endpointValue);
                 const model = String(modelValue || '').trim();
@@ -206,6 +230,8 @@ module.exports = function (RED) {
                         `Azure Foundry requires Entra ID or API key authentication, but Azure Config uses '${node.configNode.authType}'`,
                     );
                 }
+                // The node may have closed while the Entra token was requested; start no SDK call.
+                if (closing) return finishClosed();
 
                 const client = new OpenAI({
                     baseURL,
@@ -223,7 +249,12 @@ module.exports = function (RED) {
                     );
                 }
 
-                const response = await client.responses.create(requestBody);
+                // Close aborts the request through this signal. A response that settled before
+                // the abort (or whose abort failed) is checked below, before the output write.
+                const response = await client.responses.create(requestBody, {
+                    signal: controller.signal,
+                });
+                if (closing) return finishClosed();
                 const outputText = readOutputText(response);
 
                 if (node.outputMode === 'text' && !outputText) {
@@ -239,6 +270,7 @@ module.exports = function (RED) {
                 }
 
                 await node.setTypedProperty(node.output, node.outputType, msg, outputValue);
+                if (closing) return finishClosed();
 
                 msg.foundry = {
                     id: response.id,
@@ -260,6 +292,7 @@ module.exports = function (RED) {
                     next: () => node.status.waiting('waiting for input'),
                 });
             } catch (err) {
+                if (closing) return finishClosed();
                 const normalized = normalizeSdkError(err);
                 const statusText = normalized.statusCode
                     ? `HTTP ${normalized.statusCode}`
@@ -273,6 +306,8 @@ module.exports = function (RED) {
 
                 if (done) done(normalized);
                 else node.error(normalized, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }

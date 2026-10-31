@@ -110,7 +110,28 @@ module.exports = function (RED) {
         var node = this;
         extendNode(node);
 
+        // Close aborts every Graph request in flight; input still in progress then completes
+        // without status, output or error.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort a Graph request: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            const controller = new AbortController();
+            pending.add(controller);
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) throw new Error('Missing Azure Email configuration');
 
@@ -137,6 +158,9 @@ module.exports = function (RED) {
                     ? msg.email && msg.email.destinationName
                     : node.destinationName;
 
+                // The node may have closed while the user and message IDs were read.
+                if (closing) return finishClosed();
+
                 if (!msgIdRaw) throw new Error('Message ID is missing');
                 if (!destIdRaw) throw new Error('Destination Folder ID is missing');
 
@@ -145,6 +169,7 @@ module.exports = function (RED) {
                 const accessToken = await node.configNode.getToken(
                     'https://graph.microsoft.com/.default',
                 );
+                if (closing) return finishClosed();
 
                 node.status.processing('moving email...');
 
@@ -162,6 +187,7 @@ module.exports = function (RED) {
                         Accept: 'application/json',
                     },
                     body: JSON.stringify(payload),
+                    signal: controller.signal,
                 });
 
                 if (!response.ok) {
@@ -170,6 +196,7 @@ module.exports = function (RED) {
                 }
 
                 const data = await response.json();
+                if (closing) return finishClosed();
 
                 var emailDetails = {
                     action: 'transfer',
@@ -185,9 +212,12 @@ module.exports = function (RED) {
 
                 if (done) done();
             } catch (err) {
+                if (closing) return finishClosed();
                 node.status.failed(err.code || err.message || 'Azure Graph error');
                 if (done) done(err);
                 else node.error(err, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }

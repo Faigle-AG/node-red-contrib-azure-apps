@@ -1,8 +1,19 @@
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
-    function wait(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
+    // Resolves after ms, or rejects as soon as the signal aborts (on close).
+    function wait(ms, signal) {
+        return new Promise((resolve, reject) => {
+            const onAbort = () => {
+                clearTimeout(timer);
+                reject(signal.reason);
+            };
+            const timer = setTimeout(() => {
+                signal.removeEventListener('abort', onAbort);
+                resolve();
+            }, ms);
+            signal.addEventListener('abort', onAbort, { once: true });
+        });
     }
 
     function AzureDocumentIntelligenceNode(config) {
@@ -30,7 +41,28 @@ module.exports = function (RED) {
         var node = this;
         extendNode(node);
 
+        // Close aborts every request and poll wait in flight, so no further poll is sent; input
+        // still in progress then completes without status, output or error.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort a Document Intelligence request: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            const controller = new AbortController();
+            pending.add(controller);
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
 
@@ -77,6 +109,9 @@ module.exports = function (RED) {
                       node.outputOptions
                     : node.outputOptions;
 
+                // The node may have closed while the endpoint, model and document were read.
+                if (closing) return finishClosed();
+
                 if (!this.endpoint) throw new Error('Endpoint URL is missing');
                 if (!modelRaw) throw new Error('Model ID is missing');
                 if (!docRaw) throw new Error('Document Data is missing');
@@ -86,6 +121,7 @@ module.exports = function (RED) {
                 const accessToken = await node.configNode.getToken(
                     'https://cognitiveservices.azure.com/.default',
                 );
+                if (closing) return finishClosed();
 
                 node.status.processing('submitting document...');
 
@@ -178,12 +214,14 @@ module.exports = function (RED) {
                         'Content-Type': contentType,
                     },
                     body: body,
+                    signal: controller.signal,
                 });
 
                 if (!initialResponse.ok) {
                     const errData = await initialResponse.text();
                     throw new Error(`Analyze API error ${initialResponse.status}: ${errData}`);
                 }
+                if (closing) return finishClosed();
 
                 const operationLocation = initialResponse.headers.get('Operation-Location');
                 if (!operationLocation) {
@@ -196,13 +234,16 @@ module.exports = function (RED) {
                 let isCompleted = false;
 
                 while (!isCompleted) {
-                    await wait(2000);
+                    await wait(2000, controller.signal);
+                    // Close normally ends the wait early; if its abort failed, stop here instead.
+                    if (closing) return finishClosed();
 
                     const pollResponse = await fetch(operationLocation, {
                         method: 'GET',
                         headers: {
                             Authorization: `Bearer ${accessToken}`,
                         },
+                        signal: controller.signal,
                     });
 
                     if (!pollResponse.ok) {
@@ -211,6 +252,7 @@ module.exports = function (RED) {
                     }
 
                     resultData = await pollResponse.json();
+                    if (closing) return finishClosed();
 
                     if (resultData.status === 'succeeded') isCompleted = true;
                     else if (resultData.status === 'failed')
@@ -227,15 +269,19 @@ module.exports = function (RED) {
                 };
 
                 await node.setTypedProperty(node.output, node.outputType, msg, docDetails);
+                if (closing) return finishClosed();
 
                 node.status.succeeded('analysis complete');
                 send(msg);
 
                 if (done) done();
             } catch (err) {
+                if (closing) return finishClosed();
                 node.status.failed(err.code || err.message || 'Azure API error');
                 if (done) done(err);
                 else node.error(err, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }

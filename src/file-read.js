@@ -102,7 +102,29 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // After close, input still in progress starts no new storage action and completes without
+        // status, output or error. Close also aborts the stat, download or existence check in flight.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort an Azure Files read: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            const controller = new AbortController();
+            pending.add(controller);
+            const abortSignal = controller.signal;
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
@@ -158,6 +180,8 @@ module.exports = function (RED) {
                     runStat = node.actionStat;
                 }
 
+                // The node may have closed while the share and path were read.
+                if (closing) return finishClosed();
                 const filename = normalizeAzurePath(sourcePathRaw);
                 const parsed = path.posix.parse(filename);
 
@@ -182,8 +206,9 @@ module.exports = function (RED) {
 
                 if (runStat) {
                     try {
-                        properties = await fileClient.getProperties();
+                        properties = await fileClient.getProperties({ abortSignal });
                         fileExists = true;
+                        if (closing) return finishClosed();
                     } catch (err) {
                         if (!isNotFound(err)) throw err;
                         fileExists = false;
@@ -196,7 +221,9 @@ module.exports = function (RED) {
                     }
 
                     try {
-                        file.data = await fileClient.downloadToBuffer(0);
+                        file.data = await fileClient.downloadToBuffer(0, undefined, {
+                            abortSignal,
+                        });
                         fileExists = true;
                         acts.push('Read');
                     } catch (err) {
@@ -209,7 +236,7 @@ module.exports = function (RED) {
 
                 if (runExists) {
                     if (fileExists === undefined) {
-                        fileExists = await fileClient.exists();
+                        fileExists = await fileClient.exists({ abortSignal });
                     }
                     file.exists = fileExists;
                     acts.push(fileExists ? 'Exists' : 'Not Found');
@@ -241,6 +268,7 @@ module.exports = function (RED) {
                     node.targetType,
                     msg,
                 );
+                if (closing) return finishClosed();
                 const currentTarget =
                     currentTargetValue &&
                     typeof currentTargetValue === 'object' &&
@@ -252,6 +280,7 @@ module.exports = function (RED) {
                     ...currentTarget,
                     ...file,
                 });
+                if (closing) return finishClosed();
 
                 if (acts.length > 0) node.status.succeeded(acts.join(', '));
                 else node.status.info('Did nothing to the file...');
@@ -259,9 +288,12 @@ module.exports = function (RED) {
                 send(msg);
                 if (done) done();
             } catch (err) {
+                if (closing) return finishClosed();
                 node.status.failed(err.code || err.message || 'Configuration error');
                 if (done) done(err);
                 else node.error(err, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }

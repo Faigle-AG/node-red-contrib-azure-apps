@@ -175,10 +175,30 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // Close aborts every request in flight; input still in progress then completes without
+        // status, output or error. Close is reported apart from this node's request timeout.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort an Azure AI Search request: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
             const controller = new AbortController();
+            pending.add(controller);
             let timeout;
             let enableLogging = false;
+            const finishClosed = () => {
+                if (done) done();
+            };
 
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
@@ -191,6 +211,8 @@ module.exports = function (RED) {
                     'Output value',
                     ['documents', 'response'],
                 );
+                // The node may have closed while the logging and output options were read.
+                if (closing) return finishClosed();
 
                 node.status.processing('searching...');
 
@@ -308,6 +330,9 @@ module.exports = function (RED) {
                 );
                 targetUrl.searchParams.set('api-version', API_VERSION);
 
+                // The node may have closed while the query options were read.
+                if (closing) return finishClosed();
+
                 const headers = {
                     Accept: 'application/json',
                     'Content-Type': 'application/json',
@@ -317,6 +342,7 @@ module.exports = function (RED) {
                     headers['api-key'] = node.configNode.getApiKey();
                 } else if (node.configNode.authType === 'entra') {
                     const token = await node.configNode.getToken(SEARCH_SCOPE);
+                    if (closing) return finishClosed();
                     headers.Authorization = `Bearer ${token}`;
                 } else {
                     throw new Error(
@@ -347,12 +373,14 @@ module.exports = function (RED) {
                 }
 
                 const responseBody = await readResponseBody(response);
+                if (closing) return finishClosed();
                 if (!response.ok) throw createHttpError(response, responseBody);
 
                 const documents = Array.isArray(responseBody.value) ? responseBody.value : [];
                 const outputValue = outputMode === 'response' ? responseBody : documents;
 
                 await node.setTypedProperty(node.output, node.outputType, msg, outputValue);
+                if (closing) return finishClosed();
 
                 msg.azureSearch = {
                     requestId: response.headers.get('x-ms-request-id'),
@@ -372,6 +400,7 @@ module.exports = function (RED) {
                 });
             } catch (err) {
                 if (timeout) clearTimeout(timeout);
+                if (closing) return finishClosed();
 
                 let normalized = err;
                 if (err && err.name === 'AbortError') {
@@ -391,6 +420,8 @@ module.exports = function (RED) {
 
                 if (done) done(normalized);
                 else node.error(normalized, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }

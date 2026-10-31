@@ -211,7 +211,28 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // Close aborts every request in flight; input still in progress then completes without
+        // status, output or error. Close is reported apart from this node's request timeout.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort an Azure AI Search request: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
+            // The controller of this input's batch in flight, if any.
+            let batchController = null;
+            const finishClosed = () => {
+                if (done) done();
+            };
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
 
@@ -236,6 +257,8 @@ module.exports = function (RED) {
                     node.documentsType,
                     msg,
                 );
+                // The node may have closed while the values were read.
+                if (closing) return finishClosed();
 
                 const endpoint = normalizeEndpoint(endpointValue);
                 const indexName = String(indexNameValue).trim();
@@ -253,6 +276,7 @@ module.exports = function (RED) {
                     headers['api-key'] = node.configNode.getApiKey();
                 } else if (node.configNode.authType === 'entra') {
                     const token = await node.configNode.getToken(SEARCH_SCOPE);
+                    if (closing) return finishClosed();
                     headers.Authorization = `Bearer ${token}`;
                 } else {
                     throw new Error(
@@ -278,6 +302,8 @@ module.exports = function (RED) {
                     }
 
                     const controller = new AbortController();
+                    batchController = controller;
+                    pending.add(controller);
                     const timeout = setTimeout(() => controller.abort(), timeoutMs);
                     let response;
 
@@ -293,6 +319,10 @@ module.exports = function (RED) {
                     }
 
                     const responseBody = await readResponseBody(response);
+                    pending.delete(controller);
+                    batchController = null;
+                    // After close no further batch is sent and no output written.
+                    if (closing) return finishClosed();
                     if (!response.ok) throw createHttpError(response, responseBody);
 
                     const batchResults = Array.isArray(responseBody.value)
@@ -330,6 +360,7 @@ module.exports = function (RED) {
                 else outputValue = summary;
 
                 await node.setTypedProperty(node.output, node.outputType, msg, outputValue);
+                if (closing) return finishClosed();
 
                 if (failedResults.length > 0 && node.failOnDocumentError) {
                     throw createDocumentError(summary);
@@ -346,6 +377,7 @@ module.exports = function (RED) {
                     });
                 }
             } catch (err) {
+                if (closing) return finishClosed();
                 const message =
                     err && err.name === 'AbortError'
                         ? 'Azure AI Search indexing request timed out'
@@ -364,6 +396,8 @@ module.exports = function (RED) {
 
                 if (done) done(herror);
                 else node.error(herror, msg);
+            } finally {
+                if (batchController) pending.delete(batchController);
             }
         });
     }

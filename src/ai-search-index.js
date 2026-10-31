@@ -164,9 +164,29 @@ module.exports = function (RED) {
         const node = this;
         extendNode(node);
 
+        // Close aborts every request in flight; input still in progress then completes without
+        // status, output or error. Close is reported apart from this node's request timeout.
+        const pending = new Set();
+        let closing = false;
+        node.on('close', function () {
+            closing = true;
+            for (const controller of pending) {
+                try {
+                    controller.abort();
+                } catch (err) {
+                    node.warn(`Could not abort an Azure AI Search request: ${err.message}`);
+                }
+            }
+            node.status.clear();
+        });
+
         node.on('input', async function (msg, send, done) {
             const controller = new AbortController();
+            pending.add(controller);
             let timeout;
+            const finishClosed = () => {
+                if (done) done();
+            };
 
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
@@ -211,10 +231,14 @@ module.exports = function (RED) {
                         : node.operation === 'delete'
                           ? 'DELETE'
                           : 'GET';
+                // The node may have closed while the values were read; request no token.
+                if (closing) return finishClosed();
                 const headers = await createHeaders(
                     node.configNode,
                     node.operation === 'createOrUpdate',
                 );
+                // The node may have closed while the credentials were resolved.
+                if (closing) return finishClosed();
                 const targetUrl = createTargetUrl(
                     endpoint,
                     indexName,
@@ -243,6 +267,7 @@ module.exports = function (RED) {
                 timeout = null;
 
                 const responseBody = await readResponseBody(response);
+                if (closing) return finishClosed();
                 if (!response.ok) throw createHttpError(response, responseBody);
 
                 const metadata = {
@@ -267,6 +292,7 @@ module.exports = function (RED) {
                           : metadata;
 
                 await node.setTypedProperty(node.output, node.outputType, msg, outputValue);
+                if (closing) return finishClosed();
 
                 send(msg);
                 if (done) done();
@@ -285,6 +311,7 @@ module.exports = function (RED) {
                 });
             } catch (err) {
                 if (timeout) clearTimeout(timeout);
+                if (closing) return finishClosed();
 
                 let normalized = err;
                 if (err && err.name === 'AbortError') {
@@ -306,6 +333,8 @@ module.exports = function (RED) {
 
                 if (done) done(normalized);
                 else node.error(normalized, msg);
+            } finally {
+                pending.delete(controller);
             }
         });
     }
