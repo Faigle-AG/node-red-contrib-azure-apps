@@ -55,3 +55,58 @@ describe('azure editors', function () {
         });
     }
 });
+
+// Every registered palette node and its topic colour from the shared palette. Config editors
+// are not on the palette and get no colour.
+const PALETTE = {
+    'azure-email-read': '#80CBC4', // Email & Notifications (Mint Teal)
+    'azure-email-transfer': '#80CBC4',
+    'azure-email-write': '#80CBC4',
+    'azure-document-intelligence': '#B39DDB', // Document Processing, cloud (Deep Lavender)
+    'azure-foundry-llm': '#90CAF9', // LLM & AI Models, cloud (Azure Blue)
+    'azure-file-read': '#DEB887', // File Storage (Soft Tan)
+    'azure-file-write': '#DEB887',
+    'azure-file-transfer': '#DEB887',
+    'azure-directory-action': '#E6B86A', // Directory Operations (Warm Amber)
+    'azure-directory-transfer': '#E6B86A',
+    'azure-directory-watch': '#E6B86A',
+    'azure-ai-search-index': '#81D4FA', // Search & Vector DB (Steel Blue)
+    'azure-ai-search-query': '#81D4FA',
+    'azure-ai-search-sync': '#81D4FA',
+};
+const CONFIG_TYPES = ['azure-auth-config', 'azure-email-config', 'azure-file-config'];
+
+describe('azure palette', function () {
+    // Each manifest entry src/<name>.js has its editor in src/<name>.html.
+    const definitions = new Map();
+    for (const script of Object.values(require('../package.json')['node-red'].nodes)) {
+        const file = path.join(__dirname, '..', script.replace(/\.js$/, '.html'));
+        for (const [type, definition] of loadDefinitions(fs.readFileSync(file, 'utf8')))
+            definitions.set(type, definition);
+    }
+
+    it('registers exactly the palette nodes and the config editors', function () {
+        assert.deepEqual(
+            [...definitions.keys()].sort(),
+            [...Object.keys(PALETTE), ...CONFIG_TYPES].sort(),
+        );
+    });
+
+    for (const [type, color] of Object.entries(PALETTE)) {
+        it(`registers ${type} in the azure category with ${color}`, function () {
+            const definition = definitions.get(type);
+            assert.ok(definition, `${type} is registered`);
+            assert.equal(definition.category, 'azure');
+            assert.equal(definition.color, color);
+        });
+    }
+
+    for (const type of CONFIG_TYPES) {
+        it(`registers ${type} as a config editor without a colour`, function () {
+            const definition = definitions.get(type);
+            assert.ok(definition, `${type} is registered`);
+            assert.equal(definition.category, 'config');
+            assert.equal(definition.color, undefined);
+        });
+    }
+});
