@@ -1,5 +1,11 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    serviceUrl: ['str', 'env'],
+};
+
 module.exports = function (RED) {
     const { ShareServiceClient, StorageSharedKeyCredential } = require('@azure/storage-file-share');
 
@@ -93,6 +99,15 @@ module.exports = function (RED) {
                 return fileServiceClient;
             }
 
+            // Unsupported types fail before the service URL is evaluated. A connection string
+            // carries its own endpoint, so the type is not checked there.
+            if (!TYPES.serviceUrl.includes(node.serviceUrlType)) {
+                throw createError(
+                    `Service URL type '${node.serviceUrlType}' is not supported`,
+                    'INVALID_CONFIGURATION',
+                );
+            }
+
             const serviceUrlRaw = RED.util.evaluateNodeProperty(
                 node.serviceUrl,
                 node.serviceUrlType,
@@ -160,3 +175,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-file-config', AzureFilesConfigNode);
 };
+
+module.exports.TYPES = TYPES;

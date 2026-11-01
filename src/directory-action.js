@@ -1,5 +1,13 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or changed.
+const TYPES = {
+    shareName: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    source: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    property: ['msg', 'flow', 'global'],
+};
+
 module.exports = function (RED) {
     const path = require('path');
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
@@ -199,6 +207,32 @@ module.exports = function (RED) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
                 }
 
+                // Unsupported types fail before anything is evaluated or changed. Dynamic mode
+                // ignores the static source, and a blank source is the share root for a list, so
+                // neither is checked.
+                if (!TYPES.shareName.includes(node.shareNameType)) {
+                    throw createError(
+                        `Share name type '${node.shareNameType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+                const staticAction = String(node.action || '')
+                    .trim()
+                    .toLowerCase();
+                if (
+                    !node.dynamic &&
+                    (node.source || staticAction !== 'list') &&
+                    !TYPES.source.includes(node.sourceType)
+                ) {
+                    throw createError(
+                        `Source type '${node.sourceType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+                if (!TYPES.property.includes(node.propertyType)) {
+                    throw createError(`Unsupported target property type: ${node.propertyType}`);
+                }
+
                 const shareName = await node.getValidatedProperty(
                     node.shareName,
                     node.shareNameType,
@@ -332,3 +366,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-directory-action', AzureDirectoryActionNode);
 };
+
+module.exports.TYPES = TYPES;

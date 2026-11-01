@@ -1,5 +1,13 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or read.
+const TYPES = {
+    shareName: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    source: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    target: ['msg', 'flow', 'global'],
+};
+
 module.exports = function (RED) {
     const path = require('path');
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
@@ -128,6 +136,29 @@ module.exports = function (RED) {
             try {
                 if (!node.configNode) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
+                }
+
+                // Unsupported types fail before anything is evaluated or read. Dynamic mode ignores
+                // the static source, so its type is not checked there.
+                if (!TYPES.shareName.includes(node.shareNameType)) {
+                    throw createError(
+                        `Share name type '${node.shareNameType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+                if (!node.dynamic) {
+                    for (const [field, label] of [['source', 'Source']]) {
+                        const type = node[`${field}Type`];
+                        if (!TYPES[field].includes(type)) {
+                            throw createError(
+                                `${label} type '${type}' is not supported`,
+                                'INVALID_CONFIGURATION',
+                            );
+                        }
+                    }
+                }
+                if (!TYPES.target.includes(node.targetType)) {
+                    throw createError(`Unsupported target property type: ${node.targetType}`);
                 }
 
                 const currentShareName = await node.getValidatedProperty(
@@ -300,3 +331,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-file-read', AzureFileReadNode);
 };
+
+module.exports.TYPES = TYPES;

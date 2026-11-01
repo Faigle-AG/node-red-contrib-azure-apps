@@ -1,5 +1,27 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    endpoint: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    indexName: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    query: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    additionalParameters: ['msg', 'flow', 'global', 'json', 'jsonata', 'env'],
+    searchFields: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    select: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    filter: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    semanticConfiguration: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    querySyntax: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    searchMode: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    outputMode: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    top: ['msg', 'flow', 'global', 'num', 'jsonata', 'env'],
+    skip: ['msg', 'flow', 'global', 'num', 'jsonata', 'env'],
+    timeoutMs: ['msg', 'flow', 'global', 'num', 'jsonata', 'env'],
+    count: ['msg', 'flow', 'global', 'bool', 'jsonata', 'env'],
+    enableLogging: ['msg', 'flow', 'global', 'bool', 'jsonata', 'env'],
+    output: ['msg', 'flow', 'global'],
+};
+
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
@@ -202,6 +224,37 @@ module.exports = function (RED) {
 
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
+
+                // Unsupported types fail before anything is evaluated or requested. Every field is
+                // used on every input.
+                for (const [field, label] of [
+                    ['endpoint', 'Endpoint'],
+                    ['indexName', 'Index name'],
+                    ['query', 'Query'],
+                    ['additionalParameters', 'Additional parameters'],
+                    ['searchFields', 'Search fields'],
+                    ['select', 'Select'],
+                    ['filter', 'Filter'],
+                    ['semanticConfiguration', 'Semantic configuration'],
+                    ['querySyntax', 'Query type'],
+                    ['searchMode', 'Search mode'],
+                    ['outputMode', 'Value'],
+                    ['top', 'Top'],
+                    ['skip', 'Skip'],
+                    ['timeoutMs', 'Timeout'],
+                    ['count', 'Total count'],
+                    ['enableLogging', 'Logging'],
+                ]) {
+                    const type = node[`${field}Type`];
+                    if (!TYPES[field].includes(type)) {
+                        const err = new Error(`${label} type '${type}' is not supported`);
+                        err.code = 'INVALID_CONFIGURATION';
+                        throw err;
+                    }
+                }
+                if (!TYPES.output.includes(node.outputType)) {
+                    throw new Error(`Unsupported target property type: ${node.outputType}`);
+                }
 
                 // Resolve into local variables, never shared node state, for concurrent messages.
                 const valueOf = (property, label) => resolveQueryOption(node, property, msg, label);
@@ -428,3 +481,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-ai-search-query', AzureAiSearchNode);
 };
+
+module.exports.TYPES = TYPES;

@@ -1,5 +1,14 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or watched.
+const TYPES = {
+    shareName: ['flow', 'global', 'str', 'jsonata', 'env'],
+    source: ['flow', 'global', 'str', 'jsonata', 'env'],
+    target: ['msg', 'flow', 'global'],
+    ignoredFiles: ['re'],
+};
+
 module.exports = function (RED) {
     const path = require('path');
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
@@ -544,6 +553,32 @@ module.exports = function (RED) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
                 }
 
+                // Unsupported types fail before anything is evaluated or watched. A blank source
+                // (the share root) and a blank pattern are never evaluated, so their types are not
+                // checked.
+                if (!TYPES.shareName.includes(node.shareNameType)) {
+                    throw createError(
+                        `Share name type '${node.shareNameType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+                if (node.source && !TYPES.source.includes(node.sourceType)) {
+                    throw createError(
+                        `Source type '${node.sourceType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+                if (!TYPES.target.includes(node.targetType)) {
+                    throw createError(`Unsupported target property type: ${node.targetType}`);
+                }
+                const ignoredFilesType = config.ignoredFilesType || 're';
+                if (node.ignoredFiles && !TYPES.ignoredFiles.includes(ignoredFilesType)) {
+                    throw createError(
+                        `Ignored files type '${ignoredFilesType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+
                 node.resolvedShareName = await node.getValidatedProperty(
                     node.shareName,
                     node.shareNameType,
@@ -585,3 +620,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-directory-watch', AzureDirectoryWatchNode);
 };
+
+module.exports.TYPES = TYPES;

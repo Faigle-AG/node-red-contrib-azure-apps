@@ -1,5 +1,14 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    endpoint: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    indexName: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    definition: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
+    output: ['msg', 'flow', 'global'],
+};
+
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
@@ -194,6 +203,28 @@ module.exports = function (RED) {
                     throw new Error(`Unsupported index operation '${node.operation}'`);
                 }
 
+                // Unsupported types fail before anything is evaluated or requested. Only
+                // createOrUpdate reads the definition, so its type is not checked for the other
+                // operations.
+                for (const [field, label] of [
+                    ['endpoint', 'Endpoint'],
+                    ['indexName', 'Index name'],
+                    ['definition', 'Index definition'],
+                ]) {
+                    const type = node[`${field}Type`];
+                    if (
+                        (field !== 'definition' || node.operation === 'createOrUpdate') &&
+                        !TYPES[field].includes(type)
+                    ) {
+                        const err = new Error(`${label} type '${type}' is not supported`);
+                        err.code = 'INVALID_CONFIGURATION';
+                        throw err;
+                    }
+                }
+                if (!TYPES.output.includes(node.outputType)) {
+                    throw new Error(`Unsupported target property type: ${node.outputType}`);
+                }
+
                 node.status.processing(`${node.operation} index...`);
 
                 const endpointValue = await node.getValidatedProperty(
@@ -341,3 +372,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-ai-search-index', AzureAiSearchIndexNode);
 };
+
+module.exports.TYPES = TYPES;

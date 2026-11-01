@@ -111,6 +111,84 @@ Restart your Node-RED server to apply the credentials. Alternatively, you can au
 
 ---
 
+## Typed Fields and Compatibility
+
+The tables use the saved field names; node names omit the `azure-` prefix. Type lists are in editor order. The abbreviations below expand to the complete offered lists:
+
+- **V:** `msg`, `flow`, `global`, `str`, `jsonata`, `env`.
+- **VJ:** `msg`, `flow`, `global`, `str`, `json`, `jsonata`, `env`.
+- **J:** `msg`, `flow`, `global`, `json`, `jsonata`, `env`.
+- **W:** `flow`, `global`, `str`, `jsonata`, `env` (watch startup has no input message).
+- **O:** `msg`, `flow`, `global` (writable output properties).
+
+Defaults below are **editor defaults**, written as `type: value`, not instructions to rewrite saved flows. Existing runtime fallbacks remain unchanged. For example, a legacy Search Query without `top` still omits it rather than acquiring the editor's `10`. Document Intelligence's saved model default remains `prebuilt-document`; for the current v4 service, select a supported model as described below.
+
+| Node                    | Field(s)                                                                             | Offered types                                                   | Editor default             |
+| ----------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------- | -------------------------- |
+| `ai-search-index`       | `endpoint`, `indexName`                                                              | V                                                               | `str: ""`                  |
+| `ai-search-index`       | `definition`                                                                         | VJ                                                              | `msg: "payload"`           |
+| `ai-search-index`       | `output`                                                                             | O                                                               | `msg: "payload"`           |
+| `ai-search-query`       | `endpoint`, `indexName`, `searchFields`, `select`, `filter`, `semanticConfiguration` | V                                                               | `str: ""`                  |
+| `ai-search-query`       | `query`                                                                              | V                                                               | `msg: "payload"`           |
+| `ai-search-query`       | `querySyntax`                                                                        | V                                                               | `str: "simple"`            |
+| `ai-search-query`       | `searchMode`                                                                         | V                                                               | `str: "any"`               |
+| `ai-search-query`       | `outputMode`                                                                         | V                                                               | `str: "documents"`         |
+| `ai-search-query`       | `top`                                                                                | `msg`, `flow`, `global`, `num`, `jsonata`, `env`                | `num: 10`                  |
+| `ai-search-query`       | `skip`                                                                               | `msg`, `flow`, `global`, `num`, `jsonata`, `env`                | `num: ""`                  |
+| `ai-search-query`       | `timeoutMs`                                                                          | `msg`, `flow`, `global`, `num`, `jsonata`, `env`                | `num: 30000`               |
+| `ai-search-query`       | `count`, `enableLogging`                                                             | `msg`, `flow`, `global`, `bool`, `jsonata`, `env`               | `bool: false`              |
+| `ai-search-query`       | `additionalParameters`                                                               | J                                                               | `json: "{}"`               |
+| `ai-search-query`       | `output`                                                                             | O                                                               | `msg: "payload"`           |
+| `ai-search-sync`        | `endpoint`, `indexName`                                                              | V                                                               | `str: ""`                  |
+| `ai-search-sync`        | `documents`                                                                          | J                                                               | `msg: "payload"`           |
+| `ai-search-sync`        | `output`                                                                             | O                                                               | `msg: "payload"`           |
+| `document-intelligence` | `endpoint`                                                                           | V                                                               | `str: ""`                  |
+| `document-intelligence` | `modelId`                                                                            | V                                                               | `str: "prebuilt-document"` |
+| `document-intelligence` | `documentData`                                                                       | V                                                               | `msg: "payload"`           |
+| `document-intelligence` | `output`                                                                             | O                                                               | `msg: "analysis"`          |
+| `foundry-llm`           | `endpoint`, `model`, `instructions`                                                  | V                                                               | `str: ""`                  |
+| `foundry-llm`           | `input`                                                                              | VJ                                                              | `msg: "payload"`           |
+| `foundry-llm`           | `output`                                                                             | O                                                               | `msg: "payload"`           |
+| `email-config`          | `userId`                                                                             | `str`, `env`                                                    | `str: ""`                  |
+| `email-read`            | `output`                                                                             | O                                                               | `msg: "emails"`            |
+| `email-transfer`        | `messageId`                                                                          | V                                                               | `msg: "email.messageId"`   |
+| `email-write`           | `to`                                                                                 | VJ                                                              | `msg: "email.to"`          |
+| `email-write`           | `subject`                                                                            | V                                                               | `msg: "email.subject"`     |
+| `email-write`           | `body`                                                                               | V                                                               | `msg: "email.body"`        |
+| `email-write`           | `attachments`                                                                        | `msg`, `flow`, `global`, `json`, `jsonata`                      | `msg: "email.attachments"` |
+| `file-config`           | `serviceUrl`                                                                         | `str`, `env`                                                    | `str: ""`                  |
+| `file-read`             | `shareName`, `source`                                                                | V                                                               | `str: ""`                  |
+| `file-read`             | `target`                                                                             | O                                                               | `msg: "file"`              |
+| `file-write`            | `shareName`, `target`                                                                | V                                                               | `str: ""`                  |
+| `file-write`            | `data`                                                                               | `msg`, `flow`, `global`, `str`, `json`, `bin`, `jsonata`, `env` | `msg: "file.data"`         |
+| `file-transfer`         | `shareName`, `source`, `destination`                                                 | V                                                               | `str: ""`                  |
+| `directory-action`      | `shareName`, `source`                                                                | V                                                               | `str: ""`                  |
+| `directory-action`      | `property`                                                                           | O                                                               | `msg: "file.content"`      |
+| `directory-transfer`    | `shareName`, `source`, `destination`                                                 | V                                                               | `str: ""`                  |
+| `directory-watch`       | `shareName`, `source`                                                                | W                                                               | `str: ""`                  |
+| `directory-watch`       | `target`                                                                             | O                                                               | `msg: "file"`              |
+| `directory-watch`       | `ignoredFiles`                                                                       | `re`                                                            | `re: ""`                   |
+
+Search Query's literal `str` choices remain `simple/full/semantic`, `any/all`, and `documents/response` for Query Type, Search Mode and Value respectively. Its integer widgets still require Top >= 1, Skip >= 0 and Timeout >= 1000; Top and Skip can be empty, Timeout cannot. Existing per-field resolution and validation, including parameter overrides, are unchanged. Search index definitions retain their literal `str` option as well as `json`.
+
+The new literal choices preserve the existing data contracts:
+
+- File-write **Data** adds `bin`: a binary literal such as `[104,105]` evaluates to Buffer bytes. Existing `json` and other data handling remain as described in the storage protocol below.
+- Email-write **To** adds `json` for a recipient object or array of objects, for example `[{"address":"a@example.test","name":"A"}]`, not an array of address strings. **Attachments** adds `json` for the existing array of `{name, content}` objects; JSON content can be Base64 text, while message/context values may contain Buffers. There is no new universal text-to-array parser.
+- Foundry **Input** adds `json`. A JSON array remains native Responses API input; it is not automatically converted from another provider's history format.
+
+### Earlier validation of unsupported type tags
+
+Only the advertised type tags above are supported. Imported or hand-edited flows using other tags can now fail earlier or stop working, even if an older runtime evaluated them. Reordering the editor choices does not change saved values or defaults. For `flow`/`global`, named-store keys such as `#:(store)::key` depend on the Node-RED version and configured store; this is not a guarantee that a store exists or supports every access mode.
+
+Input-node tag checks run after the existing configuration/closing checks and before the first property evaluation or external operation. The watcher checks at startup. File configuration checks `serviceUrlType` in `getClient()` before evaluating that URL or constructing its client, only when it has no cached client and is not using a connection string.
+
+Unsupported active **value** tags report `INVALID_CONFIGURATION` with a message such as `Source type 'foo' is not supported`. Unsupported **output** tags retain `Unsupported target property type: <type>` without a new target-error code; Foundry's existing error normalizer reports `code: 'Error'` for that uncoded error. Existing status/error routes and the shutdown exceptions below remain unchanged. Foundry preserves nonblank output tags verbatim: `' msg '` is unsupported, not trimmed to `msg`.
+
+Inactive fields stay unchecked: statics bypassed by dynamic mode; index definitions outside `createOrUpdate`; file-transfer destinations when the untrimmed action lowercases to exactly `delete`; falsy directory-list sources (share root); falsy watcher sources and ignore patterns; falsy Foundry instructions and email attachment expressions. A whitespace-only expression is truthy, not newly treated as empty. Share selection and configured outputs stay active; directory create/delete still require a source. An unsupported active attachment tag fails before the attachment read, but an evaluation error from an advertised attachment type is still swallowed as before.
+
+The mailbox is selected by `userId` on **Azure Email Config**, with only `str` or `env`, for all three email nodes. Dynamic `msg.email` options do not override it, and `msg.mailbox` is not a mailbox selector. Folder dropdown discovery still requires a deployed Email Config with a literal `str` User ID; an `env` mailbox is resolved at runtime, not by that discovery route.
+
 ## Included Nodes
 
 ### Request-node shutdown
@@ -147,7 +225,7 @@ Leave **Features** empty when only text, tables, structure, and layout informati
 
 Reads emails from a selected Microsoft 365 mail folder. The node editor provides a folder dropdown that can load the complete mailbox folder hierarchy, including nested and hidden folders.
 
-- **User ID / Email:** The UserPrincipalName or Azure Object ID of the target mailbox. The value can be configured as `str`, `env`, `msg`, `flow`, `global`, or `jsonata`.
+- **User ID / Email:** The UserPrincipalName or Azure Object ID of the target mailbox, configured on **Azure Email Config** as `str` or `env`.
 - **Mail Folder:** Select the folder to read from the dropdown. The refresh button loads all root and nested folders and displays their hierarchy as paths such as `Projects › Customer A`.
 - **Email Count:** Maximum number of emails to retrieve. The accepted range is `1` to `1000`; Microsoft Graph pagination is followed until the requested count is reached or no additional messages are available.
 - **Include Attachments:** Expands the Graph API request to include attachments.
@@ -158,7 +236,7 @@ Reads emails from a selected Microsoft 365 mail folder. The node editor provides
 
 The dropdown is populated through Microsoft Graph when the editor opens and when the refresh button is selected.
 
-Folder loading in the editor requires **User ID / Email** to use the static `str` type because `msg`, `flow`, `global`, `env`, and JSONata values are not resolved in the Node-RED editor. Runtime email reading still supports all configured typed-input sources.
+Folder loading requires a deployed **Azure Email Config** whose **User ID / Email** uses the literal `str` type. The discovery route does not resolve `env`; deployed email inputs support both `str` and `env` from that configuration.
 
 The folder list includes:
 
@@ -207,7 +285,7 @@ The configured output property contains:
 
 Sends an HTML or plain text email from a specified user's mailbox.
 
-- **User ID / Email:** The sender's UserPrincipalName or Azure Object ID.
+- **User ID / Email:** The sender's UserPrincipalName or Azure Object ID, configured on **Azure Email Config** as `str` or `env`.
 - **To:** A comma-separated string, a single recipient object (`{ name: "...", address: "..." }`), or an array of recipient objects.
 - **Subject:** The subject line.
 - **Body:** The HTML or plain text content.
@@ -218,8 +296,8 @@ Sends an HTML or plain text email from a specified user's mailbox.
 
 Moves an existing email to a selected Microsoft 365 mail folder. The destination is selected from a dropdown containing the mailbox folder hierarchy.
 
-- **User ID / Email:** The UserPrincipalName or Azure Object ID of the mailbox. The value can be configured as `str`, `env`, `msg`, `flow`, `global`, or `jsonata`.
-- **Message ID:** The Microsoft Graph message ID to move. The value can be configured as `str`, `msg`, `flow`, `global`, `jsonata`, or `env`.
+- **User ID / Email:** The UserPrincipalName or Azure Object ID of the mailbox, configured on **Azure Email Config** as `str` or `env`.
+- **Message ID:** The Microsoft Graph message ID to move. The value can be configured as `msg`, `flow`, `global`, `str`, `jsonata`, or `env`.
 - **Dest. Folder:** Select the target folder from the dropdown. The refresh button loads root, nested, and hidden mail folders and displays their paths, such as `Projects › Customer A`.
 - **Dynamic Mode:** Override the transfer properties through `msg.email.messageId`, `msg.email.destinationId`, and optionally `msg.email.destinationName`.
 
@@ -227,7 +305,7 @@ Moves an existing email to a selected Microsoft 365 mail folder. The destination
 
 The dropdown is populated through Microsoft Graph when the editor opens and when the refresh button is selected.
 
-Folder loading in the editor requires **User ID / Email** to use the static `str` type. Other typed-input values are resolved only when the deployed node receives a message.
+Folder loading requires a deployed **Azure Email Config** whose **User ID / Email** uses the literal `str` type. An `env` User ID is resolved only when the deployed node receives a message.
 
 The selected Microsoft Graph folder ID is saved in `destinationId`. Its displayed path is saved in `destinationName`. Folder discovery follows Microsoft Graph pagination and recursively loads child folders.
 
@@ -314,7 +392,7 @@ A base already ending in `/openai/v1` or `/openai/v1/responses` is accepted. A p
 
 Strings and Responses API input arrays are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence output, are serialized as JSON. Numbers and booleans are converted to text. Arrays are Responses input items, not automatically translated Chat Completions history.
 
-Input supports `msg`, `flow`, `global`, `str`, `jsonata`, and `env`; output supports only `msg`, `flow`, and `global`. Existing saved fields remain `input/inputType` and `output/outputType`. Empty strings/arrays are currently passed to the service; typed-property resolution can turn a missing/null value into an empty string, while a missing parent path can throw. Use a nonempty text prompt for a portable flow.
+Input supports `msg`, `flow`, `global`, `str`, `json`, `jsonata`, and `env`; output supports only `msg`, `flow`, and `global`. Existing saved fields remain `input/inputType` and `output/outputType`. Empty strings/arrays are currently passed to the service; typed-property resolution can turn a missing/null value into an empty string, while a missing parent path can throw. Use a nonempty text prompt for a portable flow.
 
 Example configuration for a Document Intelligence result:
 
@@ -634,7 +712,7 @@ msg.file = { action: 'list', path: '' }; // Share root.
 return msg;
 ```
 
-Input-driven share/path fields support `msg`, `flow`, `global`, `str`, `jsonata`, and `env`. File-write data additionally supports `json`. Output properties support `msg`, `flow`, and `global`. Watch source/share settings omit `msg` because watch starts without an input message.
+Input-driven share/path fields support `msg`, `flow`, `global`, `str`, `jsonata`, and `env`. File-write data additionally supports `json` and `bin`. Output properties support `msg`, `flow`, and `global`. Watch source/share settings omit `msg` because watch starts without an input message.
 
 Write/append supports strings, Buffers, ArrayBuffer/views and JSON-serializable objects; other defined scalar values are converted to strings. Empty writes are valid. Missing dynamic data errors; dynamic `null` writes the text `null`. With default static `file.data`, `msg.file = {}` writes an empty file, but omitting `msg.file` entirely instead causes a TypeError with code `DATA_MISSING` without a storage mutation. Successful typed resolutions of undefined/null become an empty string. Keep authentication credentials in configuration nodes; do not copy them into example flows or diagnostics.
 

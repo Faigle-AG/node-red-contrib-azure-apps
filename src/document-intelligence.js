@@ -1,3 +1,12 @@
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    endpoint: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    modelId: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    documentData: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    output: ['msg', 'flow', 'global'],
+};
+
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
@@ -65,6 +74,25 @@ module.exports = function (RED) {
             };
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
+
+                // Unsupported types fail before anything is evaluated or requested. Dynamic mode
+                // takes the model and document from msg.document, so their types are not checked
+                // there.
+                for (const [field, label] of [
+                    ['endpoint', 'Endpoint'],
+                    ['modelId', 'Model'],
+                    ['documentData', 'Document data'],
+                ]) {
+                    const type = node[`${field}Type`];
+                    if ((field === 'endpoint' || !node.dynamic) && !TYPES[field].includes(type)) {
+                        const err = new Error(`${label} type '${type}' is not supported`);
+                        err.code = 'INVALID_CONFIGURATION';
+                        throw err;
+                    }
+                }
+                if (!TYPES.output.includes(node.outputType)) {
+                    throw new Error(`Unsupported target property type: ${node.outputType}`);
+                }
 
                 let endpointRaw = await node.getTypedProperty(
                     node.endpoint,
@@ -288,3 +316,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-document-intelligence', AzureDocumentIntelligenceNode);
 };
+
+module.exports.TYPES = TYPES;

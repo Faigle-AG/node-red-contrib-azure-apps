@@ -1,3 +1,15 @@
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    to: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
+    subject: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    body: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    attachments: ['msg', 'flow', 'global', 'json', 'jsonata'],
+};
+
+// The User ID is configured once, on the email configuration node, which owns its types.
+const { userId: USER_ID_TYPES } = require('./email-config').TYPES;
+
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
@@ -43,6 +55,35 @@ module.exports = function (RED) {
             };
             try {
                 if (!node.configNode) throw new Error('Missing Azure Email configuration');
+
+                // Unsupported types fail before anything is evaluated or requested, outside the
+                // attachments read below, which keeps swallowing evaluation errors. Dynamic mode
+                // takes the fields from msg.email, and blank attachments are never evaluated, so
+                // those types are not checked.
+                const userIdType = node.configNode.userIdType || 'str';
+                if (!USER_ID_TYPES.includes(userIdType)) {
+                    const err = new Error(`User ID type '${userIdType}' is not supported`);
+                    err.code = 'INVALID_CONFIGURATION';
+                    throw err;
+                }
+                if (!node.dynamic) {
+                    for (const [field, label] of [
+                        ['to', 'To'],
+                        ['subject', 'Subject'],
+                        ['body', 'Body'],
+                        ['attachments', 'Attachments'],
+                    ]) {
+                        const type = node[`${field}Type`];
+                        if (
+                            (field !== 'attachments' || node.attachments) &&
+                            !TYPES[field].includes(type)
+                        ) {
+                            const err = new Error(`${label} type '${type}' is not supported`);
+                            err.code = 'INVALID_CONFIGURATION';
+                            throw err;
+                        }
+                    }
+                }
 
                 const userIdRaw = await node.getTypedProperty(
                     node.configNode.userId,
@@ -203,3 +244,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-email-write', AzureEmailWriteNode);
 };
+
+module.exports.TYPES = TYPES;

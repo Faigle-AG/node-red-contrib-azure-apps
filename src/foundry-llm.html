@@ -89,22 +89,22 @@
 
             $('#node-input-endpoint').typedInput({
                 default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-endpointType'),
             });
             $('#node-input-model').typedInput({
                 default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-modelType'),
             });
             $('#node-input-instructions').typedInput({
                 default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-instructionsType'),
             });
             $('#node-input-input').typedInput({
                 default: 'msg',
-                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+                types: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
                 typeField: $('#node-input-inputType'),
             });
             $('#node-input-output').typedInput({
@@ -297,7 +297,7 @@ For Entra ID, assign the Node-RED identity the **Foundry User** role on the rele
 - **Azure Config** _config_ \
   Shared Azure authentication configuration using either **Microsoft Entra ID** or **API key**.
 
-- **Endpoint** _string | env | msg | flow | global | jsonata_ \
+- **Endpoint** _msg | flow | global | string | jsonata | env_ \
   Foundry project or resource endpoint. The node normalizes it to an `/openai/v1/` SDK base URL.
 
   Project endpoint example:
@@ -306,14 +306,14 @@ For Entra ID, assign the Node-RED identity the **Foundry User** role on the rele
   https://resource.services.ai.azure.com/api/projects/project-name
   ```
 
-- **Model** _string | env | msg | flow | global | jsonata_ \
+- **Model** _msg | flow | global | string | jsonata | env_ \
   The deployed model name, for example `gpt-5-mini`.
 
 - **Instructions** _optional typed value_ \
   System-level instructions sent as the Responses API `instructions` field.
 
 - **Input** _typed value_ \
-  Prompt data. Strings and Responses API input arrays are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence results, are JSON-encoded.
+  Prompt data. Strings and Responses API input arrays (for example a JSON literal) are sent directly. Buffers are converted to UTF-8. Other objects, including Azure Document Intelligence results, are JSON-encoded.
 
 - **Max Tokens** _integer_ \
   Optional `max_output_tokens` value.

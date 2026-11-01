@@ -1,5 +1,11 @@
 'use strict';
 
+// The types the User ID offers in the editor (Phase 2.9). The email nodes check them before they
+// evaluate the User ID.
+const TYPES = {
+    userId: ['str', 'env'],
+};
+
 module.exports = function (RED) {
     function createError(message, code) {
         const err = new Error(message);
@@ -30,3 +36,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-email-config', AzureEmailConfigNode);
 };
+
+module.exports.TYPES = TYPES;

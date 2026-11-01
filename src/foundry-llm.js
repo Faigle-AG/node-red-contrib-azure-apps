@@ -1,5 +1,15 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    endpoint: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    model: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    instructions: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    input: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
+    output: ['msg', 'flow', 'global'],
+};
+
 module.exports = function (RED) {
     const OpenAIModule = require('openai');
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
@@ -167,6 +177,28 @@ module.exports = function (RED) {
             try {
                 if (!node.configNode) throw new Error('Missing Azure configuration');
 
+                // Unsupported types fail before anything is evaluated or requested. Blank
+                // instructions are never evaluated, so their type is not checked.
+                for (const [field, label] of [
+                    ['endpoint', 'Endpoint'],
+                    ['model', 'Model'],
+                    ['instructions', 'Instructions'],
+                    ['input', 'Input'],
+                ]) {
+                    const type = node[`${field}Type`];
+                    if (
+                        (field !== 'instructions' || node.instructions) &&
+                        !TYPES[field].includes(type)
+                    ) {
+                        const err = new Error(`${label} type '${type}' is not supported`);
+                        err.code = 'INVALID_CONFIGURATION';
+                        throw err;
+                    }
+                }
+                if (!TYPES.output.includes(node.outputType)) {
+                    throw new Error(`Unsupported target property type: ${node.outputType}`);
+                }
+
                 node.status.processing('calling Azure Foundry');
 
                 const endpointValue = await node.getTypedProperty(
@@ -314,3 +346,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-foundry-llm', AzureFoundryLlmNode);
 };
+
+module.exports.TYPES = TYPES;

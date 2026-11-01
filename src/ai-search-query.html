@@ -151,12 +151,12 @@
         oneditprepare: function () {
             $('#node-input-endpoint').typedInput({
                 default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-endpointType'),
             });
             $('#node-input-indexName').typedInput({
                 default: 'str',
-                types: ['str', 'env', 'msg', 'flow', 'global', 'jsonata'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-indexNameType'),
             });
             $('#node-input-query').typedInput({
@@ -167,7 +167,7 @@
             ['searchFields', 'select', 'filter', 'semanticConfiguration'].forEach(function (field) {
                 $('#node-input-' + field).typedInput({
                     default: 'str',
-                    types: ['str', 'msg', 'flow', 'global', 'env', 'jsonata'],
+                    types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                     typeField: $('#node-input-' + field + 'Type'),
                 });
             });
@@ -198,12 +198,12 @@
                 $('#node-input-' + setting.field).typedInput({
                     default: 'str',
                     types: [
-                        { value: 'str', label: 'value', options: setting.options },
                         'msg',
                         'flow',
                         'global',
-                        'env',
+                        { value: 'str', label: 'value', options: setting.options },
                         'jsonata',
+                        'env',
                     ],
                     typeField: $('#node-input-' + setting.field + 'Type'),
                 });
@@ -216,6 +216,9 @@
                 $('#node-input-' + setting.field).typedInput({
                     default: 'num',
                     types: [
+                        'msg',
+                        'flow',
+                        'global',
                         {
                             value: 'num',
                             label: 'number',
@@ -225,11 +228,8 @@
                                 setting.optional,
                             ),
                         },
-                        'msg',
-                        'flow',
-                        'global',
-                        'env',
                         'jsonata',
+                        'env',
                     ],
                     typeField: $('#node-input-' + setting.field + 'Type'),
                 });
@@ -237,13 +237,13 @@
             ['count', 'enableLogging'].forEach(function (field) {
                 $('#node-input-' + field).typedInput({
                     default: 'bool',
-                    types: ['bool', 'msg', 'flow', 'global', 'env', 'jsonata'],
+                    types: ['msg', 'flow', 'global', 'bool', 'jsonata', 'env'],
                     typeField: $('#node-input-' + field + 'Type'),
                 });
             });
             $('#node-input-additionalParameters').typedInput({
                 default: 'json',
-                types: ['json', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                types: ['msg', 'flow', 'global', 'json', 'jsonata', 'env'],
                 typeField: $('#node-input-additionalParametersType'),
             });
             $('#node-input-output').typedInput({
@@ -473,47 +473,47 @@ For query-only Entra access, assign the Node-RED identity the **Search Index Dat
 - **Azure Config** _config_ \
   Existing shared Azure authentication configuration. No changes are required.
 
-- **Endpoint** _string | env | msg | flow | global | jsonata_ \
+- **Endpoint** _msg | flow | global | string | jsonata | env_ \
   Search service endpoint, for example `https://my-search-service.search.windows.net`.
 
-- **Index** _string | env | msg | flow | global | jsonata_ \
+- **Index** _msg | flow | global | string | jsonata | env_ \
   Search index name or supported index alias.
 
 - **Search Text** _typed value_ \
   Query text. The default is `msg.payload`. If it resolves empty and no vector query is supplied, the node sends `search: "*"`.
 
-- **Query Type** _choice | msg | flow | global | env | jsonata_ \
+- **Query Type** _msg | flow | global | choice | jsonata | env_ \
   Azure AI Search query parser mode: `simple`, `full`, or `semantic`. The literal input keeps the existing choices.
 
-- **Search Mode** _choice | msg | flow | global | env | jsonata_ \
+- **Search Mode** _msg | flow | global | choice | jsonata | env_ \
   `any` or `all`. Controls whether any or all search terms must match.
 
-- **Search Fields**, **Select** _string | msg | flow | global | env | jsonata_ \
+- **Search Fields**, **Select** _msg | flow | global | string | jsonata | env_ \
   Optional comma-separated field-name strings (not arrays). An explicit empty string or `null` omits the parameter. A configured dynamic source that resolves to `undefined` fails the node.
 
-- **Filter** _string | msg | flow | global | env | jsonata_ \
+- **Filter** _msg | flow | global | string | jsonata | env_ \
   OData filter expression, resolved for each incoming message. Select `msg` and enter `aiSearchFilter` to read `msg.aiSearchFilter`. For example: `contractNumberSearch eq '1234567890'`.
 
   An empty **string** leaves filtering disabled, as before. A dynamic source must resolve to a non-empty string; missing, empty, or non-string values fail the node before a request is sent. Use the string `false` to intentionally match no documents.
 
   Existing flows without `filterType` continue to use a literal string. **Parameters** can still override `filter` after this field is resolved and validated.
 
-- **Top**, **Skip** _number | msg | flow | global | env | jsonata_ \
+- **Top**, **Skip** _msg | flow | global | number | jsonata | env_ \
   Integer paging values: Top >= 1, Skip >= 0. Numbers or numeric strings are accepted. Empty strings or `null` omit these optional parameters; unresolved dynamic properties fail the node.
 
-- **Total Count** _boolean | msg | flow | global | env | jsonata_ \
+- **Total Count** _msg | flow | global | boolean | jsonata | env_ \
   Formerly the Return total count checkbox. Accepts boolean `true`/`false`, or the strings `"true"`/`"false"`. The string `"false"` is not treated as true.
 
-- **Semantic Config** _string | msg | flow | global | env | jsonata_ \
+- **Semantic Config** _msg | flow | global | string | jsonata | env_ \
   Optional semantic configuration name, normally used with Query Type = `semantic`. An empty string or `null` omits it; unresolved dynamic properties fail the node.
 
-- **Timeout (ms)** _number | msg | flow | global | env | jsonata_ \
+- **Timeout (ms)** _msg | flow | global | number | jsonata | env_ \
   Required integer >= 1000, default 30000. Resolved for each message.
 
-- **Logging** _boolean | msg | flow | global | env | jsonata_ \
+- **Logging** _msg | flow | global | boolean | jsonata | env_ \
   Enables request metadata logging for the current message; default false.
 
-- **Parameters** _JSON | msg | flow | global | jsonata | env_ \
+- **Parameters** _msg | flow | global | JSON | jsonata | env_ \
   Additional Search Documents POST body properties. These values are applied after the editor fields and therefore can override them. Use this for advanced options such as `vectorQueries`, `facets`, `answers`, `captions`, `orderby`, `scoringProfile`, or `semanticQuery`.
 
   Example vector query:
@@ -531,7 +531,7 @@ For query-only Entra access, assign the Node-RED identity the **Search Index Dat
   }
   ```
 
-- **Value** _choice | msg | flow | global | env | jsonata_ \
+- **Value** _msg | flow | global | choice | jsonata | env_ \
   `documents` (Documents only) or `response` (Complete response object). Chooses what is written to the configured output property.
 
 - **Output To** _msg | flow | global_ \

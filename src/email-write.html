@@ -71,22 +71,22 @@
         oneditprepare: function () {
             $('#node-input-to').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                types: ['msg', 'flow', 'global', 'str', 'json', 'jsonata', 'env'],
                 typeField: $('#node-input-toType'),
             });
             $('#node-input-subject').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-subjectType'),
             });
             $('#node-input-body').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-bodyType'),
             });
             $('#node-input-attachments').typedInput({
                 default: 'msg',
-                types: ['msg', 'flow', 'global', 'jsonata'],
+                types: ['msg', 'flow', 'global', 'json', 'jsonata'],
                 typeField: $('#node-input-attachmentsType'),
             });
 
@@ -192,16 +192,16 @@ Sends an email from an Azure user's mailbox through Microsoft Graph using the se
 - **Load from msg.email** _boolean_ \
   If enabled, the node ignores the UI properties and expects `msg.email.to`, `msg.email.subject`, `msg.email.body`, and optionally `msg.email.attachments` to be provided dynamically.
 
-- **To** _string | msg_ \
-  A comma-separated list of recipient email addresses.
+- **To** _msg | flow | global | string | JSON | jsonata | env_ \
+  A comma-separated list of recipient email addresses, or a recipient object (`{ address, name }`) or an array of such objects, for example as a JSON literal.
 
-- **Subject** _string | msg_ \
+- **Subject** _msg | flow | global | string | jsonata | env_ \
   The subject line of the email.
 
-- **Body** _string | msg_ \
+- **Body** _msg | flow | global | string | jsonata | env_ \
   The HTML or plain text body of the email.
 
-- **Attachments** _msg_ \
+- **Attachments** _msg | flow | global | JSON | jsonata_ \
   An array of objects containing `name` and `content` (base64 string or Node.js Buffer).
 
 ---

@@ -1,3 +1,12 @@
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or requested.
+const TYPES = {
+    messageId: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+};
+
+// The User ID is configured once, on the email configuration node, which owns its types.
+const { userId: USER_ID_TYPES } = require('./email-config').TYPES;
+
 module.exports = function (RED) {
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
 
@@ -135,6 +144,22 @@ module.exports = function (RED) {
             try {
                 if (!node.configNode) throw new Error('Missing Azure Email configuration');
 
+                // Unsupported types fail before anything is evaluated or requested. Dynamic mode
+                // takes the message ID from msg.email, so its type is not checked there.
+                const userIdType = node.configNode.userIdType || 'str';
+                if (!USER_ID_TYPES.includes(userIdType)) {
+                    const err = new Error(`User ID type '${userIdType}' is not supported`);
+                    err.code = 'INVALID_CONFIGURATION';
+                    throw err;
+                }
+                if (!node.dynamic && !TYPES.messageId.includes(node.messageIdType)) {
+                    const err = new Error(
+                        `Message ID type '${node.messageIdType}' is not supported`,
+                    );
+                    err.code = 'INVALID_CONFIGURATION';
+                    throw err;
+                }
+
                 const userIdRaw = await node.getTypedProperty(
                     node.configNode.userId,
                     node.configNode.userIdType || 'str',
@@ -224,3 +249,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-email-transfer', AzureEmailTransferNode);
 };
+
+module.exports.TYPES = TYPES;

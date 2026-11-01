@@ -37,7 +37,7 @@
 
             $('#node-input-messageId').typedInput({
                 default: 'msg',
-                types: ['str', 'msg', 'flow', 'global', 'jsonata', 'env'],
+                types: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
                 typeField: $('#node-input-messageIdType'),
             });
 
@@ -211,7 +211,7 @@ Moves an email to a selected Microsoft Graph mail folder using the selected **Az
 - **Load from msg.email** _boolean_ \
   If enabled, the node will ignore the UI properties and expect `msg.email.messageId` and `msg.email.destinationId` to be provided dynamically.
 
-- **Message ID** _string | msg | flow | global | jsonata | env_ \
+- **Message ID** _msg | flow | global | string | jsonata | env_ \
   The unique Microsoft Graph ID of the message to move.
 
 - **Dest. Folder** _string_ \

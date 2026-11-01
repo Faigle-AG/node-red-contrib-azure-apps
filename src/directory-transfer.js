@@ -1,5 +1,13 @@
 'use strict';
 
+// The types each typed field offers in the editor (Phase 2.9). A configured type outside these
+// fails clearly before anything is evaluated or changed.
+const TYPES = {
+    shareName: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    source: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+    destination: ['msg', 'flow', 'global', 'str', 'jsonata', 'env'],
+};
+
 module.exports = function (RED) {
     const path = require('path');
     const { extendNode } = require('@faigle/node-red-runtime-utils')(RED);
@@ -212,6 +220,29 @@ module.exports = function (RED) {
                     throw createError('Missing Azure configuration', 'AZURE_CONFIG_MISSING');
                 }
 
+                // Unsupported types fail before anything is evaluated or changed. Dynamic mode
+                // ignores the static paths, so their types are not checked there.
+                if (!TYPES.shareName.includes(node.shareNameType)) {
+                    throw createError(
+                        `Share name type '${node.shareNameType}' is not supported`,
+                        'INVALID_CONFIGURATION',
+                    );
+                }
+                if (!node.dynamic) {
+                    for (const [field, label] of [
+                        ['source', 'Source'],
+                        ['destination', 'Destination'],
+                    ]) {
+                        const type = node[`${field}Type`];
+                        if (!TYPES[field].includes(type)) {
+                            throw createError(
+                                `${label} type '${type}' is not supported`,
+                                'INVALID_CONFIGURATION',
+                            );
+                        }
+                    }
+                }
+
                 const shareName = await node.getValidatedProperty(
                     node.shareName,
                     node.shareNameType,
@@ -376,3 +407,5 @@ module.exports = function (RED) {
 
     RED.nodes.registerType('azure-directory-transfer', AzureDirectoryTransferNode);
 };
+
+module.exports.TYPES = TYPES;
