@@ -1,65 +1,102 @@
 [
-  {
-    "id": "azr4001",
-    "type": "inject",
-    "name": "Set msg.filename",
-    "props": [
-      {
-        "p": "filename",
-        "v": "examples/input/settings.json",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 180,
-    "y": 120,
-    "wires": [
-      [
-        "azr4002"
-      ]
-    ]
-  },
-  {
-    "id": "azr4002",
-    "type": "azure-file-read",
-    "name": "Read path from msg.filename",
-    "config": "azr4000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "target": "file",
-    "targetType": "msg",
-    "dynamic": false,
-    "actionRead": true,
-    "actionExists": true,
-    "actionStat": true,
-    "source": "filename",
-    "sourceType": "msg",
-    "x": 450,
-    "y": 120,
-    "wires": [
-      [
-        "azr4003"
-      ]
-    ]
-  },
-  {
-    "id": "azr4003",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 690,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azrt0",
+        "type": "tab",
+        "label": "azure file-read \u00b7 04 Message source",
+        "disabled": true,
+        "info": "**Take the share-relative path from the message**\n\nThe inject sets `msg.filename`; the node reads that path from the share.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`).\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set msg.filename**.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` with `data`.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azrc0",
+        "type": "comment",
+        "z": "azrt0",
+        "name": "Take the share-relative path from the message (see the tab's description)",
+        "info": "**Take the share-relative path from the message**\n\nThe inject sets `msg.filename`; the node reads that path from the share.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`).\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set msg.filename**.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` with `data`.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azr4000a",
+        "type": "azure-auth-config",
+        "z": "azrt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azr4000",
+        "type": "azure-file-config",
+        "z": "azrt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azr4000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azr4001",
+        "type": "inject",
+        "name": "Set msg.filename",
+        "props": [
+            {
+                "p": "filename",
+                "v": "examples/input/settings.json",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 180,
+        "y": 120,
+        "wires": [
+            [
+                "azr4002"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr4002",
+        "type": "azure-file-read",
+        "name": "Read path from msg.filename",
+        "config": "azr4000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "target": "file",
+        "targetType": "msg",
+        "dynamic": false,
+        "actionRead": true,
+        "actionExists": true,
+        "actionStat": true,
+        "source": "filename",
+        "sourceType": "msg",
+        "x": 450,
+        "y": 120,
+        "wires": [
+            [
+                "azr4003"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr4003",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 120,
+        "wires": [],
+        "z": "azrt0"
+    }
 ]

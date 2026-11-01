@@ -1,68 +1,97 @@
 [
-  {
-    "id": "ais0201",
-    "type": "inject",
-    "name": "Load sample v",
-    "props": [
-      {
-        "p": "test",
-        "v": "{\"value\":[{\"@search.action\":\"upload\",\"id\":\"K0001\",\"customer_number\":\"K-100001\",\"first_name\":\"Anna\",\"last_name\":\"Keller\",\"date_of_birth\":\"1987-03-14\",\"street\":\"Musterstrasse 12\",\"postal_code\":\"8001\",\"city\":\"Zuerich\",\"country\":\"Switzerland\",\"email\":\"anna.keller@example.test\",\"phone\":\"+41 79 000 00 01\",\"insurance_number\":\"VERS-CH-100001\",\"policy_id\":\"POL-HAUS-2026-001\",\"insurance_type\":\"Household contents insurance\",\"plan\":\"Comfort\",\"contract_start\":\"2024-01-01\",\"contract_end\":\"2027-12-31\",\"monthly_premium\":42.5,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Sample Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 1\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"active\",\"risk_class\":\"low\",\"notes\":\"Customer prefers digital correspondence. No open claims.\"},{\"@search.action\":\"upload\",\"id\":\"K0002\",\"customer_number\":\"K-100002\",\"first_name\":\"Lukas\",\"last_name\":\"Meier\",\"date_of_birth\":\"1979-11-02\",\"street\":\"Beispielweg 8\",\"postal_code\":\"3001\",\"city\":\"Bern\",\"country\":\"Switzerland\",\"email\":\"lukas.meier@example.test\",\"phone\":\"+41 79 000 00 02\",\"insurance_number\":\"VERS-CH-100002\",\"policy_id\":\"POL-AUTO-2026-014\",\"insurance_type\":\"Motor vehicle insurance\",\"plan\":\"Premium\",\"contract_start\":\"2025-06-01\",\"contract_end\":\"2028-05-31\",\"monthly_premium\":118.9,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Example Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 2\",\"payment_method\":\"Invoice\",\"advisor\":\"Sandra Baumann\",\"customer_status\":\"active\",\"risk_class\":\"medium\",\"notes\":\"The insured object is a passenger car. The most recent claim has been closed.\"},{\"@search.action\":\"upload\",\"id\":\"K0003\",\"customer_number\":\"K-100003\",\"first_name\":\"Sophie\",\"last_name\":\"Fischer\",\"date_of_birth\":\"1992-07-21\",\"street\":\"Testgasse 4\",\"postal_code\":\"4051\",\"city\":\"Basel\",\"country\":\"Switzerland\",\"email\":\"sophie.fischer@example.test\",\"phone\":\"+41 79 000 00 03\",\"insurance_number\":\"VERS-CH-100003\",\"policy_id\":\"POL-RECHT-2025-122\",\"insurance_type\":\"Legal expenses insurance\",\"plan\":\"Private Plus\",\"contract_start\":\"2023-09-15\",\"contract_end\":\"2026-09-14\",\"monthly_premium\":29.0,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Test Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 3\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"renewal_pending\",\"risk_class\":\"low\",\"notes\":\"Contract renewal has not yet been confirmed.\"}]}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 0.1,
-    "topic": "",
-    "x": 160,
-    "y": 120,
-    "wires": [
-      [
-        "ais0202"
-      ]
-    ]
-  },
-  {
-    "id": "ais0202",
-    "type": "azure-ai-search-sync",
-    "name": "AI Search - Sync customers",
-    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
-    "endpointType": "str",
-    "indexName": "test",
-    "indexNameType": "str",
-    "documents": "customers",
-    "documentsType": "msg",
-    "action": "mergeOrUpload",
-    "batchSize": 500,
-    "timeoutMs": 30000,
-    "failOnDocumentError": true,
-    "output": "syncResult",
-    "outputType": "msg",
-    "outputMode": "summary",
-    "enableLogging": false,
-    "x": 430,
-    "y": 120,
-    "wires": [
-      [
-        "ais0203"
-      ]
-    ]
-  },
-  {
-    "id": "ais0203",
-    "type": "debug",
-    "name": "Sync result",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "syncResult",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 700,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "ais02t0",
+        "type": "tab",
+        "label": "azure ai-search \u00b7 02 Sync sample documents",
+        "disabled": true,
+        "info": "**Upload synthetic customer documents**\n\nUploads synthetic customers into the index (merge or upload). Run 01 first.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and an Azure AI Search service where you may create a **disposable** index.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_SEARCH_ENDPOINT` (e.g. `https://<service>.search.windows.net`)\nand `NODE_RED_EXAMPLE_AZURE_SEARCH_INDEX` (an index name used only for these examples). Open **EDIT ME: example Search key** and\nenter an admin or query key as appropriate. This example contains no key. All Search examples use the same index, so they agree.\nIf the endpoint or index is unset, the node reports it missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Load sample v** (the original name).\n\n**Effects:** Adds or changes documents. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the Debug sidebar shows the result object named in the node.\n\n**Cleanup:** delete the example index when you are done.\n\n**Not verified:** a real Search service (the tests fake the HTTP calls), and behaviour in the editor."
+    },
+    {
+        "id": "ais02c0",
+        "type": "comment",
+        "z": "ais02t0",
+        "name": "Upload synthetic customer documents (see the tab's description)",
+        "info": "**Upload synthetic customer documents**\n\nUploads synthetic customers into the index (merge or upload). Run 01 first.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and an Azure AI Search service where you may create a **disposable** index.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_SEARCH_ENDPOINT` (e.g. `https://<service>.search.windows.net`)\nand `NODE_RED_EXAMPLE_AZURE_SEARCH_INDEX` (an index name used only for these examples). Open **EDIT ME: example Search key** and\nenter an admin or query key as appropriate. This example contains no key. All Search examples use the same index, so they agree.\nIf the endpoint or index is unset, the node reports it missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Load sample v** (the original name).\n\n**Effects:** Adds or changes documents. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the Debug sidebar shows the result object named in the node.\n\n**Cleanup:** delete the example index when you are done.\n\n**Not verified:** a real Search service (the tests fake the HTTP calls), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "ais0200",
+        "type": "azure-auth-config",
+        "z": "ais02t0",
+        "name": "EDIT ME: example Search key",
+        "authType": "apiKey",
+        "accountName": ""
+    },
+    {
+        "id": "ais0201",
+        "type": "inject",
+        "name": "Load sample v",
+        "props": [
+            {
+                "p": "customers",
+                "v": "{\"value\":[{\"@search.action\":\"upload\",\"id\":\"K0001\",\"customer_number\":\"K-100001\",\"first_name\":\"Anna\",\"last_name\":\"Keller\",\"date_of_birth\":\"1987-03-14\",\"street\":\"Musterstrasse 12\",\"postal_code\":\"8001\",\"city\":\"Zuerich\",\"country\":\"Switzerland\",\"email\":\"anna.keller@example.test\",\"phone\":\"+41 79 000 00 01\",\"insurance_number\":\"VERS-CH-100001\",\"policy_id\":\"POL-HAUS-2026-001\",\"insurance_type\":\"Household contents insurance\",\"plan\":\"Comfort\",\"contract_start\":\"2024-01-01\",\"contract_end\":\"2027-12-31\",\"monthly_premium\":42.5,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Sample Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 1\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"active\",\"risk_class\":\"low\",\"notes\":\"Customer prefers digital correspondence. No open claims.\"},{\"@search.action\":\"upload\",\"id\":\"K0002\",\"customer_number\":\"K-100002\",\"first_name\":\"Lukas\",\"last_name\":\"Meier\",\"date_of_birth\":\"1979-11-02\",\"street\":\"Beispielweg 8\",\"postal_code\":\"3001\",\"city\":\"Bern\",\"country\":\"Switzerland\",\"email\":\"lukas.meier@example.test\",\"phone\":\"+41 79 000 00 02\",\"insurance_number\":\"VERS-CH-100002\",\"policy_id\":\"POL-AUTO-2026-014\",\"insurance_type\":\"Motor vehicle insurance\",\"plan\":\"Premium\",\"contract_start\":\"2025-06-01\",\"contract_end\":\"2028-05-31\",\"monthly_premium\":118.9,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Example Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 2\",\"payment_method\":\"Invoice\",\"advisor\":\"Sandra Baumann\",\"customer_status\":\"active\",\"risk_class\":\"medium\",\"notes\":\"The insured object is a passenger car. The most recent claim has been closed.\"},{\"@search.action\":\"upload\",\"id\":\"K0003\",\"customer_number\":\"K-100003\",\"first_name\":\"Sophie\",\"last_name\":\"Fischer\",\"date_of_birth\":\"1992-07-21\",\"street\":\"Testgasse 4\",\"postal_code\":\"4051\",\"city\":\"Basel\",\"country\":\"Switzerland\",\"email\":\"sophie.fischer@example.test\",\"phone\":\"+41 79 000 00 03\",\"insurance_number\":\"VERS-CH-100003\",\"policy_id\":\"POL-RECHT-2025-122\",\"insurance_type\":\"Legal expenses insurance\",\"plan\":\"Private Plus\",\"contract_start\":\"2023-09-15\",\"contract_end\":\"2026-09-14\",\"monthly_premium\":29.0,\"currency\":\"CHF\",\"payment_interval\":\"monthly\",\"bank_name\":\"Test Bank\",\"masked_iban\":\"CH00 TEST 0000 0000 0000 3\",\"payment_method\":\"Direct debit\",\"advisor\":\"Markus Steiner\",\"customer_status\":\"renewal_pending\",\"risk_class\":\"low\",\"notes\":\"Contract renewal has not yet been confirmed.\"}]}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "ais0202"
+            ]
+        ],
+        "z": "ais02t0"
+    },
+    {
+        "id": "ais0202",
+        "type": "azure-ai-search-sync",
+        "name": "AI Search - Sync customers",
+        "endpoint": "NODE_RED_EXAMPLE_AZURE_SEARCH_ENDPOINT",
+        "endpointType": "env",
+        "indexName": "NODE_RED_EXAMPLE_AZURE_SEARCH_INDEX",
+        "indexNameType": "env",
+        "documents": "customers",
+        "documentsType": "msg",
+        "action": "mergeOrUpload",
+        "batchSize": 500,
+        "timeoutMs": 30000,
+        "failOnDocumentError": true,
+        "output": "syncResult",
+        "outputType": "msg",
+        "outputMode": "summary",
+        "enableLogging": false,
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "ais0203"
+            ]
+        ],
+        "z": "ais02t0",
+        "config": "ais0200"
+    },
+    {
+        "id": "ais0203",
+        "type": "debug",
+        "name": "Sync result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "syncResult",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 120,
+        "wires": [],
+        "z": "ais02t0"
+    }
 ]

@@ -1,88 +1,135 @@
 [
-  {
-    "id": "azdi1001",
-    "type": "inject",
-    "name": "Analyze document",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 130,
-    "y": 160,
-    "wires": [
-      [
-        "azdi1004"
-      ]
-    ]
-  },
-  {
-    "id": "azdi1004",
-    "type": "azure-file-read",
-    "name": "read sample",
-    "config": "azdi1000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "target": "file",
-    "targetType": "msg",
-    "dynamic": false,
-    "actionRead": true,
-    "actionExists": true,
-    "actionStat": true,
-    "source": "examples/sample.pdf",
-    "sourceType": "str",
-    "x": 350,
-    "y": 160,
-    "wires": [
-      [
-        "azdi1002"
-      ]
-    ]
-  },
-  {
-    "id": "azdi1002",
-    "type": "azure-document-intelligence",
-    "name": "Analyze public document",
-    "config": "azdi1000",
-    "dynamic": false,
-    "endpoint": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
-    "modelId": "prebuilt-layout",
-    "modelIdType": "str",
-    "documentData": "file.data",
-    "documentDataType": "msg",
-    "inputType": "buffer",
-    "outputContentFormat": "markdown",
-    "pages": "",
-    "locale": "",
-    "stringIndexType": "utf16CodeUnit",
-    "features": "",
-    "queryFields": "",
-    "outputOptions": "",
-    "output": "analysis",
-    "outputType": "msg",
-    "x": 610,
-    "y": 160,
-    "wires": [
-      [
-        "azdi1003"
-      ]
-    ]
-  },
-  {
-    "id": "azdi1003",
-    "type": "debug",
-    "name": "msg.analysis",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "analysis",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 870,
-    "y": 160,
-    "wires": []
-  }
+    {
+        "id": "azdi1t0",
+        "type": "tab",
+        "label": "azure document-intelligence \u00b7 01 Static URL analysis",
+        "disabled": true,
+        "info": "**Analyze a PDF read from your file share**\n\nReads `examples/sample.pdf` from your share and sends its bytes to the `prebuilt-layout` model (Markdown output). (The file name says \"URL\"; the flow sends the file bytes, not a URL.)\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, an Azure AI Document Intelligence resource, and a disposable Azure file share with a PDF you may send to Azure at `examples/sample.pdf`; the authentication node **EDIT ME: example storage authentication** needs a SAS token for that share (not included).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_DOCUMENT_ENDPOINT`: your Document Intelligence endpoint (e.g. `https://<resource>.cognitiveservices.azure.com/`)\n- `NODE_RED_EXAMPLE_AZURE_FILES_URL`: the storage account file endpoint (e.g. `https://<account>.file.core.windows.net`)\n- `NODE_RED_EXAMPLE_AZURE_SHARE`: the share name\n\nThe authentication node **EDIT ME: example Document Intelligence identity** uses **Microsoft Entra ID** (the node requests\nEntra tokens only): the node uses whatever identity the Node-RED process can obtain (environment variables, managed identity,\nAzure CLI login). Run it under a **dedicated test identity** with access to that resource only. This example contains no secret.\n\nIf a variable is unset, the node that needs it reports what is missing and makes no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Analyze document**.\n\n**Effects:** Reads the file (read-only) and sends it to Azure for analysis. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** after Azure finishes (the node polls every 2 seconds), the Debug sidebar shows the analysis result object.\n\n**Cleanup:** the flow provisions no Azure resource. Each analysis runs as an operation in the service, which keeps its result and bills it under its own rules; this flow does not remove either. Remove the sample document from your share or URL if you placed it there for this example.\n\n**Not verified:** a real Document Intelligence resource or model, and whether Azure accepts this particular document (the tests fake Azure and the identity and treat the document as opaque bytes); behaviour in the editor."
+    },
+    {
+        "id": "azdi1c0",
+        "type": "comment",
+        "z": "azdi1t0",
+        "name": "Analyze a PDF read from your file share (see the tab's description)",
+        "info": "**Analyze a PDF read from your file share**\n\nReads `examples/sample.pdf` from your share and sends its bytes to the `prebuilt-layout` model (Markdown output). (The file name says \"URL\"; the flow sends the file bytes, not a URL.)\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, an Azure AI Document Intelligence resource, and a disposable Azure file share with a PDF you may send to Azure at `examples/sample.pdf`; the authentication node **EDIT ME: example storage authentication** needs a SAS token for that share (not included).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_DOCUMENT_ENDPOINT`: your Document Intelligence endpoint (e.g. `https://<resource>.cognitiveservices.azure.com/`)\n- `NODE_RED_EXAMPLE_AZURE_FILES_URL`: the storage account file endpoint (e.g. `https://<account>.file.core.windows.net`)\n- `NODE_RED_EXAMPLE_AZURE_SHARE`: the share name\n\nThe authentication node **EDIT ME: example Document Intelligence identity** uses **Microsoft Entra ID** (the node requests\nEntra tokens only): the node uses whatever identity the Node-RED process can obtain (environment variables, managed identity,\nAzure CLI login). Run it under a **dedicated test identity** with access to that resource only. This example contains no secret.\n\nIf a variable is unset, the node that needs it reports what is missing and makes no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Analyze document**.\n\n**Effects:** Reads the file (read-only) and sends it to Azure for analysis. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** after Azure finishes (the node polls every 2 seconds), the Debug sidebar shows the analysis result object.\n\n**Cleanup:** the flow provisions no Azure resource. Each analysis runs as an operation in the service, which keeps its result and bills it under its own rules; this flow does not remove either. Remove the sample document from your share or URL if you placed it there for this example.\n\n**Not verified:** a real Document Intelligence resource or model, and whether Azure accepts this particular document (the tests fake Azure and the identity and treat the document as opaque bytes); behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azdi1000e",
+        "type": "azure-auth-config",
+        "z": "azdi1t0",
+        "name": "EDIT ME: example Document Intelligence identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azdi1000a",
+        "type": "azure-auth-config",
+        "z": "azdi1t0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azdi1000",
+        "type": "azure-file-config",
+        "z": "azdi1t0",
+        "name": "EDIT ME: example file share",
+        "auth": "azdi1000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azdi1001",
+        "type": "inject",
+        "name": "Analyze document",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 130,
+        "y": 160,
+        "wires": [
+            [
+                "azdi1004"
+            ]
+        ],
+        "z": "azdi1t0"
+    },
+    {
+        "id": "azdi1004",
+        "type": "azure-file-read",
+        "name": "read sample",
+        "config": "azdi1000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "target": "file",
+        "targetType": "msg",
+        "dynamic": false,
+        "actionRead": true,
+        "actionExists": true,
+        "actionStat": true,
+        "source": "examples/sample.pdf",
+        "sourceType": "str",
+        "x": 350,
+        "y": 160,
+        "wires": [
+            [
+                "azdi1002"
+            ]
+        ],
+        "z": "azdi1t0"
+    },
+    {
+        "id": "azdi1002",
+        "type": "azure-document-intelligence",
+        "name": "Analyze the PDF from the share",
+        "config": "azdi1000e",
+        "dynamic": false,
+        "endpoint": "NODE_RED_EXAMPLE_AZURE_DOCUMENT_ENDPOINT",
+        "modelId": "prebuilt-layout",
+        "modelIdType": "str",
+        "documentData": "file.data",
+        "documentDataType": "msg",
+        "inputType": "buffer",
+        "outputContentFormat": "markdown",
+        "pages": "",
+        "locale": "",
+        "stringIndexType": "utf16CodeUnit",
+        "features": "",
+        "queryFields": "",
+        "outputOptions": "",
+        "output": "analysis",
+        "outputType": "msg",
+        "x": 610,
+        "y": 160,
+        "wires": [
+            [
+                "azdi1003"
+            ]
+        ],
+        "z": "azdi1t0",
+        "endpointType": "env"
+    },
+    {
+        "id": "azdi1003",
+        "type": "debug",
+        "name": "msg.analysis",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "analysis",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 870,
+        "y": 160,
+        "wires": [],
+        "z": "azdi1t0"
+    }
 ]

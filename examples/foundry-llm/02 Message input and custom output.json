@@ -1,72 +1,100 @@
 [
-  {
-    "id": "azf2001",
-    "type": "inject",
-    "name": "Set msg.question",
-    "props": [
-      {
-        "p": "question",
-        "v": "Give me five practical uses for Azure Functions.",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 180,
-    "y": 120,
-    "wires": [
-      [
-        "azf2002"
-      ]
-    ]
-  },
-  {
-    "id": "azf2002",
-    "type": "azure-foundry-llm",
-    "name": "Question to msg.answer",
-    "config": "azf2000",
-    "endpoint": "",
-    "endpointType": "str",
-    "model": "",
-    "modelType": "str",
-    "instructions": "Return a concise bullet list.",
-    "instructionsType": "str",
-    "input": "question",
-    "inputType": "msg",
-    "output": "answer",
-    "outputType": "msg",
-    "outputMode": "text",
-    "maxOutputTokens": "400",
-    "temperature": "0.2",
-    "maxRetries": 4,
-    "timeoutMs": 120000,
-    "includeRawResponse": false,
-    "enableLogging": false,
-    "x": 420,
-    "y": 120,
-    "wires": [
-      [
-        "azf2003"
-      ]
-    ]
-  },
-  {
-    "id": "azf2003",
-    "type": "debug",
-    "name": "msg.answer",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "answer",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 640,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azf2t0",
+        "type": "tab",
+        "label": "azure foundry-llm \u00b7 02 Message input and custom output",
+        "disabled": true,
+        "info": "**Take the question from msg.question, answer into msg.answer**\n\nSends `msg.question` (temperature 0.2, at most 400 output tokens) and writes the answer text to `msg.answer`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a Microsoft Foundry project with a model deployment that you may call (usage may incur charges).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT`: the project endpoint (e.g. `https://<resource>.services.ai.azure.com/api/projects/<project>`)\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL`: the name of your model deployment\n\nThe authentication node **EDIT ME: example Foundry identity** uses **Microsoft Entra ID**: the node uses whatever identity\nthe Node-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test\nidentity** with access to that project only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Set msg.question**.\n\n**Effects:** Each click invokes the model once through the SDK; the SDK may retry (these examples allow up to 4 retries), and service usage may incur charges. The flow provisions no Azure resource. The node sends no `store` option, so whether the service keeps the request or the response follows the service's own settings.\n\n**Expected result:** `msg.answer` with the answer text.\n\n**Cleanup:** these flows do not delete service-retained data; manage retention and any cleanup through the service.\n\n**Not verified:** a real Foundry project, deployment or model output, SDK retries and charges (the tests fake the SDK client and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azf2c0",
+        "type": "comment",
+        "z": "azf2t0",
+        "name": "Take the question from msg.question, answer into msg.answer (see the tab's description)",
+        "info": "**Take the question from msg.question, answer into msg.answer**\n\nSends `msg.question` (temperature 0.2, at most 400 output tokens) and writes the answer text to `msg.answer`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a Microsoft Foundry project with a model deployment that you may call (usage may incur charges).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT`: the project endpoint (e.g. `https://<resource>.services.ai.azure.com/api/projects/<project>`)\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL`: the name of your model deployment\n\nThe authentication node **EDIT ME: example Foundry identity** uses **Microsoft Entra ID**: the node uses whatever identity\nthe Node-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test\nidentity** with access to that project only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Set msg.question**.\n\n**Effects:** Each click invokes the model once through the SDK; the SDK may retry (these examples allow up to 4 retries), and service usage may incur charges. The flow provisions no Azure resource. The node sends no `store` option, so whether the service keeps the request or the response follows the service's own settings.\n\n**Expected result:** `msg.answer` with the answer text.\n\n**Cleanup:** these flows do not delete service-retained data; manage retention and any cleanup through the service.\n\n**Not verified:** a real Foundry project, deployment or model output, SDK retries and charges (the tests fake the SDK client and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azf2000",
+        "type": "azure-auth-config",
+        "z": "azf2t0",
+        "name": "EDIT ME: example Foundry identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azf2001",
+        "type": "inject",
+        "name": "Set msg.question",
+        "props": [
+            {
+                "p": "question",
+                "v": "Give me five practical uses for Azure Functions.",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 180,
+        "y": 120,
+        "wires": [
+            [
+                "azf2002"
+            ]
+        ],
+        "z": "azf2t0"
+    },
+    {
+        "id": "azf2002",
+        "type": "azure-foundry-llm",
+        "name": "Question to msg.answer",
+        "config": "azf2000",
+        "endpoint": "NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT",
+        "endpointType": "env",
+        "model": "NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL",
+        "modelType": "env",
+        "instructions": "Return a concise bullet list.",
+        "instructionsType": "str",
+        "input": "question",
+        "inputType": "msg",
+        "output": "answer",
+        "outputType": "msg",
+        "outputMode": "text",
+        "maxOutputTokens": "400",
+        "temperature": "0.2",
+        "maxRetries": 4,
+        "timeoutMs": 120000,
+        "includeRawResponse": false,
+        "enableLogging": false,
+        "x": 420,
+        "y": 120,
+        "wires": [
+            [
+                "azf2003"
+            ]
+        ],
+        "z": "azf2t0"
+    },
+    {
+        "id": "azf2003",
+        "type": "debug",
+        "name": "msg.answer",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "answer",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 120,
+        "wires": [],
+        "z": "azf2t0"
+    }
 ]

@@ -1,86 +1,124 @@
 [
-  {
-    "id": "azt2001",
-    "type": "inject",
-    "name": "Create source file",
-    "props": [
-      {
-        "p": "payload"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "payload": "Temporary Azure file to move",
-    "payloadType": "str",
-    "x": 240,
-    "y": 320,
-    "wires": [
-      [
-        "azt2002"
-      ]
-    ]
-  },
-  {
-    "id": "azt2002",
-    "type": "azure-file-write",
-    "name": "Create move-source.txt",
-    "config": "azt2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "write",
-    "target": "examples/move-source.txt",
-    "targetType": "str",
-    "data": "payload",
-    "dataType": "msg",
-    "createDir": true,
-    "x": 490,
-    "y": 320,
-    "wires": [
-      [
-        "azt2003"
-      ]
-    ]
-  },
-  {
-    "id": "azt2003",
-    "type": "azure-file-transfer",
-    "name": "Move source",
-    "config": "azt2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "move",
-    "source": "examples/move-source.txt",
-    "sourceType": "str",
-    "destination": "examples/moved.txt",
-    "destinationType": "str",
-    "createDir": true,
-    "x": 730,
-    "y": 320,
-    "wires": [
-      [
-        "azt2004"
-      ]
-    ]
-  },
-  {
-    "id": "azt2004",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 920,
-    "y": 320,
-    "wires": []
-  }
+    {
+        "id": "aztt0",
+        "type": "tab",
+        "label": "azure file-transfer \u00b7 02 Move with setup",
+        "disabled": true,
+        "info": "**Create a file, then move it**\n\nOne click writes `examples/move-source.txt` and moves it to `examples/moved.txt`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Create source file**.\n\n**Effects:** Creates the file, then moves it. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` describing the moved file.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "aztc0",
+        "type": "comment",
+        "z": "aztt0",
+        "name": "Create a file, then move it (see the tab's description)",
+        "info": "**Create a file, then move it**\n\nOne click writes `examples/move-source.txt` and moves it to `examples/moved.txt`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Create source file**.\n\n**Effects:** Creates the file, then moves it. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` describing the moved file.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azt2000a",
+        "type": "azure-auth-config",
+        "z": "aztt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azt2000",
+        "type": "azure-file-config",
+        "z": "aztt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azt2000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azt2001",
+        "type": "inject",
+        "name": "Create source file",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "payload": "Temporary Azure file to move",
+        "payloadType": "str",
+        "x": 240,
+        "y": 320,
+        "wires": [
+            [
+                "azt2002"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt2002",
+        "type": "azure-file-write",
+        "name": "Create move-source.txt",
+        "config": "azt2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "write",
+        "target": "examples/move-source.txt",
+        "targetType": "str",
+        "data": "payload",
+        "dataType": "msg",
+        "createDir": true,
+        "x": 490,
+        "y": 320,
+        "wires": [
+            [
+                "azt2003"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt2003",
+        "type": "azure-file-transfer",
+        "name": "Move source",
+        "config": "azt2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "move",
+        "source": "examples/move-source.txt",
+        "sourceType": "str",
+        "destination": "examples/moved.txt",
+        "destinationType": "str",
+        "createDir": true,
+        "x": 730,
+        "y": 320,
+        "wires": [
+            [
+                "azt2004"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt2004",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 920,
+        "y": 320,
+        "wires": [],
+        "z": "aztt0"
+    }
 ]

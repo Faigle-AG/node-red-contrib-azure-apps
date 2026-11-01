@@ -1,60 +1,95 @@
 [
-  {
-    "id": "azew1001",
-    "type": "inject",
-    "name": "Send email",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 120,
-    "wires": [
-      [
-        "azew1002"
-      ]
-    ]
-  },
-  {
-    "id": "azew1002",
-    "type": "azure-email-write",
-    "name": "Send hello",
-    "config": "azew1000",
-    "userId": "sender@example.com",
-    "userIdType": "str",
-    "dynamic": false,
-    "to": "recipient@example.com",
-    "toType": "str",
-    "subject": "Hello from Node-RED",
-    "subjectType": "str",
-    "body": "<p>Hello from the Azure email node.</p>",
-    "bodyType": "str",
-    "attachments": "",
-    "attachmentsType": "msg",
-    "x": 380,
-    "y": 120,
-    "wires": [
-      [
-        "azew1003"
-      ]
-    ]
-  },
-  {
-    "id": "azew1003",
-    "type": "debug",
-    "name": "msg.email",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "email",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 590,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azewt0",
+        "type": "tab",
+        "label": "azure email-write \u00b7 01 Static send",
+        "disabled": true,
+        "info": "**Send one email**\n\nSends a short HTML email from the configured mailbox to `NODE_RED_EXAMPLE_AZURE_RECIPIENT`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_RECIPIENT`: the address that receives the example emails;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Send email**.\n\n**Effects:** **Sends a real email** each click. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the recipient receives it; `msg.email` describes it.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azewc0",
+        "type": "comment",
+        "z": "azewt0",
+        "name": "Send one email (see the tab's description)",
+        "info": "**Send one email**\n\nSends a short HTML email from the configured mailbox to `NODE_RED_EXAMPLE_AZURE_RECIPIENT`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_RECIPIENT`: the address that receives the example emails;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Send email**.\n\n**Effects:** **Sends a real email** each click. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the recipient receives it; `msg.email` describes it.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azew1000a",
+        "type": "azure-auth-config",
+        "z": "azewt0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azew1000",
+        "type": "azure-email-config",
+        "z": "azewt0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azew1000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azew1001",
+        "type": "inject",
+        "name": "Send email",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 120,
+        "wires": [
+            [
+                "azew1002"
+            ]
+        ],
+        "z": "azewt0"
+    },
+    {
+        "id": "azew1002",
+        "type": "azure-email-write",
+        "name": "Send hello",
+        "config": "azew1000",
+        "dynamic": false,
+        "to": "NODE_RED_EXAMPLE_AZURE_RECIPIENT",
+        "toType": "env",
+        "subject": "Hello from Node-RED",
+        "subjectType": "str",
+        "body": "<p>Hello from the Azure email node.</p>",
+        "bodyType": "str",
+        "attachments": "",
+        "attachmentsType": "msg",
+        "x": 380,
+        "y": 120,
+        "wires": [
+            [
+                "azew1003"
+            ]
+        ],
+        "z": "azewt0"
+    },
+    {
+        "id": "azew1003",
+        "type": "debug",
+        "name": "msg.email",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "email",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 590,
+        "y": 120,
+        "wires": [],
+        "z": "azewt0"
+    }
 ]

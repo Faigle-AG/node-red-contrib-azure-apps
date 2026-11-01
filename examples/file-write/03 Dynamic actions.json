@@ -1,88 +1,126 @@
 [
-  {
-    "id": "azw3001",
-    "type": "inject",
-    "name": "Dynamic write",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"write\",\"path\":\"examples/output/dynamic.txt\",\"data\":\"Created dynamically\\n\",\"createDir\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 90,
-    "wires": [
-      [
-        "azw3003"
-      ]
-    ]
-  },
-  {
-    "id": "azw3002",
-    "type": "inject",
-    "name": "Dynamic append",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"append\",\"path\":\"examples/output/dynamic.txt\",\"data\":\"Appended dynamically\\n\",\"createDir\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 150,
-    "wires": [
-      [
-        "azw3003"
-      ]
-    ]
-  },
-  {
-    "id": "azw3003",
-    "type": "azure-file-write",
-    "name": "Dynamic file write",
-    "config": "azw3000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": true,
-    "action": "write",
-    "target": "",
-    "targetType": "str",
-    "data": "file.data",
-    "dataType": "msg",
-    "createDir": true,
-    "x": 430,
-    "y": 120,
-    "wires": [
-      [
-        "azw3004"
-      ]
-    ]
-  },
-  {
-    "id": "azw3004",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 650,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azwt0",
+        "type": "tab",
+        "label": "azure file-write \u00b7 03 Dynamic actions",
+        "disabled": true,
+        "info": "**Write or append per message**\n\nWith **Load from msg.file**, each message names action, path and data.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic write**, then **Dynamic append**.\n\n**Effects:** Creates or overwrites, then appends. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** the file contains both lines.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azwc0",
+        "type": "comment",
+        "z": "azwt0",
+        "name": "Write or append per message (see the tab's description)",
+        "info": "**Write or append per message**\n\nWith **Load from msg.file**, each message names action, path and data.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic write**, then **Dynamic append**.\n\n**Effects:** Creates or overwrites, then appends. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** the file contains both lines.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azw3000a",
+        "type": "azure-auth-config",
+        "z": "azwt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azw3000",
+        "type": "azure-file-config",
+        "z": "azwt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azw3000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azw3001",
+        "type": "inject",
+        "name": "Dynamic write",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"write\",\"path\":\"examples/output/dynamic.txt\",\"data\":\"Created dynamically\\n\",\"createDir\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 90,
+        "wires": [
+            [
+                "azw3003"
+            ]
+        ],
+        "z": "azwt0"
+    },
+    {
+        "id": "azw3002",
+        "type": "inject",
+        "name": "Dynamic append",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"append\",\"path\":\"examples/output/dynamic.txt\",\"data\":\"Appended dynamically\\n\",\"createDir\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 150,
+        "wires": [
+            [
+                "azw3003"
+            ]
+        ],
+        "z": "azwt0"
+    },
+    {
+        "id": "azw3003",
+        "type": "azure-file-write",
+        "name": "Dynamic file write",
+        "config": "azw3000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": true,
+        "action": "write",
+        "target": "",
+        "targetType": "str",
+        "data": "file.data",
+        "dataType": "msg",
+        "createDir": true,
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "azw3004"
+            ]
+        ],
+        "z": "azwt0"
+    },
+    {
+        "id": "azw3004",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 120,
+        "wires": [],
+        "z": "azwt0"
+    }
 ]

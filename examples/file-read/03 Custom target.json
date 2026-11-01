@@ -1,58 +1,96 @@
 [
-  {
-    "id": "azr3001",
-    "type": "inject",
-    "name": "Read settings.json",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 190,
-    "y": 120,
-    "wires": [
-      [
-        "azr3002"
-      ]
-    ]
-  },
-  {
-    "id": "azr3002",
-    "type": "azure-file-read",
-    "name": "Store under msg.result",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "target": "result",
-    "targetType": "msg",
-    "dynamic": false,
-    "actionRead": true,
-    "actionExists": true,
-    "actionStat": true,
-    "source": "examples/input/settings.json",
-    "sourceType": "str",
-    "x": 430,
-    "y": 120,
-    "wires": [
-      [
-        "azr3003"
-      ]
-    ]
-  },
-  {
-    "id": "azr3003",
-    "type": "debug",
-    "name": "msg.result",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "result",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 670,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azrt0",
+        "type": "tab",
+        "label": "azure file-read \u00b7 03 Custom target",
+        "disabled": true,
+        "info": "**Store the result under msg.result**\n\nReads `examples/input/settings.json` and writes the result to `msg.result`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`).\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read settings.json**.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.result` with `data`, `exists: true` and stats.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azrc0",
+        "type": "comment",
+        "z": "azrt0",
+        "name": "Store the result under msg.result (see the tab's description)",
+        "info": "**Store the result under msg.result**\n\nReads `examples/input/settings.json` and writes the result to `msg.result`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`).\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read settings.json**.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.result` with `data`, `exists: true` and stats.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azr3000a",
+        "type": "azure-auth-config",
+        "z": "azrt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azr3000",
+        "type": "azure-file-config",
+        "z": "azrt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azr3000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azr3001",
+        "type": "inject",
+        "name": "Read settings.json",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "azr3002"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr3002",
+        "type": "azure-file-read",
+        "name": "Store under msg.result",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "target": "result",
+        "targetType": "msg",
+        "dynamic": false,
+        "actionRead": true,
+        "actionExists": true,
+        "actionStat": true,
+        "source": "examples/input/settings.json",
+        "sourceType": "str",
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "azr3003"
+            ]
+        ],
+        "z": "azrt0",
+        "config": "azr3000"
+    },
+    {
+        "id": "azr3003",
+        "type": "debug",
+        "name": "msg.result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "result",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 670,
+        "y": 120,
+        "wires": [],
+        "z": "azrt0"
+    }
 ]

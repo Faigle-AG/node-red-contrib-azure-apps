@@ -1,112 +1,151 @@
 [
-  {
-    "id": "azda3001",
-    "type": "inject",
-    "name": "Dynamic create",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"create\",\"path\":\"examples/dynamic/nested\",\"recursive\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 80,
-    "wires": [
-      [
-        "azda3004"
-      ]
-    ]
-  },
-  {
-    "id": "azda3002",
-    "type": "inject",
-    "name": "Dynamic list",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"list\",\"path\":\"examples/dynamic\"}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 160,
-    "y": 140,
-    "wires": [
-      [
-        "azda3004"
-      ]
-    ]
-  },
-  {
-    "id": "azda3003",
-    "type": "inject",
-    "name": "Dynamic delete",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"delete\",\"path\":\"examples/dynamic\",\"recursive\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 200,
-    "wires": [
-      [
-        "azda3004"
-      ]
-    ]
-  },
-  {
-    "id": "azda3004",
-    "type": "azure-directory-action",
-    "name": "Dynamic directory action",
-    "config": "azda3000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": true,
-    "action": "list",
-    "source": "",
-    "sourceType": "str",
-    "property": "file.content",
-    "propertyType": "msg",
-    "recursive": true,
-    "x": 440,
-    "y": 140,
-    "wires": [
-      [
-        "azda3005"
-      ]
-    ]
-  },
-  {
-    "id": "azda3005",
-    "type": "debug",
-    "name": "msg",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "true",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 680,
-    "y": 140,
-    "wires": []
-  }
+    {
+        "id": "azdat0",
+        "type": "tab",
+        "label": "azure directory-action \u00b7 03 Dynamic actions",
+        "disabled": true,
+        "info": "**Folder actions per message**\n\nWith **Load from msg.file**, each message names its action and path.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic create**, **Dynamic list**, **Dynamic delete** in order.\n\n**Effects:** Creates, lists and recursively deletes `examples/dynamic`. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** the list shows `nested`.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azdac0",
+        "type": "comment",
+        "z": "azdat0",
+        "name": "Folder actions per message (see the tab's description)",
+        "info": "**Folder actions per message**\n\nWith **Load from msg.file**, each message names its action and path.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic create**, **Dynamic list**, **Dynamic delete** in order.\n\n**Effects:** Creates, lists and recursively deletes `examples/dynamic`. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** the list shows `nested`.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azda3000a",
+        "type": "azure-auth-config",
+        "z": "azdat0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azda3000",
+        "type": "azure-file-config",
+        "z": "azdat0",
+        "name": "EDIT ME: example file share",
+        "auth": "azda3000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azda3001",
+        "type": "inject",
+        "name": "Dynamic create",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"create\",\"path\":\"examples/dynamic/nested\",\"recursive\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 80,
+        "wires": [
+            [
+                "azda3004"
+            ]
+        ],
+        "z": "azdat0"
+    },
+    {
+        "id": "azda3002",
+        "type": "inject",
+        "name": "Dynamic list",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"list\",\"path\":\"examples/dynamic\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 160,
+        "y": 140,
+        "wires": [
+            [
+                "azda3004"
+            ]
+        ],
+        "z": "azdat0"
+    },
+    {
+        "id": "azda3003",
+        "type": "inject",
+        "name": "Dynamic delete",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"delete\",\"path\":\"examples/dynamic\",\"recursive\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 200,
+        "wires": [
+            [
+                "azda3004"
+            ]
+        ],
+        "z": "azdat0"
+    },
+    {
+        "id": "azda3004",
+        "type": "azure-directory-action",
+        "name": "Dynamic directory action",
+        "config": "azda3000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": true,
+        "action": "list",
+        "source": "",
+        "sourceType": "str",
+        "property": "file.content",
+        "propertyType": "msg",
+        "recursive": true,
+        "x": 440,
+        "y": 140,
+        "wires": [
+            [
+                "azda3005"
+            ]
+        ],
+        "z": "azdat0"
+    },
+    {
+        "id": "azda3005",
+        "type": "debug",
+        "name": "msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 140,
+        "wires": [],
+        "z": "azdat0"
+    }
 ]

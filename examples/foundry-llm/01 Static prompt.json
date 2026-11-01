@@ -1,72 +1,100 @@
 [
-  {
-    "id": "azf1001",
-    "type": "inject",
-    "name": "Ask Foundry",
-    "props": [
-      {
-        "p": "payload",
-        "v": "Explain what Node-RED is in three short sentences.",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 120,
-    "wires": [
-      [
-        "azf1002"
-      ]
-    ]
-  },
-  {
-    "id": "azf1002",
-	"type": "azure-foundry-llm",
-    "name": "Basic Foundry request",
-    "config": "azf1000",
-    "endpoint": "",
-    "endpointType": "str",
-    "model": "",
-    "modelType": "str",
-    "instructions": "Answer clearly and concisely.",
-    "instructionsType": "str",
-    "input": "payload",
-    "inputType": "msg",
-    "output": "payload",
-    "outputType": "msg",
-    "outputMode": "text",
-    "maxOutputTokens": "300",
-    "temperature": "",
-    "maxRetries": 4,
-    "timeoutMs": 120000,
-    "includeRawResponse": false,
-    "enableLogging": false,
-    "x": 410,
-    "y": 120,
-    "wires": [
-      [
-        "azf1003"
-      ]
-    ]
-  },
-  {
-    "id": "azf1003",
-    "type": "debug",
-    "name": "msg.payload",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "payload",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 640,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azf1t0",
+        "type": "tab",
+        "label": "azure foundry-llm \u00b7 01 Static prompt",
+        "disabled": true,
+        "info": "**Ask a Foundry model a fixed question**\n\nSends `msg.payload` with short instructions to your model deployment and writes the answer text to `msg.payload`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a Microsoft Foundry project with a model deployment that you may call (usage may incur charges).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT`: the project endpoint (e.g. `https://<resource>.services.ai.azure.com/api/projects/<project>`)\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL`: the name of your model deployment\n\nThe authentication node **EDIT ME: example Foundry identity** uses **Microsoft Entra ID**: the node uses whatever identity\nthe Node-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test\nidentity** with access to that project only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Ask Foundry**.\n\n**Effects:** Each click invokes the model once through the SDK; the SDK may retry (these examples allow up to 4 retries), and service usage may incur charges. The flow provisions no Azure resource. The node sends no `store` option, so whether the service keeps the request or the response follows the service's own settings.\n\n**Expected result:** `msg.payload` with the answer text.\n\n**Cleanup:** these flows do not delete service-retained data; manage retention and any cleanup through the service.\n\n**Not verified:** a real Foundry project, deployment or model output, SDK retries and charges (the tests fake the SDK client and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azf1c0",
+        "type": "comment",
+        "z": "azf1t0",
+        "name": "Ask a Foundry model a fixed question (see the tab's description)",
+        "info": "**Ask a Foundry model a fixed question**\n\nSends `msg.payload` with short instructions to your model deployment and writes the answer text to `msg.payload`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a Microsoft Foundry project with a model deployment that you may call (usage may incur charges).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT`: the project endpoint (e.g. `https://<resource>.services.ai.azure.com/api/projects/<project>`)\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL`: the name of your model deployment\n\nThe authentication node **EDIT ME: example Foundry identity** uses **Microsoft Entra ID**: the node uses whatever identity\nthe Node-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test\nidentity** with access to that project only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Ask Foundry**.\n\n**Effects:** Each click invokes the model once through the SDK; the SDK may retry (these examples allow up to 4 retries), and service usage may incur charges. The flow provisions no Azure resource. The node sends no `store` option, so whether the service keeps the request or the response follows the service's own settings.\n\n**Expected result:** `msg.payload` with the answer text.\n\n**Cleanup:** these flows do not delete service-retained data; manage retention and any cleanup through the service.\n\n**Not verified:** a real Foundry project, deployment or model output, SDK retries and charges (the tests fake the SDK client and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azf1000",
+        "type": "azure-auth-config",
+        "z": "azf1t0",
+        "name": "EDIT ME: example Foundry identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azf1001",
+        "type": "inject",
+        "name": "Ask Foundry",
+        "props": [
+            {
+                "p": "payload",
+                "v": "Explain what Node-RED is in three short sentences.",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 120,
+        "wires": [
+            [
+                "azf1002"
+            ]
+        ],
+        "z": "azf1t0"
+    },
+    {
+        "id": "azf1002",
+        "type": "azure-foundry-llm",
+        "name": "Basic Foundry request",
+        "config": "azf1000",
+        "endpoint": "NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT",
+        "endpointType": "env",
+        "model": "NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL",
+        "modelType": "env",
+        "instructions": "Answer clearly and concisely.",
+        "instructionsType": "str",
+        "input": "payload",
+        "inputType": "msg",
+        "output": "payload",
+        "outputType": "msg",
+        "outputMode": "text",
+        "maxOutputTokens": "300",
+        "temperature": "",
+        "maxRetries": 4,
+        "timeoutMs": 120000,
+        "includeRawResponse": false,
+        "enableLogging": false,
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "azf1003"
+            ]
+        ],
+        "z": "azf1t0"
+    },
+    {
+        "id": "azf1003",
+        "type": "debug",
+        "name": "msg.payload",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 120,
+        "wires": [],
+        "z": "azf1t0"
+    }
 ]

@@ -1,62 +1,97 @@
 [
-  {
-    "id": "azet3001",
-    "type": "inject",
-    "name": "Dynamic move",
-    "props": [
-      {
-        "p": "email",
-        "v": "{\"action\":\"transfer\",\"messageId\":\"REPLACE-WITH-GRAPH-MESSAGE-ID\",\"destinationId\":\"deleteditems\",\"destnationName\":\"Deleted Items\"}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 280,
-    "y": 340,
-    "wires": [
-      [
-        "azet3002"
-      ]
-    ]
-  },
-  {
-    "id": "azet3002",
-    "type": "azure-email-transfer",
-    "name": "Dynamic email transfer",
-    "config": "azet3000",
-    "userId": "user@example.com",
-    "userIdType": "str",
-    "dynamic": true,
-    "messageId": "",
-    "messageIdType": "str",
-    "destinationId": "archive",
-    "destinationName": "Archive",
-    "x": 530,
-    "y": 340,
-    "wires": [
-      [
-        "azet3003"
-      ]
-    ]
-  },
-  {
-    "id": "azet3003",
-    "type": "debug",
-    "name": "msg.email",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "email",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 760,
-    "y": 340,
-    "wires": []
-  }
+    {
+        "id": "azett0",
+        "type": "tab",
+        "label": "azure email-transfer \u00b7 03 Dynamic transfer",
+        "disabled": true,
+        "info": "**Move a message chosen per message**\n\nWith **Load from msg.email**, the message names the message ID and the destination folder (Deleted Items).\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_MESSAGE_ID`: the Graph ID of a message in that mailbox to move;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic move**.\n\n**Effects:** Moves one message to Deleted Items; not undone automatically. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.email` describing the move.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azetc0",
+        "type": "comment",
+        "z": "azett0",
+        "name": "Move a message chosen per message (see the tab's description)",
+        "info": "**Move a message chosen per message**\n\nWith **Load from msg.email**, the message names the message ID and the destination folder (Deleted Items).\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_MESSAGE_ID`: the Graph ID of a message in that mailbox to move;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic move**.\n\n**Effects:** Moves one message to Deleted Items; not undone automatically. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.email` describing the move.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azet3000a",
+        "type": "azure-auth-config",
+        "z": "azett0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azet3000",
+        "type": "azure-email-config",
+        "z": "azett0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azet3000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azet3001",
+        "type": "inject",
+        "name": "Dynamic move",
+        "props": [
+            {
+                "p": "email",
+                "v": "{\"action\": \"transfer\", \"messageId\": $env(\"NODE_RED_EXAMPLE_AZURE_MESSAGE_ID\"), \"destinationId\": \"deleteditems\", \"destinationName\": \"Deleted Items\"}",
+                "vt": "jsonata"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 280,
+        "y": 340,
+        "wires": [
+            [
+                "azet3002"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet3002",
+        "type": "azure-email-transfer",
+        "name": "Dynamic email transfer",
+        "config": "azet3000",
+        "dynamic": true,
+        "messageId": "",
+        "messageIdType": "str",
+        "destinationId": "archive",
+        "destinationName": "Archive",
+        "x": 530,
+        "y": 340,
+        "wires": [
+            [
+                "azet3003"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet3003",
+        "type": "debug",
+        "name": "msg.email",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "email",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 760,
+        "y": 340,
+        "wires": [],
+        "z": "azett0"
+    }
 ]

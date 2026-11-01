@@ -1,64 +1,93 @@
 [
-  {
-    "id": "azer4001",
-    "type": "inject",
-    "name": "Set msg.mailbox",
-    "props": [
-      {
-        "p": "mailbox",
-        "v": "user@example.com",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 120,
-    "wires": [
-      [
-        "azer4002"
-      ]
-    ]
-  },
-  {
-    "id": "azer4002",
-    "type": "azure-email-read",
-    "name": "Read mailbox from msg",
-    "config": "azer4000",
-    "dynamic": false,
-    "userId": "mailbox",
-    "userIdType": "msg",
-    "folderId": "inbox",
-    "folderName": "Inbox",
-    "limit": 10,
-    "downloadAttachments": true,
-    "output": "emails",
-    "outputType": "msg",
-    "x": 420,
-    "y": 120,
-    "wires": [
-      [
-        "azer4003"
-      ]
-    ]
-  },
-  {
-    "id": "azer4003",
-    "type": "debug",
-    "name": "msg.emails",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "emails",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 640,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azert0",
+        "type": "tab",
+        "label": "azure email-read \u00b7 04 Message user",
+        "disabled": true,
+        "info": "**Read the Inbox of the configured mailbox**\n\nThis file was the \"message user\" example. The mailbox is chosen on the **email configuration** (`NODE_RED_EXAMPLE_AZURE_MAILBOX`), not by `msg.mailbox`: the node never read a per-message mailbox. It reads up to 10 Inbox messages.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address).\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read the configured mailbox**.\n\n**Effects:** Read-only: lists messages from the mailbox. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.emails` with the messages.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azerc0",
+        "type": "comment",
+        "z": "azert0",
+        "name": "Read the Inbox of the configured mailbox (see the tab's description)",
+        "info": "**Read the Inbox of the configured mailbox**\n\nThis file was the \"message user\" example. The mailbox is chosen on the **email configuration** (`NODE_RED_EXAMPLE_AZURE_MAILBOX`), not by `msg.mailbox`: the node never read a per-message mailbox. It reads up to 10 Inbox messages.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address).\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read the configured mailbox**.\n\n**Effects:** Read-only: lists messages from the mailbox. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.emails` with the messages.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azer4000a",
+        "type": "azure-auth-config",
+        "z": "azert0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azer4000",
+        "type": "azure-email-config",
+        "z": "azert0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azer4000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azer4001",
+        "type": "inject",
+        "name": "Read the configured mailbox",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 120,
+        "wires": [
+            [
+                "azer4002"
+            ]
+        ],
+        "z": "azert0"
+    },
+    {
+        "id": "azer4002",
+        "type": "azure-email-read",
+        "name": "Read the configured mailbox",
+        "config": "azer4000",
+        "dynamic": false,
+        "folderId": "inbox",
+        "folderName": "Inbox",
+        "limit": 10,
+        "downloadAttachments": true,
+        "output": "emails",
+        "outputType": "msg",
+        "x": 420,
+        "y": 120,
+        "wires": [
+            [
+                "azer4003"
+            ]
+        ],
+        "z": "azert0"
+    },
+    {
+        "id": "azer4003",
+        "type": "debug",
+        "name": "msg.emails",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "emails",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 120,
+        "wires": [],
+        "z": "azert0"
+    }
 ]

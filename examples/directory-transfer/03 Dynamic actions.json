@@ -1,88 +1,126 @@
 [
-  {
-    "id": "azdt3001",
-    "type": "inject",
-    "name": "Dynamic copy",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"copy\",\"source\":\"examples/input\",\"destination\":\"examples/dynamic-copy\",\"recursive\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 90,
-    "wires": [
-      [
-        "azdt3003"
-      ]
-    ]
-  },
-  {
-    "id": "azdt3002",
-    "type": "inject",
-    "name": "Dynamic move",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"move\",\"source\":\"examples/dynamic-copy\",\"destination\":\"examples/archive/dynamic-moved\",\"recursive\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 160,
-    "wires": [
-      [
-        "azdt3003"
-      ]
-    ]
-  },
-  {
-    "id": "azdt3003",
-    "type": "azure-directory-transfer",
-    "name": "Dynamic directory transfer",
-    "config": "azdt3000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": true,
-    "action": "move",
-    "source": "",
-    "sourceType": "str",
-    "destination": "",
-    "destinationType": "str",
-    "recursive": true,
-    "x": 440,
-    "y": 125,
-    "wires": [
-      [
-        "azdt3004"
-      ]
-    ]
-  },
-  {
-    "id": "azdt3004",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 690,
-    "y": 125,
-    "wires": []
-  }
+    {
+        "id": "azdtt0",
+        "type": "tab",
+        "label": "azure directory-transfer \u00b7 03 Dynamic actions",
+        "disabled": true,
+        "info": "**Copy and move folders per message**\n\nWith **Load from msg.file**, each message names its action and paths.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`); the copy and the moved folder contain it.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic copy**, then **Dynamic move**.\n\n**Effects:** Creates a copy, then moves it under `examples/archive/`. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` after each step.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azdtc0",
+        "type": "comment",
+        "z": "azdtt0",
+        "name": "Copy and move folders per message (see the tab's description)",
+        "info": "**Copy and move folders per message**\n\nWith **Load from msg.file**, each message names its action and paths.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`); the copy and the moved folder contain it.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic copy**, then **Dynamic move**.\n\n**Effects:** Creates a copy, then moves it under `examples/archive/`. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` after each step.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azdt3000a",
+        "type": "azure-auth-config",
+        "z": "azdtt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azdt3000",
+        "type": "azure-file-config",
+        "z": "azdtt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azdt3000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azdt3001",
+        "type": "inject",
+        "name": "Dynamic copy",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"copy\",\"source\":\"examples/input\",\"destination\":\"examples/dynamic-copy\",\"recursive\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 90,
+        "wires": [
+            [
+                "azdt3003"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt3002",
+        "type": "inject",
+        "name": "Dynamic move",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"move\",\"source\":\"examples/dynamic-copy\",\"destination\":\"examples/archive/dynamic-moved\",\"recursive\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 160,
+        "wires": [
+            [
+                "azdt3003"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt3003",
+        "type": "azure-directory-transfer",
+        "name": "Dynamic directory transfer",
+        "config": "azdt3000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": true,
+        "action": "move",
+        "source": "",
+        "sourceType": "str",
+        "destination": "",
+        "destinationType": "str",
+        "recursive": true,
+        "x": 440,
+        "y": 125,
+        "wires": [
+            [
+                "azdt3004"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt3004",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 125,
+        "wires": [],
+        "z": "azdtt0"
+    }
 ]

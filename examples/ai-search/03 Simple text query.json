@@ -1,76 +1,117 @@
 [
-  {
-    "id": "ais0301",
-    "type": "inject",
-    "name": "Search Anna Keller",
-    "props": [
-      {
-        "p": "searchText",
-        "v": "Anna Keller",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 0.1,
-    "topic": "",
-    "x": 160,
-    "y": 120,
-    "wires": [
-      [
-        "ais0302"
-      ]
-    ]
-  },
-  {
-    "id": "ais0302",
-    "type": "azure-ai-search-query",
-    "name": "AI Search - Query customers",
-    "endpoint": "https://YOUR-SEARCH-SERVICE.search.windows.net",
-    "endpointType": "str",
-    "indexName": "test",
-    "indexNameType": "str",
-    "query": "searchText",
-    "queryType": "msg",
-    "querySyntax": "simple",
-    "searchMode": "any",
-    "searchFields": "first_name,last_name,customer_number,insurance_number,policy_id,notes",
-    "select": "",
-    "filter": "",
-    "top": 10,
-    "skip": "",
-    "count": false,
-    "semanticConfiguration": "",
-    "additionalParameters": "{}",
-    "additionalParametersType": "json",
-    "output": "searchResults",
-    "outputType": "msg",
-    "outputMode": "documents",
-    "timeoutMs": 30000,
-    "enableLogging": false,
-    "x": 430,
-    "y": 120,
-    "wires": [
-      [
-        "ais0303"
-      ]
-    ]
-  },
-  {
-    "id": "ais0303",
-    "type": "debug",
-    "name": "Search results",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "searchResults",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 700,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "ais03t0",
+        "type": "tab",
+        "label": "azure ai-search \u00b7 03 Simple text query",
+        "disabled": true,
+        "info": "**Search the index**\n\nSearches the synthetic customers for \"Anna Keller\". Run 01 and 02 first.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and an Azure AI Search service where you may create a **disposable** index.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_SEARCH_ENDPOINT` (e.g. `https://<service>.search.windows.net`)\nand `NODE_RED_EXAMPLE_AZURE_SEARCH_INDEX` (an index name used only for these examples). Open **EDIT ME: example Search key** and\nenter an admin or query key as appropriate. This example contains no key. All Search examples use the same index, so they agree.\nIf the endpoint or index is unset, the node reports it missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Search Anna Keller**.\n\n**Effects:** Read-only. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the Debug sidebar shows the result object named in the node.\n\n**Cleanup:** delete the example index when you are done.\n\n**Not verified:** a real Search service (the tests fake the HTTP calls), and behaviour in the editor."
+    },
+    {
+        "id": "ais03c0",
+        "type": "comment",
+        "z": "ais03t0",
+        "name": "Search the index (see the tab's description)",
+        "info": "**Search the index**\n\nSearches the synthetic customers for \"Anna Keller\". Run 01 and 02 first.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and an Azure AI Search service where you may create a **disposable** index.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_SEARCH_ENDPOINT` (e.g. `https://<service>.search.windows.net`)\nand `NODE_RED_EXAMPLE_AZURE_SEARCH_INDEX` (an index name used only for these examples). Open **EDIT ME: example Search key** and\nenter an admin or query key as appropriate. This example contains no key. All Search examples use the same index, so they agree.\nIf the endpoint or index is unset, the node reports it missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Search Anna Keller**.\n\n**Effects:** Read-only. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the Debug sidebar shows the result object named in the node.\n\n**Cleanup:** delete the example index when you are done.\n\n**Not verified:** a real Search service (the tests fake the HTTP calls), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "ais0300",
+        "type": "azure-auth-config",
+        "z": "ais03t0",
+        "name": "EDIT ME: example Search key",
+        "authType": "apiKey",
+        "accountName": ""
+    },
+    {
+        "id": "ais0301",
+        "type": "inject",
+        "name": "Search Anna Keller",
+        "props": [
+            {
+                "p": "searchText",
+                "v": "Anna Keller",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 160,
+        "y": 120,
+        "wires": [
+            [
+                "ais0302"
+            ]
+        ],
+        "z": "ais03t0"
+    },
+    {
+        "id": "ais0302",
+        "type": "azure-ai-search-query",
+        "name": "AI Search - Query customers",
+        "endpoint": "NODE_RED_EXAMPLE_AZURE_SEARCH_ENDPOINT",
+        "endpointType": "env",
+        "indexName": "NODE_RED_EXAMPLE_AZURE_SEARCH_INDEX",
+        "indexNameType": "env",
+        "query": "searchText",
+        "queryType": "msg",
+        "querySyntax": "simple",
+        "searchMode": "any",
+        "searchFields": "first_name,last_name,customer_number,insurance_number,policy_id,notes",
+        "select": "",
+        "filter": "",
+        "top": 10,
+        "skip": "",
+        "count": false,
+        "semanticConfiguration": "",
+        "additionalParameters": "{}",
+        "additionalParametersType": "json",
+        "output": "searchResults",
+        "outputType": "msg",
+        "outputMode": "documents",
+        "timeoutMs": 30000,
+        "enableLogging": false,
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "ais0303"
+            ]
+        ],
+        "z": "ais03t0",
+        "config": "ais0300",
+        "querySyntaxType": "str",
+        "searchModeType": "str",
+        "searchFieldsType": "str",
+        "selectType": "str",
+        "filterType": "str",
+        "topType": "num",
+        "skipType": "num",
+        "countType": "bool",
+        "semanticConfigurationType": "str",
+        "outputModeType": "str",
+        "timeoutMsType": "num",
+        "enableLoggingType": "bool"
+    },
+    {
+        "id": "ais0303",
+        "type": "debug",
+        "name": "Search results",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "searchResults",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 700,
+        "y": 120,
+        "wires": [],
+        "z": "ais03t0"
+    }
 ]

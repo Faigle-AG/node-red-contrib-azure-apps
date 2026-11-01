@@ -1,87 +1,115 @@
 [
-  {
-    "id": "azf3001",
-    "type": "inject",
-    "name": "Set request configuration",
-    "props": [
-      {
-        "p": "foundryEndpoint",
-        "v": "https://YOUR-RESOURCE.services.ai.azure.com/api/projects/YOUR-PROJECT",
-        "vt": "str"
-      },
-      {
-        "p": "foundryModel",
-        "v": "YOUR-MODEL-DEPLOYMENT",
-        "vt": "str"
-      },
-      {
-        "p": "systemPrompt",
-        "v": "Respond as a technical assistant. Keep the answer under 100 words.",
-        "vt": "str"
-      },
-      {
-        "p": "payload",
-        "v": "What is the difference between authentication and authorization?",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 190,
-    "y": 120,
-    "wires": [
-      [
-        "azf3002"
-      ]
-    ]
-  },
-  {
-    "id": "azf3002",
-    "type": "azure-foundry-llm",
-    "name": "Config from msg",
-    "config": "azf3000",
-    "endpoint": "foundryEndpoint",
-    "endpointType": "msg",
-    "model": "foundryModel",
-    "modelType": "msg",
-    "instructions": "systemPrompt",
-    "instructionsType": "msg",
-    "input": "payload",
-    "inputType": "msg",
-    "output": "payload",
-    "outputType": "msg",
-    "outputMode": "text",
-    "maxOutputTokens": "300",
-    "temperature": "0",
-    "maxRetries": 4,
-    "timeoutMs": 120000,
-    "includeRawResponse": false,
-    "enableLogging": false,
-    "x": 430,
-    "y": 120,
-    "wires": [
-      [
-        "azf3003"
-      ]
-    ]
-  },
-  {
-    "id": "azf3003",
-    "type": "debug",
-    "name": "msg",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "true",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 640,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azf3t0",
+        "type": "tab",
+        "label": "azure foundry-llm \u00b7 03 Message configuration",
+        "disabled": true,
+        "info": "**Endpoint, model and instructions from the message**\n\nThe inject fills `msg.foundryEndpoint` and `msg.foundryModel` from the same variables, plus `msg.systemPrompt` and the question; the node reads all of them from the message.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a Microsoft Foundry project with a model deployment that you may call (usage may incur charges).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT`: the project endpoint (e.g. `https://<resource>.services.ai.azure.com/api/projects/<project>`)\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL`: the name of your model deployment\n\nThe authentication node **EDIT ME: example Foundry identity** uses **Microsoft Entra ID**: the node uses whatever identity\nthe Node-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test\nidentity** with access to that project only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Set request configuration**.\n\n**Effects:** Each click invokes the model once through the SDK; the SDK may retry (these examples allow up to 4 retries), and service usage may incur charges. The flow provisions no Azure resource. The node sends no `store` option, so whether the service keeps the request or the response follows the service's own settings. The Debug node shows the **complete message**. Use synthetic prompts, and do not share the editor or its Debug output when your prompts are sensitive.\n\n**Expected result:** the complete message, with the answer text in `msg.payload` and request details in `msg.foundry`.\n\n**Cleanup:** these flows do not delete service-retained data; manage retention and any cleanup through the service.\n\n**Not verified:** a real Foundry project, deployment or model output, SDK retries and charges (the tests fake the SDK client and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azf3c0",
+        "type": "comment",
+        "z": "azf3t0",
+        "name": "Endpoint, model and instructions from the message (see the tab's description)",
+        "info": "**Endpoint, model and instructions from the message**\n\nThe inject fills `msg.foundryEndpoint` and `msg.foundryModel` from the same variables, plus `msg.systemPrompt` and the question; the node reads all of them from the message.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a Microsoft Foundry project with a model deployment that you may call (usage may incur charges).\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT`: the project endpoint (e.g. `https://<resource>.services.ai.azure.com/api/projects/<project>`)\n- `NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL`: the name of your model deployment\n\nThe authentication node **EDIT ME: example Foundry identity** uses **Microsoft Entra ID**: the node uses whatever identity\nthe Node-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test\nidentity** with access to that project only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration node is on the same tab. Enable the tab, deploy, then click **Set request configuration**.\n\n**Effects:** Each click invokes the model once through the SDK; the SDK may retry (these examples allow up to 4 retries), and service usage may incur charges. The flow provisions no Azure resource. The node sends no `store` option, so whether the service keeps the request or the response follows the service's own settings. The Debug node shows the **complete message**. Use synthetic prompts, and do not share the editor or its Debug output when your prompts are sensitive.\n\n**Expected result:** the complete message, with the answer text in `msg.payload` and request details in `msg.foundry`.\n\n**Cleanup:** these flows do not delete service-retained data; manage retention and any cleanup through the service.\n\n**Not verified:** a real Foundry project, deployment or model output, SDK retries and charges (the tests fake the SDK client and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azf3000",
+        "type": "azure-auth-config",
+        "z": "azf3t0",
+        "name": "EDIT ME: example Foundry identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azf3001",
+        "type": "inject",
+        "name": "Set request configuration",
+        "props": [
+            {
+                "p": "foundryEndpoint",
+                "v": "NODE_RED_EXAMPLE_AZURE_FOUNDRY_ENDPOINT",
+                "vt": "env"
+            },
+            {
+                "p": "foundryModel",
+                "v": "NODE_RED_EXAMPLE_AZURE_FOUNDRY_MODEL",
+                "vt": "env"
+            },
+            {
+                "p": "systemPrompt",
+                "v": "Respond as a technical assistant. Keep the answer under 100 words.",
+                "vt": "str"
+            },
+            {
+                "p": "payload",
+                "v": "What is the difference between authentication and authorization?",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "azf3002"
+            ]
+        ],
+        "z": "azf3t0"
+    },
+    {
+        "id": "azf3002",
+        "type": "azure-foundry-llm",
+        "name": "Config from msg",
+        "config": "azf3000",
+        "endpoint": "foundryEndpoint",
+        "endpointType": "msg",
+        "model": "foundryModel",
+        "modelType": "msg",
+        "instructions": "systemPrompt",
+        "instructionsType": "msg",
+        "input": "payload",
+        "inputType": "msg",
+        "output": "payload",
+        "outputType": "msg",
+        "outputMode": "text",
+        "maxOutputTokens": "300",
+        "temperature": "0",
+        "maxRetries": 4,
+        "timeoutMs": 120000,
+        "includeRawResponse": false,
+        "enableLogging": false,
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "azf3003"
+            ]
+        ],
+        "z": "azf3t0"
+    },
+    {
+        "id": "azf3003",
+        "type": "debug",
+        "name": "msg",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 120,
+        "wires": [],
+        "z": "azf3t0"
+    }
 ]

@@ -1,64 +1,101 @@
 [
-  {
-    "id": "azw2001",
-    "type": "inject",
-    "name": "Append log line",
-    "props": [
-      {
-        "p": "payload"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "payload": "$now() & \" - New Azure log entry\\n\"",
-    "payloadType": "jsonata",
-    "x": 190,
-    "y": 120,
-    "wires": [
-      [
-        "azw2002"
-      ]
-    ]
-  },
-  {
-    "id": "azw2002",
-    "type": "azure-file-write",
-    "name": "Append application.log",
-    "config": "azw2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "append",
-    "target": "examples/output/application.log",
-    "targetType": "str",
-    "data": "payload",
-    "dataType": "msg",
-    "createDir": true,
-    "x": 440,
-    "y": 120,
-    "wires": [
-      [
-        "azw2003"
-      ]
-    ]
-  },
-  {
-    "id": "azw2003",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 680,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azwt0",
+        "type": "tab",
+        "label": "azure file-write \u00b7 02 Append",
+        "disabled": true,
+        "info": "**Append a log line in the share**\n\nEach click appends one timestamped line to `examples/output/application.log`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Append log line**.\n\n**Effects:** Creates the file if needed, then appends. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** one more line per click.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azwc0",
+        "type": "comment",
+        "z": "azwt0",
+        "name": "Append a log line in the share (see the tab's description)",
+        "info": "**Append a log line in the share**\n\nEach click appends one timestamped line to `examples/output/application.log`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Append log line**.\n\n**Effects:** Creates the file if needed, then appends. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** one more line per click.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azw2000a",
+        "type": "azure-auth-config",
+        "z": "azwt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azw2000",
+        "type": "azure-file-config",
+        "z": "azwt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azw2000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azw2001",
+        "type": "inject",
+        "name": "Append log line",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "payload": "$now() & \" - New Azure log entry\\n\"",
+        "payloadType": "jsonata",
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "azw2002"
+            ]
+        ],
+        "z": "azwt0"
+    },
+    {
+        "id": "azw2002",
+        "type": "azure-file-write",
+        "name": "Append application.log",
+        "config": "azw2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "append",
+        "target": "examples/output/application.log",
+        "targetType": "str",
+        "data": "payload",
+        "dataType": "msg",
+        "createDir": true,
+        "x": 440,
+        "y": 120,
+        "wires": [
+            [
+                "azw2003"
+            ]
+        ],
+        "z": "azwt0"
+    },
+    {
+        "id": "azw2003",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 120,
+        "wires": [],
+        "z": "azwt0"
+    }
 ]

@@ -1,58 +1,93 @@
 [
-  {
-    "id": "azer3001",
-    "type": "inject",
-    "name": "Read Inbox",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 120,
-    "wires": [
-      [
-        "azer3002"
-      ]
-    ]
-  },
-  {
-    "id": "azer3002",
-    "type": "azure-email-read",
-    "name": "Store under msg.result",
-    "config": "azer3000",
-    "dynamic": false,
-    "userId": "user@example.com",
-    "userIdType": "str",
-    "folderId": "inbox",
-    "folderName": "Inbox",
-    "limit": 5,
-    "downloadAttachments": false,
-    "output": "result",
-    "outputType": "msg",
-    "x": 410,
-    "y": 120,
-    "wires": [
-      [
-        "azer3003"
-      ]
-    ]
-  },
-  {
-    "id": "azer3003",
-    "type": "debug",
-    "name": "msg.result",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "result",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 630,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azert0",
+        "type": "tab",
+        "label": "azure email-read \u00b7 03 Custom target",
+        "disabled": true,
+        "info": "**Store the messages under msg.result**\n\nReads up to 5 Inbox messages into `msg.result`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address).\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read Inbox**.\n\n**Effects:** Read-only: lists messages from the mailbox. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.result` with the messages.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azerc0",
+        "type": "comment",
+        "z": "azert0",
+        "name": "Store the messages under msg.result (see the tab's description)",
+        "info": "**Store the messages under msg.result**\n\nReads up to 5 Inbox messages into `msg.result`.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address).\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read Inbox**.\n\n**Effects:** Read-only: lists messages from the mailbox. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.result` with the messages.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azer3000a",
+        "type": "azure-auth-config",
+        "z": "azert0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azer3000",
+        "type": "azure-email-config",
+        "z": "azert0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azer3000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azer3001",
+        "type": "inject",
+        "name": "Read Inbox",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 120,
+        "wires": [
+            [
+                "azer3002"
+            ]
+        ],
+        "z": "azert0"
+    },
+    {
+        "id": "azer3002",
+        "type": "azure-email-read",
+        "name": "Store under msg.result",
+        "config": "azer3000",
+        "dynamic": false,
+        "folderId": "inbox",
+        "folderName": "Inbox",
+        "limit": 5,
+        "downloadAttachments": false,
+        "output": "result",
+        "outputType": "msg",
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "azer3003"
+            ]
+        ],
+        "z": "azert0"
+    },
+    {
+        "id": "azer3003",
+        "type": "debug",
+        "name": "msg.result",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "result",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 630,
+        "y": 120,
+        "wires": [],
+        "z": "azert0"
+    }
 ]

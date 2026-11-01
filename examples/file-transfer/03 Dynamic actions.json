@@ -1,112 +1,151 @@
 [
-  {
-    "id": "azt3001",
-    "type": "inject",
-    "name": "Dynamic copy",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"copy\",\"source\":\"examples/copy-source.txt\",\"destination\":\"examples/dynamic-copy.txt\",\"createDir\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 250,
-    "y": 440,
-    "wires": [
-      [
-        "azt3004"
-      ]
-    ]
-  },
-  {
-    "id": "azt3002",
-    "type": "inject",
-    "name": "Dynamic move",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"move\",\"source\":\"examples/dynamic-copy.txt\",\"destination\":\"examples/dynamic-moved.txt\",\"createDir\":true}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 250,
-    "y": 500,
-    "wires": [
-      [
-        "azt3004"
-      ]
-    ]
-  },
-  {
-    "id": "azt3003",
-    "type": "inject",
-    "name": "Dynamic delete",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"delete\",\"source\":\"examples/dynamic-moved.txt\"}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 250,
-    "y": 560,
-    "wires": [
-      [
-        "azt3004"
-      ]
-    ]
-  },
-  {
-    "id": "azt3004",
-    "type": "azure-file-transfer",
-    "name": "Dynamic file transfer",
-    "config": "azt3000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": true,
-    "action": "move",
-    "source": "",
-    "sourceType": "str",
-    "destination": "",
-    "destinationType": "str",
-    "createDir": true,
-    "x": 520,
-    "y": 500,
-    "wires": [
-      [
-        "azt3005"
-      ]
-    ]
-  },
-  {
-    "id": "azt3005",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 750,
-    "y": 500,
-    "wires": []
-  }
+    {
+        "id": "aztt0",
+        "type": "tab",
+        "label": "azure file-transfer \u00b7 03 Dynamic actions",
+        "disabled": true,
+        "info": "**Copy, move and delete per message**\n\nRun **file-transfer 01** first (it creates `examples/copy-source.txt`). Then copy it, move the copy, and delete the moved copy.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic copy**, **Dynamic move**, **Dynamic delete** in order.\n\n**Effects:** Creates, moves and deletes files; the delete is not undone. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` after each step.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "aztc0",
+        "type": "comment",
+        "z": "aztt0",
+        "name": "Copy, move and delete per message (see the tab's description)",
+        "info": "**Copy, move and delete per message**\n\nRun **file-transfer 01** first (it creates `examples/copy-source.txt`). Then copy it, move the copy, and delete the moved copy.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Dynamic copy**, **Dynamic move**, **Dynamic delete** in order.\n\n**Effects:** Creates, moves and deletes files; the delete is not undone. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` after each step.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azt3000a",
+        "type": "azure-auth-config",
+        "z": "aztt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azt3000",
+        "type": "azure-file-config",
+        "z": "aztt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azt3000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azt3001",
+        "type": "inject",
+        "name": "Dynamic copy",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"copy\",\"source\":\"examples/copy-source.txt\",\"destination\":\"examples/dynamic-copy.txt\",\"createDir\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 250,
+        "y": 440,
+        "wires": [
+            [
+                "azt3004"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt3002",
+        "type": "inject",
+        "name": "Dynamic move",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"move\",\"source\":\"examples/dynamic-copy.txt\",\"destination\":\"examples/dynamic-moved.txt\",\"createDir\":true}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 250,
+        "y": 500,
+        "wires": [
+            [
+                "azt3004"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt3003",
+        "type": "inject",
+        "name": "Dynamic delete",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"delete\",\"source\":\"examples/dynamic-moved.txt\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 250,
+        "y": 560,
+        "wires": [
+            [
+                "azt3004"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt3004",
+        "type": "azure-file-transfer",
+        "name": "Dynamic file transfer",
+        "config": "azt3000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": true,
+        "action": "move",
+        "source": "",
+        "sourceType": "str",
+        "destination": "",
+        "destinationType": "str",
+        "createDir": true,
+        "x": 520,
+        "y": 500,
+        "wires": [
+            [
+                "azt3005"
+            ]
+        ],
+        "z": "aztt0"
+    },
+    {
+        "id": "azt3005",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 750,
+        "y": 500,
+        "wires": [],
+        "z": "aztt0"
+    }
 ]

@@ -1,113 +1,152 @@
 [
-  {
-    "id": "azr2001",
-    "type": "inject",
-    "name": "Read + exists",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":[\"read\",\"exists\"],\"path\":\"examples/input/settings.json\"}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 80,
-    "wires": [
-      [
-        "azr2004"
-      ]
-    ]
-  },
-  {
-    "id": "azr2002",
-    "type": "inject",
-    "name": "Get stat",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"stat\",\"path\":\"examples/input/settings.json\"}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 160,
-    "y": 140,
-    "wires": [
-      [
-        "azr2004"
-      ]
-    ]
-  },
-  {
-    "id": "azr2003",
-    "type": "inject",
-    "name": "Check missing file",
-    "props": [
-      {
-        "p": "file",
-        "v": "{\"action\":\"exists\",\"path\":\"examples/input/does-not-exist.txt\"}",
-        "vt": "json"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 180,
-    "y": 200,
-    "wires": [
-      [
-        "azr2004"
-      ]
-    ]
-  },
-  {
-    "id": "azr2004",
-    "type": "azure-file-read",
-    "name": "Dynamic file operation",
-    "config": "azr2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "target": "file",
-    "targetType": "msg",
-    "dynamic": true,
-    "actionRead": false,
-    "actionExists": false,
-    "actionStat": false,
-    "source": "",
-    "sourceType": "str",
-    "x": 440,
-    "y": 140,
-    "wires": [
-      [
-        "azr2005"
-      ]
-    ]
-  },
-  {
-    "id": "azr2005",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 670,
-    "y": 140,
-    "wires": []
-  }
+    {
+        "id": "azrt0",
+        "type": "tab",
+        "label": "azure file-read \u00b7 02 Dynamic actions",
+        "disabled": true,
+        "info": "**Choose the read action per message**\n\nWith **Load from msg.file**, each message names its action and share-relative path.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`), and make sure `examples/input/does-not-exist.txt` does not exist (the third button reads it to show `exists: false`).\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click any button.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` with `data`/`exists`, then stats, then `exists: false` for the missing path.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azrc0",
+        "type": "comment",
+        "z": "azrt0",
+        "name": "Choose the read action per message (see the tab's description)",
+        "info": "**Choose the read action per message**\n\nWith **Load from msg.file**, each message names its action and share-relative path.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`), and make sure `examples/input/does-not-exist.txt` does not exist (the third button reads it to show `exists: false`).\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click any button.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` with `data`/`exists`, then stats, then `exists: false` for the missing path.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azr2000a",
+        "type": "azure-auth-config",
+        "z": "azrt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azr2000",
+        "type": "azure-file-config",
+        "z": "azrt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azr2000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azr2001",
+        "type": "inject",
+        "name": "Read + exists",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":[\"read\",\"exists\"],\"path\":\"examples/input/settings.json\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 80,
+        "wires": [
+            [
+                "azr2004"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr2002",
+        "type": "inject",
+        "name": "Get stat",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"stat\",\"path\":\"examples/input/settings.json\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 160,
+        "y": 140,
+        "wires": [
+            [
+                "azr2004"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr2003",
+        "type": "inject",
+        "name": "Check missing file",
+        "props": [
+            {
+                "p": "file",
+                "v": "{\"action\":\"exists\",\"path\":\"examples/input/does-not-exist.txt\"}",
+                "vt": "json"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 180,
+        "y": 200,
+        "wires": [
+            [
+                "azr2004"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr2004",
+        "type": "azure-file-read",
+        "name": "Dynamic file operation",
+        "config": "azr2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "target": "file",
+        "targetType": "msg",
+        "dynamic": true,
+        "actionRead": false,
+        "actionExists": false,
+        "actionStat": false,
+        "source": "",
+        "sourceType": "str",
+        "x": 440,
+        "y": 140,
+        "wires": [
+            [
+                "azr2005"
+            ]
+        ],
+        "z": "azrt0"
+    },
+    {
+        "id": "azr2005",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 670,
+        "y": 140,
+        "wires": [],
+        "z": "azrt0"
+    }
 ]

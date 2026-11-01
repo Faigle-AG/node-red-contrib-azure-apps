@@ -1,78 +1,112 @@
 [
-  {
-    "id": "azet2001",
-    "type": "inject",
-    "name": "Read newest Inbox message",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 240,
-    "y": 260,
-    "wires": [
-      [
-        "azet2002"
-      ]
-    ]
-  },
-  {
-    "id": "azet2002",
-    "type": "azure-email-read",
-    "name": "Read one Inbox message",
-    "config": "azet2000",
-    "dynamic": false,
-    "userId": "user@example.com",
-    "userIdType": "str",
-    "folderId": "inbox",
-    "folderName": "Inbox",
-    "limit": 1,
-    "downloadAttachments": false,
-    "output": "emails",
-    "outputType": "msg",
-    "x": 510,
-    "y": 260,
-    "wires": [
-      [
-        "azet2003"
-      ]
-    ]
-  },
-  {
-    "id": "azet2003",
-    "type": "azure-email-transfer",
-    "name": "Move first result to Archive",
-    "config": "azet2000",
-    "userId": "user@example.com",
-    "userIdType": "str",
-    "dynamic": false,
-    "messageId": "emails.list[0].id",
-    "messageIdType": "msg",
-    "destinationId": "archive",
-    "destinationName": "Archive",
-    "x": 780,
-    "y": 260,
-    "wires": [
-      [
-        "azet2004"
-      ]
-    ]
-  },
-  {
-    "id": "azet2004",
-    "type": "debug",
-    "name": "msg.email",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "email",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 1010,
-    "y": 260,
-    "wires": []
-  }
+    {
+        "id": "azett0",
+        "type": "tab",
+        "label": "azure email-transfer \u00b7 02 Read newest then archive",
+        "disabled": true,
+        "info": "**Read the first returned Inbox message, then archive it**\n\nReads the first message Graph returns from the Inbox and moves it to Archive, in that order. The node sets no sort order, so this is not necessarily the newest message (the filename says \"newest\"; it is kept).\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address).\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read first returned Inbox message**.\n\n**Effects:** Moves that Inbox message; not undone automatically. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.email` describing the move.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azetc0",
+        "type": "comment",
+        "z": "azett0",
+        "name": "Read the first returned Inbox message, then archive it (see the tab's description)",
+        "info": "**Read the first returned Inbox message, then archive it**\n\nReads the first message Graph returns from the Inbox and moves it to Archive, in that order. The node sets no sort order, so this is not necessarily the newest message (the filename says \"newest\"; it is kept).\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address).\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Read first returned Inbox message**.\n\n**Effects:** Moves that Inbox message; not undone automatically. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.email` describing the move.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azet2000a",
+        "type": "azure-auth-config",
+        "z": "azett0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azet2000",
+        "type": "azure-email-config",
+        "z": "azett0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azet2000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azet2001",
+        "type": "inject",
+        "name": "Read first returned Inbox message",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 240,
+        "y": 260,
+        "wires": [
+            [
+                "azet2002"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet2002",
+        "type": "azure-email-read",
+        "name": "Read one Inbox message",
+        "config": "azet2000",
+        "dynamic": false,
+        "folderId": "inbox",
+        "folderName": "Inbox",
+        "limit": 1,
+        "downloadAttachments": false,
+        "output": "emails",
+        "outputType": "msg",
+        "x": 510,
+        "y": 260,
+        "wires": [
+            [
+                "azet2003"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet2003",
+        "type": "azure-email-transfer",
+        "name": "Move first result to Archive",
+        "config": "azet2000",
+        "dynamic": false,
+        "messageId": "emails.list[0].id",
+        "messageIdType": "msg",
+        "destinationId": "archive",
+        "destinationName": "Archive",
+        "x": 780,
+        "y": 260,
+        "wires": [
+            [
+                "azet2004"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet2004",
+        "type": "debug",
+        "name": "msg.email",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "email",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1010,
+        "y": 260,
+        "wires": [],
+        "z": "azett0"
+    }
 ]

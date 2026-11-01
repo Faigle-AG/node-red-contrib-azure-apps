@@ -1,71 +1,100 @@
 [
-  {
-    "id": "azdi2001",
-    "type": "inject",
-    "name": "Set msg.documentUrl",
-    "props": [
-      {
-        "p": "documentUrl",
-        "v": "https://example-files.online-convert.com/document/pdf/example.pdf",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 140,
-    "y": 300,
-    "wires": [
-      [
-        "azdi2002"
-      ]
-    ]
-  },
-  {
-    "id": "azdi2002",
-    "type": "azure-document-intelligence",
-    "name": "Analyze URL from msg",
-    "config": "azdi2000",
-    "dynamic": false,
-    "endpoint": "https://YOUR-RESOURCE.cognitiveservices.azure.com/",
-    "modelId": "prebuilt-layout",
-    "modelIdType": "str",
-    "documentData": "documentUrl",
-    "documentDataType": "msg",
-    "inputType": "url",
-    "outputContentFormat": "markdown",
-    "pages": "",
-    "locale": "",
-    "stringIndexType": "utf16CodeUnit",
-    "features": "",
-    "queryFields": "",
-    "outputOptions": "",
-    "output": "analysis",
-    "outputType": "msg",
-    "x": 380,
-    "y": 300,
-    "wires": [
-      [
-        "azdi2003"
-      ]
-    ]
-  },
-  {
-    "id": "azdi2003",
-    "type": "debug",
-    "name": "msg.analysis",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "analysis",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 610,
-    "y": 300,
-    "wires": []
-  }
+    {
+        "id": "azdi2t0",
+        "type": "tab",
+        "label": "azure document-intelligence \u00b7 02 Message document URL",
+        "disabled": true,
+        "info": "**Analyze a document at a URL from the message**\n\nThe inject puts the document URL from `NODE_RED_EXAMPLE_AZURE_DOCUMENT_URL` into `msg.documentUrl`; the node asks Azure to fetch and analyze it.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, an Azure AI Document Intelligence resource, and a document URL that Azure can fetch and that you may send to Azure.\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_DOCUMENT_ENDPOINT`: your Document Intelligence endpoint (e.g. `https://<resource>.cognitiveservices.azure.com/`)\n- `NODE_RED_EXAMPLE_AZURE_DOCUMENT_URL`: the URL of the document to analyze\n\nThe authentication node **EDIT ME: example Document Intelligence identity** uses **Microsoft Entra ID** (the node requests\nEntra tokens only): the node uses whatever identity the Node-RED process can obtain (environment variables, managed identity,\nAzure CLI login). Run it under a **dedicated test identity** with access to that resource only. This example contains no secret.\n\nIf a variable is unset, the node that needs it reports what is missing and makes no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set msg.documentUrl**.\n\n**Effects:** Azure fetches the document from that URL and analyzes it. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** after Azure finishes (the node polls every 2 seconds), the Debug sidebar shows the analysis result object.\n\n**Cleanup:** the flow provisions no Azure resource. Each analysis runs as an operation in the service, which keeps its result and bills it under its own rules; this flow does not remove either. Remove the sample document from your share or URL if you placed it there for this example.\n\n**Not verified:** a real Document Intelligence resource or model, and whether Azure accepts this particular document (the tests fake Azure and the identity and treat the document as opaque bytes); behaviour in the editor."
+    },
+    {
+        "id": "azdi2c0",
+        "type": "comment",
+        "z": "azdi2t0",
+        "name": "Analyze a document at a URL from the message (see the tab's description)",
+        "info": "**Analyze a document at a URL from the message**\n\nThe inject puts the document URL from `NODE_RED_EXAMPLE_AZURE_DOCUMENT_URL` into `msg.documentUrl`; the node asks Azure to fetch and analyze it.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, an Azure AI Document Intelligence resource, and a document URL that Azure can fetch and that you may send to Azure.\n\n**Setup:** before you start Node-RED, set:\n- `NODE_RED_EXAMPLE_AZURE_DOCUMENT_ENDPOINT`: your Document Intelligence endpoint (e.g. `https://<resource>.cognitiveservices.azure.com/`)\n- `NODE_RED_EXAMPLE_AZURE_DOCUMENT_URL`: the URL of the document to analyze\n\nThe authentication node **EDIT ME: example Document Intelligence identity** uses **Microsoft Entra ID** (the node requests\nEntra tokens only): the node uses whatever identity the Node-RED process can obtain (environment variables, managed identity,\nAzure CLI login). Run it under a **dedicated test identity** with access to that resource only. This example contains no secret.\n\nIf a variable is unset, the node that needs it reports what is missing and makes no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set msg.documentUrl**.\n\n**Effects:** Azure fetches the document from that URL and analyzes it. Configure everything first: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** after Azure finishes (the node polls every 2 seconds), the Debug sidebar shows the analysis result object.\n\n**Cleanup:** the flow provisions no Azure resource. Each analysis runs as an operation in the service, which keeps its result and bills it under its own rules; this flow does not remove either. Remove the sample document from your share or URL if you placed it there for this example.\n\n**Not verified:** a real Document Intelligence resource or model, and whether Azure accepts this particular document (the tests fake Azure and the identity and treat the document as opaque bytes); behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azdi2000",
+        "type": "azure-auth-config",
+        "z": "azdi2t0",
+        "name": "EDIT ME: example Document Intelligence identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azdi2001",
+        "type": "inject",
+        "name": "Set msg.documentUrl",
+        "props": [
+            {
+                "p": "documentUrl",
+                "v": "NODE_RED_EXAMPLE_AZURE_DOCUMENT_URL",
+                "vt": "env"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 140,
+        "y": 300,
+        "wires": [
+            [
+                "azdi2002"
+            ]
+        ],
+        "z": "azdi2t0"
+    },
+    {
+        "id": "azdi2002",
+        "type": "azure-document-intelligence",
+        "name": "Analyze URL from msg",
+        "config": "azdi2000",
+        "dynamic": false,
+        "endpoint": "NODE_RED_EXAMPLE_AZURE_DOCUMENT_ENDPOINT",
+        "modelId": "prebuilt-layout",
+        "modelIdType": "str",
+        "documentData": "documentUrl",
+        "documentDataType": "msg",
+        "inputType": "url",
+        "outputContentFormat": "markdown",
+        "pages": "",
+        "locale": "",
+        "stringIndexType": "utf16CodeUnit",
+        "features": "",
+        "queryFields": "",
+        "outputOptions": "",
+        "output": "analysis",
+        "outputType": "msg",
+        "x": 380,
+        "y": 300,
+        "wires": [
+            [
+                "azdi2003"
+            ]
+        ],
+        "z": "azdi2t0",
+        "endpointType": "env"
+    },
+    {
+        "id": "azdi2003",
+        "type": "debug",
+        "name": "msg.analysis",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "analysis",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 610,
+        "y": 300,
+        "wires": [],
+        "z": "azdi2t0"
+    }
 ]

@@ -1,69 +1,106 @@
 [
-  {
-    "id": "azdt4001",
-    "type": "inject",
-    "name": "Set source + destination",
-    "props": [
-      {
-        "p": "sourcePath",
-        "v": "examples/input",
-        "vt": "str"
-      },
-      {
-        "p": "destinationPath",
-        "v": "examples/from-message",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 190,
-    "y": 120,
-    "wires": [
-      [
-        "azdt4002"
-      ]
-    ]
-  },
-  {
-    "id": "azdt4002",
-    "type": "azure-directory-transfer",
-    "name": "Copy paths from msg",
-    "config": "azdt4000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "copy",
-    "source": "sourcePath",
-    "sourceType": "msg",
-    "destination": "destinationPath",
-    "destinationType": "msg",
-    "recursive": true,
-    "x": 440,
-    "y": 120,
-    "wires": [
-      [
-        "azdt4003"
-      ]
-    ]
-  },
-  {
-    "id": "azdt4003",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 680,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azdtt0",
+        "type": "tab",
+        "label": "azure directory-transfer \u00b7 04 Message paths",
+        "disabled": true,
+        "info": "**Take both folder paths from the message**\n\nThe inject sets both paths; the node copies the folder.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`); the copy contains it.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set source + destination**.\n\n**Effects:** Creates the copy. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` describing the copy.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azdtc0",
+        "type": "comment",
+        "z": "azdtt0",
+        "name": "Take both folder paths from the message (see the tab's description)",
+        "info": "**Take both folder paths from the message**\n\nThe inject sets both paths; the node copies the folder.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Prepare the input:** before the first click, upload a small JSON file to `examples/input/settings.json` in your share (for example the text `{\"example\":true}`); the copy contains it.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set source + destination**.\n\n**Effects:** Creates the copy. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` describing the copy.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azdt4000a",
+        "type": "azure-auth-config",
+        "z": "azdtt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azdt4000",
+        "type": "azure-file-config",
+        "z": "azdtt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azdt4000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azdt4001",
+        "type": "inject",
+        "name": "Set source + destination",
+        "props": [
+            {
+                "p": "sourcePath",
+                "v": "examples/input",
+                "vt": "str"
+            },
+            {
+                "p": "destinationPath",
+                "v": "examples/from-message",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "azdt4002"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt4002",
+        "type": "azure-directory-transfer",
+        "name": "Copy paths from msg",
+        "config": "azdt4000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "copy",
+        "source": "sourcePath",
+        "sourceType": "msg",
+        "destination": "destinationPath",
+        "destinationType": "msg",
+        "recursive": true,
+        "x": 440,
+        "y": 120,
+        "wires": [
+            [
+                "azdt4003"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt4003",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 120,
+        "wires": [],
+        "z": "azdtt0"
+    }
 ]

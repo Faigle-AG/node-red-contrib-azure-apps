@@ -1,58 +1,95 @@
 [
-  {
-    "id": "azda1001",
-    "type": "inject",
-    "name": "List share root",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 180,
-    "y": 120,
-    "wires": [
-      [
-        "azda1002"
-      ]
-    ]
-  },
-  {
-    "id": "azda1002",
-    "type": "azure-directory-action",
-    "name": "List share root",
-    "config": "azda1000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "list",
-    "source": "",
-    "sourceType": "str",
-    "property": "file.content",
-    "propertyType": "msg",
-    "recursive": true,
-    "x": 410,
-    "y": 120,
-    "wires": [
-      [
-        "azda1003"
-      ]
-    ]
-  },
-  {
-    "id": "azda1003",
-    "type": "debug",
-    "name": "msg.file.content",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file.content",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 650,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azdat0",
+        "type": "tab",
+        "label": "azure directory-action \u00b7 01 Static list",
+        "disabled": true,
+        "info": "**List the share root**\n\nLists the top level of your share (a blank folder means the share root for a list).\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **List share root**.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file.content` with the entries.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azdac0",
+        "type": "comment",
+        "z": "azdat0",
+        "name": "List the share root (see the tab's description)",
+        "info": "**List the share root**\n\nLists the top level of your share (a blank folder means the share root for a list).\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **List share root**.\n\n**Effects:** Read-only. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file.content` with the entries.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azda1000a",
+        "type": "azure-auth-config",
+        "z": "azdat0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azda1000",
+        "type": "azure-file-config",
+        "z": "azdat0",
+        "name": "EDIT ME: example file share",
+        "auth": "azda1000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azda1001",
+        "type": "inject",
+        "name": "List share root",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 180,
+        "y": 120,
+        "wires": [
+            [
+                "azda1002"
+            ]
+        ],
+        "z": "azdat0"
+    },
+    {
+        "id": "azda1002",
+        "type": "azure-directory-action",
+        "name": "List share root",
+        "config": "azda1000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "list",
+        "source": "",
+        "sourceType": "str",
+        "property": "file.content",
+        "propertyType": "msg",
+        "recursive": true,
+        "x": 410,
+        "y": 120,
+        "wires": [
+            [
+                "azda1003"
+            ]
+        ],
+        "z": "azdat0"
+    },
+    {
+        "id": "azda1003",
+        "type": "debug",
+        "name": "msg.file.content",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file.content",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 120,
+        "wires": [],
+        "z": "azdat0"
+    }
 ]

@@ -1,67 +1,97 @@
 [
-  {
-    "id": "azet4001",
-    "type": "inject",
-    "name": "Set mailbox + message ID",
-    "props": [
-      {
-        "p": "mailbox",
-        "v": "user@example.com",
-        "vt": "str"
-      },
-      {
-        "p": "messageId",
-        "v": "REPLACE-WITH-GRAPH-MESSAGE-ID",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 190,
-    "y": 120,
-    "wires": [
-      [
-        "azet4002"
-      ]
-    ]
-  },
-  {
-    "id": "azet4002",
-    "type": "azure-email-transfer",
-    "name": "Move using message properties",
-    "config": "azet4000",
-    "userId": "mailbox",
-    "userIdType": "msg",
-    "dynamic": false,
-    "messageId": "messageId",
-    "messageIdType": "msg",
-    "destinationId": "archive",
-    "destinationName": "Archive",
-    "x": 450,
-    "y": 120,
-    "wires": [
-      [
-        "azet4003"
-      ]
-    ]
-  },
-  {
-    "id": "azet4003",
-    "type": "debug",
-    "name": "msg.email",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "email",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 690,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azett0",
+        "type": "tab",
+        "label": "azure email-transfer \u00b7 04 Message user",
+        "disabled": true,
+        "info": "**Move a message in the configured mailbox**\n\nThis file was the \"message user\" example. The mailbox is chosen on the **email configuration**, not by `msg.mailbox`. The inject sets only the message ID; the node moves that message to Archive.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_MESSAGE_ID`: the Graph ID of a message in that mailbox to move;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set message ID**.\n\n**Effects:** Moves one message; not undone automatically. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.email` describing the move.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azetc0",
+        "type": "comment",
+        "z": "azett0",
+        "name": "Move a message in the configured mailbox (see the tab's description)",
+        "info": "**Move a message in the configured mailbox**\n\nThis file was the \"message user\" example. The mailbox is chosen on the **email configuration**, not by `msg.mailbox`. The inject sets only the message ID; the node moves that message to Archive.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_MESSAGE_ID`: the Graph ID of a message in that mailbox to move;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set message ID**.\n\n**Effects:** Moves one message; not undone automatically. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** `msg.email` describing the move.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azet4000a",
+        "type": "azure-auth-config",
+        "z": "azett0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azet4000",
+        "type": "azure-email-config",
+        "z": "azett0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azet4000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azet4001",
+        "type": "inject",
+        "name": "Set message ID",
+        "props": [
+            {
+                "p": "messageId",
+                "v": "NODE_RED_EXAMPLE_AZURE_MESSAGE_ID",
+                "vt": "env"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 190,
+        "y": 120,
+        "wires": [
+            [
+                "azet4002"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet4002",
+        "type": "azure-email-transfer",
+        "name": "Move in the configured mailbox",
+        "config": "azet4000",
+        "dynamic": false,
+        "messageId": "messageId",
+        "messageIdType": "msg",
+        "destinationId": "archive",
+        "destinationName": "Archive",
+        "x": 450,
+        "y": 120,
+        "wires": [
+            [
+                "azet4003"
+            ]
+        ],
+        "z": "azett0"
+    },
+    {
+        "id": "azet4003",
+        "type": "debug",
+        "name": "msg.email",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "email",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 120,
+        "wires": [],
+        "z": "azett0"
+    }
 ]

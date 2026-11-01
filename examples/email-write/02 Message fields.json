@@ -1,76 +1,111 @@
 [
-  {
-    "id": "azew2001",
-    "type": "inject",
-    "name": "Set email fields",
-    "props": [
-      {
-        "p": "recipient",
-        "v": "recipient@example.com",
-        "vt": "str"
-      },
-      {
-        "p": "subject",
-        "v": "Message-driven email",
-        "vt": "str"
-      },
-      {
-        "p": "payload",
-        "v": "<p>The recipient, subject and body came from msg.</p>",
-        "vt": "str"
-      }
-    ],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 170,
-    "y": 120,
-    "wires": [
-      [
-        "azew2002"
-      ]
-    ]
-  },
-  {
-    "id": "azew2002",
-    "type": "azure-email-write",
-    "name": "Send from message fields",
-    "config": "azew2000",
-    "userId": "sender@example.com",
-    "userIdType": "str",
-    "dynamic": false,
-    "to": "recipient",
-    "toType": "msg",
-    "subject": "subject",
-    "subjectType": "msg",
-    "body": "payload",
-    "bodyType": "msg",
-    "attachments": "",
-    "attachmentsType": "msg",
-    "x": 430,
-    "y": 120,
-    "wires": [
-      [
-        "azew2003"
-      ]
-    ]
-  },
-  {
-    "id": "azew2003",
-    "type": "debug",
-    "name": "msg.email",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "email",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 660,
-    "y": 120,
-    "wires": []
-  }
+    {
+        "id": "azewt0",
+        "type": "tab",
+        "label": "azure email-write \u00b7 02 Message fields",
+        "disabled": true,
+        "info": "**Take recipient, subject and body from the message**\n\nThe inject sets the recipient (from `NODE_RED_EXAMPLE_AZURE_RECIPIENT`), subject and body; the node sends them.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_RECIPIENT`: the address that receives the example emails;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set email fields**.\n\n**Effects:** **Sends a real email** each click. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the recipient receives it.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor."
+    },
+    {
+        "id": "azewc0",
+        "type": "comment",
+        "z": "azewt0",
+        "name": "Take recipient, subject and body from the message (see the tab's description)",
+        "info": "**Take recipient, subject and body from the message**\n\nThe inject sets the recipient (from `NODE_RED_EXAMPLE_AZURE_RECIPIENT`), subject and body; the node sends them.\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package, and a **test mailbox** in a Microsoft 365 tenant that an Entra identity may use through Microsoft Graph.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_MAILBOX` to the test mailbox (user ID or address) and:\n- `NODE_RED_EXAMPLE_AZURE_RECIPIENT`: the address that receives the example emails;\nThe authentication node **EDIT ME: example Microsoft Graph identity** uses **Microsoft Entra ID**: the node uses whatever identity the\nNode-RED process can obtain (environment variables, managed identity, Azure CLI login). Run it under a **dedicated test identity**\nwith mail permissions on the test mailbox only. This example contains no secret.\n\nIf a variable is unset, the node reports what is missing and sends no request.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Set email fields**.\n\n**Effects:** **Sends a real email** each click. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so earlier steps of a click may already have run. Nothing is rolled back.\n\n**Expected result:** the recipient receives it.\n\n**Cleanup:** remove what the example created or moved in the test mailbox.\n\n**Not verified:** a real tenant, mailbox or Graph permission (the tests fake Graph and the identity), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azew2000a",
+        "type": "azure-auth-config",
+        "z": "azewt0",
+        "name": "EDIT ME: example Microsoft Graph identity",
+        "authType": "entra",
+        "accountName": ""
+    },
+    {
+        "id": "azew2000",
+        "type": "azure-email-config",
+        "z": "azewt0",
+        "name": "EDIT ME: example test mailbox",
+        "auth": "azew2000a",
+        "userId": "NODE_RED_EXAMPLE_AZURE_MAILBOX",
+        "userIdType": "env"
+    },
+    {
+        "id": "azew2001",
+        "type": "inject",
+        "name": "Set email fields",
+        "props": [
+            {
+                "p": "recipient",
+                "v": "NODE_RED_EXAMPLE_AZURE_RECIPIENT",
+                "vt": "env"
+            },
+            {
+                "p": "subject",
+                "v": "Message-driven email",
+                "vt": "str"
+            },
+            {
+                "p": "payload",
+                "v": "<p>The recipient, subject and body came from msg.</p>",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 170,
+        "y": 120,
+        "wires": [
+            [
+                "azew2002"
+            ]
+        ],
+        "z": "azewt0"
+    },
+    {
+        "id": "azew2002",
+        "type": "azure-email-write",
+        "name": "Send from message fields",
+        "config": "azew2000",
+        "dynamic": false,
+        "to": "recipient",
+        "toType": "msg",
+        "subject": "subject",
+        "subjectType": "msg",
+        "body": "payload",
+        "bodyType": "msg",
+        "attachments": "",
+        "attachmentsType": "msg",
+        "x": 430,
+        "y": 120,
+        "wires": [
+            [
+                "azew2003"
+            ]
+        ],
+        "z": "azewt0"
+    },
+    {
+        "id": "azew2003",
+        "type": "debug",
+        "name": "msg.email",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "email",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 660,
+        "y": 120,
+        "wires": [],
+        "z": "azewt0"
+    }
 ]

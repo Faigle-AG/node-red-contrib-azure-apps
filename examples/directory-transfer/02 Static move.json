@@ -1,102 +1,141 @@
 [
-  {
-    "id": "azdt2001",
-    "type": "inject",
-    "name": "Create source directory",
-    "props": [],
-    "repeat": "",
-    "crontab": "",
-    "once": false,
-    "onceDelay": 5,
-    "topic": "",
-    "x": 180,
-    "y": 200,
-    "wires": [
-      [
-        "azdt2002"
-      ]
-    ]
-  },
-  {
-    "id": "azdt2002",
-    "type": "azure-directory-action",
-    "name": "Create move-source",
-    "config": "azdt2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "create",
-    "source": "examples/source",
-    "sourceType": "str",
-    "property": "result",
-    "propertyType": "msg",
-    "recursive": true,
-    "x": 420,
-    "y": 200,
-    "wires": [
-      [
-        "azdt2003"
-      ]
-    ]
-  },
-  {
-    "id": "azdt2003",
-    "type": "azure-file-write",
-    "name": "create example.txt",
-    "config": "azdt2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "write",
-    "target": "examples/source/example.txt",
-    "targetType": "str",
-    "data": "Directory move example",
-    "dataType": "str",
-    "createDir": true,
-    "x": 640,
-    "y": 200,
-    "wires": [
-      [
-        "azdt2004"
-      ]
-    ]
-  },
-  {
-    "id": "azdt2004",
-    "type": "azure-directory-transfer",
-    "name": "Move directory",
-    "config": "azdt2000",
-    "shareName": "documents",
-    "shareNameType": "str",
-    "dynamic": false,
-    "action": "move",
-    "source": "examples/source/example.txt",
-    "sourceType": "str",
-    "destination": "examples/moved-source/example.txt",
-    "destinationType": "str",
-    "recursive": true,
-    "x": 850,
-    "y": 200,
-    "wires": [
-      [
-        "azdt2005"
-      ]
-    ]
-  },
-  {
-    "id": "azdt2005",
-    "type": "debug",
-    "name": "msg.file",
-    "active": true,
-    "tosidebar": true,
-    "console": false,
-    "tostatus": false,
-    "complete": "file",
-    "targetType": "msg",
-    "statusVal": "",
-    "statusType": "auto",
-    "x": 1040,
-    "y": 200,
-    "wires": []
-  }
+    {
+        "id": "azdtt0",
+        "type": "tab",
+        "label": "azure directory-transfer \u00b7 02 Static move",
+        "disabled": true,
+        "info": "**Create a folder with a file, then move the folder**\n\nOne click creates `examples/source`, writes `example.txt` into it and moves the folder to `examples/moved-source`. (The original pointed this directory transfer at a file path, which it cannot move; the candidate moves the folder, as the node name says.)\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Create source directory**.\n\n**Effects:** Creates the folder and file, then moves the folder. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` describing the move.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor."
+    },
+    {
+        "id": "azdtc0",
+        "type": "comment",
+        "z": "azdtt0",
+        "name": "Create a folder with a file, then move the folder (see the tab's description)",
+        "info": "**Create a folder with a file, then move the folder**\n\nOne click creates `examples/source`, writes `example.txt` into it and moves the folder to `examples/moved-source`. (The original pointed this directory transfer at a file path, which it cannot move; the candidate moves the folder, as the node name says.)\n\n**Prerequisites:** the `@faigle/node-red-contrib-azure-apps` package and a **disposable** Azure file share you may change.\n\n**Setup:** before you start Node-RED, set `NODE_RED_EXAMPLE_AZURE_FILES_URL` to your storage account file endpoint\n(for example `https://<account>.file.core.windows.net`) and `NODE_RED_EXAMPLE_AZURE_SHARE` to the share name. Then open the\nconfiguration node **EDIT ME: example storage authentication** and enter a SAS token for that share. This example contains no token.\nPaths are relative to that share. If the share variable is unset, the node reports `SHARE_NAME_MISSING` and touches nothing.\n\n**Activation:** this tab is disabled, and its configuration nodes are on the same tab. Enable the tab, deploy, then click **Create source directory**.\n\n**Effects:** Creates the folder and file, then moves the folder. Configure everything before you enable the tab: a node checks its fields when the flow reaches it, so\nearlier steps of a click may already have changed the share. Nothing is rolled back.\n\n**Expected result:** `msg.file` describing the move.\n\n**Cleanup:** delete what the example created in your share when you are done.\n\n**Not verified:** a real storage account (the tests use an in-memory share), and behaviour in the editor.",
+        "x": 220,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "azdt2000a",
+        "type": "azure-auth-config",
+        "z": "azdtt0",
+        "name": "EDIT ME: example storage authentication",
+        "authType": "sas",
+        "accountName": ""
+    },
+    {
+        "id": "azdt2000",
+        "type": "azure-file-config",
+        "z": "azdtt0",
+        "name": "EDIT ME: example file share",
+        "auth": "azdt2000a",
+        "serviceUrl": "NODE_RED_EXAMPLE_AZURE_FILES_URL",
+        "serviceUrlType": "env"
+    },
+    {
+        "id": "azdt2001",
+        "type": "inject",
+        "name": "Create source directory",
+        "props": [],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 5,
+        "topic": "",
+        "x": 180,
+        "y": 200,
+        "wires": [
+            [
+                "azdt2002"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt2002",
+        "type": "azure-directory-action",
+        "name": "Create move-source",
+        "config": "azdt2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "create",
+        "source": "examples/source",
+        "sourceType": "str",
+        "property": "result",
+        "propertyType": "msg",
+        "recursive": true,
+        "x": 420,
+        "y": 200,
+        "wires": [
+            [
+                "azdt2003"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt2003",
+        "type": "azure-file-write",
+        "name": "create example.txt",
+        "config": "azdt2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "write",
+        "target": "examples/source/example.txt",
+        "targetType": "str",
+        "data": "Directory move example",
+        "dataType": "str",
+        "createDir": true,
+        "x": 640,
+        "y": 200,
+        "wires": [
+            [
+                "azdt2004"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt2004",
+        "type": "azure-directory-transfer",
+        "name": "Move directory",
+        "config": "azdt2000",
+        "shareName": "NODE_RED_EXAMPLE_AZURE_SHARE",
+        "shareNameType": "env",
+        "dynamic": false,
+        "action": "move",
+        "source": "examples/source",
+        "sourceType": "str",
+        "destination": "examples/moved-source",
+        "destinationType": "str",
+        "recursive": true,
+        "x": 850,
+        "y": 200,
+        "wires": [
+            [
+                "azdt2005"
+            ]
+        ],
+        "z": "azdtt0"
+    },
+    {
+        "id": "azdt2005",
+        "type": "debug",
+        "name": "msg.file",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "file",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1040,
+        "y": 200,
+        "wires": [],
+        "z": "azdtt0"
+    }
 ]
